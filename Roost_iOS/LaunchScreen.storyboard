@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="13122.16" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13104.12"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" image="RoostIconRounded" translatesAutoresizingMaskIntoConstraints="NO" id="Img-IC-on">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="90" id="wic-90"/>
+                                    <constraint firstAttribute="height" constant="90" id="hic-90"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Roost" textAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lbl-RS-t1">
+                                <fontDescription type="boldSystem" pointSize="42"/>
+                                <color key="textColor" name="LaunchForeground"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loch Studios" textAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lbl-LC-h1">
+                                <fontDescription type="system" pointSize="13"/>
+                                <color key="textColor" name="LaunchForeground"/>
+                            </label>
+                        </subviews>
+                        <color key="backgroundColor" name="LaunchBackground"/>
+                        <constraints>
+                            <constraint firstItem="Img-IC-on" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxIcon"/>
+                            <constraint firstItem="Img-IC-on" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-60" id="cyIcon"/>
+                            <constraint firstItem="Lbl-RS-t1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxLabel"/>
+                            <constraint firstItem="Lbl-RS-t1" firstAttribute="top" secondItem="Img-IC-on" secondAttribute="bottom" constant="16" id="iconToLabel"/>
+                            <constraint firstItem="Lbl-LC-h1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxLoch"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Lbl-LC-h1" secondAttribute="bottom" constant="44" id="botLoch"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="RoostIconRounded" width="60" height="60"/>
+        <namedColor name="LaunchBackground">
+            <color colorSpace="custom" customColorSpace="sRGB" red="0.92157" green="0.89020" blue="0.83529" alpha="1" cocoaTouchSystemColor="no"/>
+        </namedColor>
+        <namedColor name="LaunchForeground">
+            <color colorSpace="custom" customColorSpace="sRGB" red="0.23922" green="0.19608" blue="0.16078" alpha="1" cocoaTouchSystemColor="no"/>
+        </namedColor>
+    </resources>
+</document>

@@ -6,23 +6,98 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000101 /* Supabase */; };
+		A10000000000000000000002 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000102 /* KeychainAccess */; };
+		A10000000000000000000003 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000103 /* GoogleSignIn */; };
+		A10000000000000000000004 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000104 /* Nuke */; };
+		A10000000000000000000005 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000105 /* SwiftUIIntrospect */; };
+		A10000000000000000000006 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000106 /* FirebaseMessaging */; };
+		A10000000000000000000007 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000107 /* SwiftDate */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000020 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF2F9AEF2F74804E0013AAC9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF2F9AF62F74804E0013AAC9;
+			remoteInfo = Roost_iOS;
+		};
+		A10000000000000000000021 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF2F9AEF2F74804E0013AAC9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF2F9AF62F74804E0013AAC9;
+			remoteInfo = Roost_iOS;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		CF2F9AF72F74804E0013AAC9 /* Roost_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roost_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000030 /* RoostTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoostTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000031 /* RoostUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoostUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000034 /* Roost_iOS/Config/Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Roost_iOS/Config/Secrets.xcconfig; sourceTree = "<group>"; };
+		CF2F9AF72F74804E0013AAC9 /* Roost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF2FA20E2F7492A50013AAC9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CF583B872F8CE6CB0032004C /* Exceptions for "Roost_iOS" folder in "Roost_iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Config/Secrets.xcconfig,
+			);
+			target = CF2F9AF62F74804E0013AAC9 /* Roost_iOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000032 /* RoostTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RoostTests;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000033 /* RoostUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RoostUITests;
+			sourceTree = "<group>";
+		};
 		CF2F9AF92F74804E0013AAC9 /* Roost_iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CF583B872F8CE6CB0032004C /* Exceptions for "Roost_iOS" folder in "Roost_iOS" target */,
+			);
 			path = Roost_iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000040 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000041 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF2F9AF42F74804E0013AAC9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000001 /* Supabase in Frameworks */,
+				A10000000000000000000002 /* KeychainAccess in Frameworks */,
+				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
+				A10000000000000000000004 /* Nuke in Frameworks */,
+				A10000000000000000000005 /* SwiftUIIntrospect in Frameworks */,
+				A10000000000000000000006 /* FirebaseMessaging in Frameworks */,
+				A10000000000000000000007 /* SwiftDate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,21 +108,81 @@
 			isa = PBXGroup;
 			children = (
 				CF2F9AF92F74804E0013AAC9 /* Roost_iOS */,
+				A10000000000000000000032 /* RoostTests */,
+				A10000000000000000000033 /* RoostUITests */,
 				CF2F9AF82F74804E0013AAC9 /* Products */,
+				CF2FA1082F7491760013AAC9 /* Recovered References */,
+				CF2FA20E2F7492A50013AAC9 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
 		CF2F9AF82F74804E0013AAC9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CF2F9AF72F74804E0013AAC9 /* Roost_iOS.app */,
+				CF2F9AF72F74804E0013AAC9 /* Roost.app */,
+				A10000000000000000000030 /* RoostTests.xctest */,
+				A10000000000000000000031 /* RoostUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CF2FA1082F7491760013AAC9 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000034 /* Roost_iOS/Config/Secrets.xcconfig */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A10000000000000000000050 /* RoostTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000090 /* Build configuration list for PBXNativeTarget "RoostTests" */;
+			buildPhases = (
+				A10000000000000000000042 /* Sources */,
+				A10000000000000000000040 /* Frameworks */,
+				A10000000000000000000044 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000060 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000032 /* RoostTests */,
+			);
+			name = RoostTests;
+			packageProductDependencies = (
+			);
+			productName = RoostTests;
+			productReference = A10000000000000000000030 /* RoostTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A10000000000000000000051 /* RoostUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000091 /* Build configuration list for PBXNativeTarget "RoostUITests" */;
+			buildPhases = (
+				A10000000000000000000043 /* Sources */,
+				A10000000000000000000041 /* Frameworks */,
+				A10000000000000000000045 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000061 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000033 /* RoostUITests */,
+			);
+			name = RoostUITests;
+			packageProductDependencies = (
+			);
+			productName = RoostUITests;
+			productReference = A10000000000000000000031 /* RoostUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		CF2F9AF62F74804E0013AAC9 /* Roost_iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CF2F9B022F74804F0013AAC9 /* Build configuration list for PBXNativeTarget "Roost_iOS" */;
@@ -65,9 +200,16 @@
 			);
 			name = Roost_iOS;
 			packageProductDependencies = (
+				A10000000000000000000101 /* Supabase */,
+				A10000000000000000000102 /* KeychainAccess */,
+				A10000000000000000000103 /* GoogleSignIn */,
+				A10000000000000000000104 /* Nuke */,
+				A10000000000000000000105 /* SwiftUIIntrospect */,
+				A10000000000000000000106 /* FirebaseMessaging */,
+				A10000000000000000000107 /* SwiftDate */,
 			);
-			productName = Roost_iOS;
-			productReference = CF2F9AF72F74804E0013AAC9 /* Roost_iOS.app */;
+			productName = Roost;
+			productReference = CF2F9AF72F74804E0013AAC9 /* Roost.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -78,8 +220,16 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2630;
-				LastUpgradeCheck = 2630;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					A10000000000000000000050 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = CF2F9AF62F74804E0013AAC9;
+					};
+					A10000000000000000000051 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = CF2F9AF62F74804E0013AAC9;
+					};
 					CF2F9AF62F74804E0013AAC9 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -94,17 +244,42 @@
 			);
 			mainGroup = CF2F9AEE2F74804E0013AAC9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A10000000000000000000120 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				A10000000000000000000121 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+				A10000000000000000000122 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				A10000000000000000000123 /* XCRemoteSwiftPackageReference "Nuke" */,
+				A10000000000000000000124 /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
+				A10000000000000000000125 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				A10000000000000000000126 /* XCRemoteSwiftPackageReference "SwiftDate" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CF2F9AF82F74804E0013AAC9 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				CF2F9AF62F74804E0013AAC9 /* Roost_iOS */,
+				A10000000000000000000050 /* RoostTests */,
+				A10000000000000000000051 /* RoostUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000044 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000045 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF2F9AF52F74804E0013AAC9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +290,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000042 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF2F9AF32F74804E0013AAC9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +313,108 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A10000000000000000000060 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF2F9AF62F74804E0013AAC9 /* Roost_iOS */;
+			targetProxy = A10000000000000000000020 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000061 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF2F9AF62F74804E0013AAC9 /* Roost_iOS */;
+			targetProxy = A10000000000000000000021 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		A10000000000000000000070 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roostapp.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roost.app/Roost";
+				TEST_TARGET_NAME = Roost_iOS;
+			};
+			name = Debug;
+		};
+		A10000000000000000000071 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roostapp.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roost.app/Roost";
+				TEST_TARGET_NAME = Roost_iOS;
+			};
+			name = Release;
+		};
+		A10000000000000000000072 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roostapp.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Roost_iOS;
+			};
+			name = Debug;
+		};
+		A10000000000000000000073 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.roostapp.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Roost_iOS;
+			};
+			name = Release;
+		};
 		CF2F9B002F74804F0013AAC9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -177,12 +467,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -234,11 +525,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -246,15 +538,24 @@
 		};
 		CF2F9B032F74804F0013AAC9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000034 /* Roost_iOS/Config/Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 22X48K6KSP;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Roost;
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.roostapp.ios\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = "$(SUPABASE_ANON_KEY)";
+				INFOPLIST_KEY_SUPABASE_URL = "$(SUPABASE_URL)";
+				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -263,8 +564,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Ember-Studio.Roost-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emberstudio.roost;
+				PRODUCT_NAME = Roost;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -277,15 +578,24 @@
 		};
 		CF2F9B042F74804F0013AAC9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000034 /* Roost_iOS/Config/Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 22X48K6KSP;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Roost;
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.roostapp.ios\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = "$(SUPABASE_ANON_KEY)";
+				INFOPLIST_KEY_SUPABASE_URL = "$(SUPABASE_URL)";
+				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -294,8 +604,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Ember-Studio.Roost-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emberstudio.roost;
+				PRODUCT_NAME = Roost;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -309,6 +619,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A10000000000000000000090 /* Build configuration list for PBXNativeTarget "RoostTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000070 /* Debug */,
+				A10000000000000000000071 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000091 /* Build configuration list for PBXNativeTarget "RoostUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000072 /* Debug */,
+				A10000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CF2F9AF22F74804E0013AAC9 /* Build configuration list for PBXProject "Roost_iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -328,6 +656,103 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A10000000000000000000120 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+		A10000000000000000000121 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.2;
+			};
+		};
+		A10000000000000000000122 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		A10000000000000000000123 /* XCRemoteSwiftPackageReference "Nuke" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kean/Nuke";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+		A10000000000000000000124 /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/siteline/swiftui-introspect";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+		A10000000000000000000125 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+		A10000000000000000000126 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/malcommac/SwiftDate";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000101 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000120 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		A10000000000000000000102 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000121 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+		A10000000000000000000103 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000122 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		A10000000000000000000104 /* Nuke */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000123 /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = Nuke;
+		};
+		A10000000000000000000105 /* SwiftUIIntrospect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000124 /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
+			productName = SwiftUIIntrospect;
+		};
+		A10000000000000000000106 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000125 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		A10000000000000000000107 /* SwiftDate */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000126 /* XCRemoteSwiftPackageReference "SwiftDate" */;
+			productName = SwiftDate;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CF2F9AEF2F74804E0013AAC9 /* Project object */;
 }

@@ -1,0 +1,27 @@
+# Xcode
+xcuserdata/
+*.xcworkspace
+!Roost_iOS.xcodeproj/project.xcworkspace/
+!Roost_iOS.xcodeproj/project.xcworkspace/xcshareddata/
+!Roost_iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+!Roost_iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+DerivedData/
+build/
+
+# Secrets
+Secrets.xcconfig
+Roost_iOS/Config/Secrets.xcconfig
+
+# macOS
+.DS_Store
+
+# Local assistant/tooling state
+.agents/
+.claude/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
