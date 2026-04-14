@@ -20,12 +20,12 @@ struct MainTabView: View {
     @Environment(MemberNamesHelper.self) private var memberNamesHelper
     @Environment(ScrambleModeEnvironment.self) private var scrambleModeEnvironment
     @Environment(SavingsGoalsViewModel.self) private var savingsGoalsViewModel
-    @Environment(AppLockManager.self) private var lockManager
+    @Environment(AppBootManager.self) private var appBootManager
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var loadedTabs: Set<NotificationRouter.AppTab> = [.home]
+    @State private var loadedTabs: Set<NotificationRouter.AppTab> = [.home, .tasks, .money, .calendar, .more]
     @State private var warmedHomeId: UUID?
-    @State private var keyboardVisible = false
+    @State private var tabBarHidden = false
     @State private var showIncomeSetup = false
 
     var body: some View {
@@ -33,7 +33,7 @@ struct MainTabView: View {
             currentTabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.roostBackground)
-                .safeAreaPadding(.bottom, keyboardVisible ? 0 : DesignSystem.Size.tabBarHeight + DesignSystem.Spacing.tabContentBottomInset)
+                .safeAreaPadding(.bottom, tabBarHidden ? 0 : DesignSystem.Size.tabBarHeight + DesignSystem.Spacing.tabContentBottomInset)
                 .overlay(alignment: .bottom) {
                     if let error = homeManager.errorMessage {
                         Text(error)
@@ -46,7 +46,7 @@ struct MainTabView: View {
                     }
                 }
 
-            if !keyboardVisible {
+            if !tabBarHidden {
                 FigmaTabBar(
                     selectedTab: Binding(
                         get: { notificationRouter.selectedTab },
@@ -54,28 +54,37 @@ struct MainTabView: View {
                     )
                 )
                 .ignoresSafeArea(.keyboard, edges: .bottom)
+                .transaction { transaction in
+                    transaction.disablesAnimations = true
+                    transaction.animation = nil
+                }
             }
         }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .animation(nil, value: tabBarHidden)
             .task(id: authManager.homeId) {
                 guard let homeId = authManager.homeId,
                       let userId = authManager.currentUser?.id else { return }
+                if appBootManager.isBooted(homeId: homeId, userId: userId) {
+                    await restartRealtime(homeId: homeId, userId: userId)
+                    warmedHomeId = homeId
+                    if shouldShowIncomeSetup() { showIncomeSetup = true }
+                    loadedTabs.insert(notificationRouter.selectedTab)
+                    return
+                }
+
                 await homeManager.loadHome(homeId: homeId, userId: userId)
                 await homeManager.startRealtime(homeId: homeId, userId: userId)
                 if warmedHomeId != homeId {
-                    await warmPageData(homeId: homeId, userId: userId)
+                    async let pageWarm: Void = warmPageData(homeId: homeId, userId: userId)
+                    async let userWarm: Void = warmUserData(userId: userId)
+                    _ = await (pageWarm, userWarm)
                     warmedHomeId = homeId
+                    appBootManager.markBooted(homeId: homeId, userId: userId)
                     // Check income onboarding after home data is warm
                     if shouldShowIncomeSetup() { showIncomeSetup = true }
                 }
                 loadedTabs.insert(notificationRouter.selectedTab)
-            }
-            .task(id: authManager.currentUser?.id) {
-                guard let userId = authManager.currentUser?.id else { return }
-                notificationsViewModel.isAppActive = scenePhase == .active
-                await notificationsViewModel.load(userId: userId)
-                await notificationsViewModel.startRealtime(userId: userId)
-                await settingsViewModel.loadPreferences(for: userId)
-                await LocalNotificationManager.shared.requestAuthorization()
             }
             .onChange(of: scenePhase) { _, newValue in
                 notificationsViewModel.isAppActive = newValue == .active
@@ -86,11 +95,13 @@ struct MainTabView: View {
             .onChange(of: notificationRouter.selectedTab) { _, newValue in
                 loadedTabs.insert(newValue)
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-                keyboardVisible = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-                keyboardVisible = false
+            .onReceive(NotificationCenter.default.publisher(for: .roostTabBarHiddenChanged)) { notification in
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                transaction.animation = nil
+                withTransaction(transaction) {
+                    tabBarHidden = (notification.object as? Bool) ?? false
+                }
             }
             .onDisappear {
                 Task {
@@ -117,10 +128,10 @@ struct MainTabView: View {
                 }
             }
 
-            if loadedTabs.contains(.shopping) {
-                tabContainer(for: .shopping) {
+            if loadedTabs.contains(.tasks) {
+                tabContainer(for: .tasks) {
                     NavigationStack {
-                        ShoppingListView()
+                        TasksHomeView()
                     }
                 }
             }
@@ -133,10 +144,10 @@ struct MainTabView: View {
                 }
             }
 
-            if loadedTabs.contains(.life) {
-                tabContainer(for: .life) {
+            if loadedTabs.contains(.calendar) {
+                tabContainer(for: .calendar) {
                     NavigationStack {
-                        PlanHomeView()
+                        CalendarView()
                     }
                 }
             }
@@ -154,6 +165,8 @@ struct MainTabView: View {
                                     HouseholdSettingsView()
                                 case .rooms:
                                     RoomsView()
+                                case .pinboard:
+                                    PinboardView()
                                 case .budgetCategories:
                                     BudgetCategoriesSettingsView()
                                 case .appearance:
@@ -242,6 +255,42 @@ struct MainTabView: View {
 
         _ = await (dashboardRealtime, shoppingRealtime, expensesRealtime, budgetRealtime, choresRealtime, calendarRealtime, activityRealtime, pinboardRealtime)
         _ = await (templateRealtime, monthlyRealtime, settingsRealtime, goalsRealtime)
+    }
+
+    private func warmUserData(userId: UUID) async {
+        notificationsViewModel.isAppActive = scenePhase == .active
+
+        async let notificationsLoad: Void = notificationsViewModel.load(userId: userId)
+        async let settingsLoad: Void = settingsViewModel.loadPreferences(for: userId)
+        async let notificationAuth: Void = LocalNotificationManager.shared.requestAuthorization()
+
+        _ = await (notificationsLoad, settingsLoad, notificationAuth)
+
+        await notificationsViewModel.startRealtime(userId: userId)
+    }
+
+    private func restartRealtime(homeId: UUID, userId: UUID) async {
+        await homeManager.startRealtime(homeId: homeId, userId: userId)
+        memberNamesHelper.load(currentUserId: userId, homeMembers: homeManager.members)
+        scrambleModeEnvironment.sync(from: moneySettingsViewModel.settings)
+        notificationsViewModel.isAppActive = scenePhase == .active
+
+        async let dashboardRealtime: Void = dashboardViewModel.startRealtime(homeId: homeId)
+        async let shoppingRealtime: Void = shoppingViewModel.startRealtime(homeId: homeId)
+        async let expensesRealtime: Void = expensesViewModel.startRealtime(homeId: homeId)
+        async let budgetRealtime: Void = budgetViewModel.startRealtime(homeId: homeId)
+        async let choresRealtime: Void = choresViewModel.startRealtime(homeId: homeId)
+        async let calendarRealtime: Void = calendarViewModel.startRealtime(homeId: homeId)
+        async let activityRealtime: Void = activityViewModel.startRealtime(homeId: homeId)
+        async let pinboardRealtime: Void = pinboardViewModel.startRealtime(homeId: homeId, userId: userId)
+        async let templateRealtime: Void = budgetTemplateViewModel.startRealtime(homeId: homeId)
+        async let monthlyRealtime: Void = monthlyMoneyViewModel.startRealtime(homeId: homeId)
+        async let settingsRealtime: Void = moneySettingsViewModel.startRealtime(homeId: homeId)
+        async let goalsRealtime: Void = savingsGoalsViewModel.startRealtime(homeId: homeId)
+        async let notificationsRealtime: Void = notificationsViewModel.startRealtime(userId: userId)
+
+        _ = await (dashboardRealtime, shoppingRealtime, expensesRealtime, budgetRealtime, choresRealtime, calendarRealtime, activityRealtime, pinboardRealtime)
+        _ = await (templateRealtime, monthlyRealtime, settingsRealtime, goalsRealtime, notificationsRealtime)
     }
 
     private func stopPagePolling() async {

@@ -49,9 +49,11 @@ final class SavingsGoalsViewModel {
 
     // MARK: - CRUD
 
-    func addGoal(_ data: CreateSavingsGoal) async throws {
+    @discardableResult
+    func addGoal(_ data: CreateSavingsGoal) async throws -> SavingsGoal {
         let created = try await service.addGoal(data)
         goals.append(created)
+        return created
     }
 
     func addToGoal(id: UUID, amount: Decimal) async throws {
@@ -69,6 +71,13 @@ final class SavingsGoalsViewModel {
     }
 
     func completeGoal(id: UUID) async throws {
+        if let goal = goals.first(where: { $0.id == id }),
+           let budgetLineId = goal.budgetLineId {
+            let cleared = try await service.removeGoalContribution(goalId: id, budgetLineId: budgetLineId)
+            if let idx = goals.firstIndex(where: { $0.id == id }) {
+                goals[idx] = cleared
+            }
+        }
         let updated = try await service.completeGoal(id: id)
         if let idx = goals.firstIndex(where: { $0.id == id }) {
             goals[idx] = updated

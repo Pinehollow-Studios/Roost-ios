@@ -90,6 +90,19 @@ The palette is drawn from warm, earthy domestic tones: terracotta pottery, sage 
 - **Accent:** `#e8d5bc`
   A warm highlight for subtle emphasis and hover-like pressed states where needed.
 
+**Area Accent Colors**
+
+These accents identify sections without replacing the terracotta app primary. Terracotta remains the main commitment colour for primary actions across Roost; area accents are for page rails, focus rings, selected chips, section highlights, empty-state icons, links, and small orientation details.
+
+- **Shopping Accent (Orange):** `#e9822a`
+  Warm, practical, and fast. Use for shopping page highlights, add-item focus states, shopping chips, list accents, and the top page rail.
+- **Chores Accent (Green):** `#2fae63`
+  Fresh, active, and rewarding. Use for chores progress, chore filters, completion-adjacent emphasis, room/task setup highlights, and the top-level chores identity.
+- **Money Accent (Blue):** `#337dd6`
+  Clear, precise, and modern. Use for money page rails, analytical selected states, money links, spend-context highlights, and compact financial navigation.
+
+Area accents should be confident but restrained. They should read clearly against the warm Roost base without turning neon, and opacity should be used for quiet surfaces.
+
 **Status Colors**
 
 - **Success:** `#7fa087`
@@ -141,6 +154,7 @@ Dark mode should feel like a softly lit room at night, not a cold technical inve
 - Never use pure white or pure black.
 - Never fall back to default SwiftUI blue for branded UI.
 - Terracotta should feel intentional, not sprayed everywhere.
+- Orange, green, and blue area accents should orient the user by app area; they should not become full-page themes.
 - Use muted tones for structure and hierarchy; use primary colour for commitment and meaning.
 
 ---
@@ -527,6 +541,99 @@ Where Roost shows budgets, balances, or trends, charts should remain warm and re
 
 ---
 
+## Money Section Design Language
+
+The Money section is the one place in Roost that can feel more professional and analytical than the rest of the app. It should still belong to the same warm household system, but the density, typography, and component rhythm should move closer to a modern budgeting product than a general home dashboard.
+
+### Visual Thesis
+
+Money should feel like a calm financial cockpit: compact, warm, precise, and trustworthy. It is not a bank, not a spreadsheet, and not a marketing dashboard.
+
+### Competitive Research Notes
+
+Current budgeting leaders converge on the same product patterns:
+
+- **Monarch** uses a monthly cash-flow model, supports category and flex budgeting, and deliberately simplifies mobile budget columns to the values people need most: budgeted and remaining or actual. Source: https://help.monarch.com/hc/en-us/articles/360048883631-Creating-Your-Budget-in-Monarch
+- **Monarch** also treats the dashboard as configurable widgets and has publicly called out improved information density, redesigned mobile cards, higher contrast, and collapsible budget sections. Sources: https://help.monarch.com/hc/en-us/articles/360058127551-Customize-Your-Dashboard and https://partners.monarchmoney.com/blog/monarch-brand-refresh
+- **Copilot Money** leads its dashboard with monthly spending progress, free-to-spend context, recurring-payment awareness, and category bars that change colour based on spending pace. Sources: https://help.copilot.money/en/articles/6045480-dashboard-tab-overview and https://help.copilot.money/en/articles/9504513-categories-tab-overview
+- **Rocket Money** emphasises spend allowance, category goal trackers, automatic categorisation, and alerts as users approach spending goals. Source: https://www.rocketmoney.com/feature/create-a-budget
+- **YNAB** progress bars reinforce the value of seeing budget status at a glance rather than reading long explanations. Source: https://www.ynab.com/progress-bars/
+
+Roost should borrow the useful behaviours, not the visual identity: clear spend pace, category status, cash-flow allocation, upcoming commitments, and compact trend comparison.
+
+### Money Typography
+
+Money uses the same DM Sans family, but with a tighter type scale.
+
+- Page titles still follow the global page title system.
+- Module labels: `10-11pt`, medium, uppercase only when acting as an analytical section label.
+- Row labels: `12pt`, medium.
+- Row values: `13-15pt`, medium.
+- Supporting text: `11pt`, regular.
+- Chart labels: `9-10pt`, medium.
+- Avoid large explanatory paragraphs. If a sentence wraps more than twice inside a money module, shorten it.
+
+### Money Layout Density
+
+Money screens should be denser than Shopping, Home, and Plan.
+
+- Prefer `10-12pt` internal module padding for analytical cards.
+- Prefer `7-10pt` vertical spacing inside modules.
+- Prefer `12pt` spacing between modules on overview-style pages.
+- Use quiet cards for analytics. Borders and surface tone should carry structure; shadows should be minimal or absent.
+- Avoid oversized empty-state boxes in Money. Empty states should be compact and action-led.
+- Put the most decision-useful information first: pace, remaining, overspent, due soon, and month-over-month change.
+
+### Money Components
+
+Money components should feel custom and product-specific.
+
+- Do not use visible native iOS controls for analytical modules: no default `ProgressView`, `DisclosureGroup`, default blue links, default segmented controls, or default dividers.
+- Use custom hairlines, custom expand rows, custom progress bars, and custom loading skeletons.
+- Keep progress bars slim: `4-6pt` for rows, `8-10pt` only for primary spend rings.
+- Use colour as status, not decoration:
+  - Sage: safe, under pace, positive.
+  - Amber: approaching limit, due soon, needs attention.
+  - Terracotta: primary brand action or neutral money emphasis.
+  - Blue (`#337dd6`): money area accent for navigation, links, active analytical controls, and section rails.
+  - Destructive red: over budget or genuinely negative.
+- Category rows should show status faster than copy can explain it: dot, name, remaining or overage, slim progress bar.
+
+### Money Copy
+
+Money copy should be more operational than emotional.
+
+- Good: “£42 left”, “Over £18”, “Due tomorrow”, “+12% vs last month”.
+- Avoid: “You’re doing great”, “Build better habits”, “Stay on top of your finances”.
+- Insights should be short and specific. Prefer one sentence under a primary metric.
+- Do not repeat what the chart already says.
+
+### Overview Page Direction
+
+The Money Overview page should behave like a compact monthly briefing.
+
+Order of priority:
+
+1. Monthly spend pace and health.
+2. Income allocation: fixed, lifestyle, unallocated.
+3. Lifestyle category status.
+4. Upcoming fixed costs.
+5. Spend trend.
+6. Month comparison.
+
+Each module should answer one question:
+
+- “How much of the month have we used?”
+- “Where is income allocated?”
+- “Which categories need attention?”
+- “What is due soon?”
+- “Is spending changing?”
+- “What moved compared with last month?”
+
+If a module cannot answer one of those questions in under one second, simplify it.
+
+---
+
 ## Voice & Tone
 
 Roost copy should sound like a thoughtful person, not a system.
@@ -560,17 +667,20 @@ Roost copy should sound like a thoughtful person, not a system.
 - Optimise for speed
 - Checking off an item should feel satisfying
 - Adding an item should be friction-light
+- Area accent: orange `#e9822a`. Use it for shopping rails, add-item focus states, suggestions, chips, and quick-action emphasis. Keep primary commitment buttons terracotta unless the interaction is a lightweight shopping-specific selection.
 
 ### Expenses
 
 - Money screens should feel calm and trustworthy
 - Use hierarchy to clarify who owes whom
 - Never make critical balance information visually noisy
+- Area accent: blue `#337dd6`. Use it for money navigation, selected analytical controls, money page links, month controls, chart emphasis, and compact section identity. Terracotta remains the app-wide primary CTA colour.
 
 ### Chores
 
 - Completion states should feel rewarding
 - Overdue items should be visible without turning the screen alarming
+- Area accent: green `#2fae63`. Use it for chores rails, filters, progress, task setup highlights, room selection, and completion-adjacent UI. Keep overdue and destructive states semantic rather than green.
 
 ### Dashboard
 

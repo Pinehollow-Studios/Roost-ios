@@ -1,5 +1,7 @@
 import SwiftUI
 
+private let moneyPageInset: CGFloat = DesignSystem.Spacing.page
+
 // MARK: - MoneyHomeView
 
 struct MoneyHomeView: View {
@@ -23,7 +25,7 @@ struct MoneyHomeView: View {
     @State private var countdownTask: Task<Void, Never>?
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .top) {
             VStack(spacing: 0) {
                 // Scramble banner — outside scroll so it stays fixed
                 if scramble.isScrambled {
@@ -32,11 +34,16 @@ struct MoneyHomeView: View {
                 scrollContent
             }
 
-            FigmaFloatingActionButton(systemImage: "plus") {
-                showAddExpense = true
-            }
-            .padding(.trailing, 20)
-            .padding(.bottom, 16)
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.roostMoneyTint.opacity(0.52), Color.roostMoneyTint.opacity(0.18)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+                .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -57,7 +64,7 @@ struct MoneyHomeView: View {
             }
             hideBalances = UserDefaults.standard.bool(forKey: "roost-hide-balances")
         }
-        .sheet(isPresented: $showAddExpense) {
+        .navigationDestination(isPresented: $showAddExpense) {
             if let myUserId = homeManager.currentUserId {
                 AddExpenseSheet(
                     myName: memberNames.names.me,
@@ -65,7 +72,9 @@ struct MoneyHomeView: View {
                     myUserId: myUserId,
                     partnerUserId: homeManager.partner?.userID,
                     suggestedCategories: budgetVM.categories,
-                    defaultSplitType: settingsVM.settings.defaultExpenseSplit == 50.0 ? "equal" : "solo"
+                    defaultSplitType: settingsVM.settings.defaultExpenseSplit == 50.0 ? "equal" : "solo",
+                    currencySymbol: settingsVM.settings.currencySymbol,
+                    hidesTabBar: true
                 ) { title, amount, paidBy, splitType, category, notes, date, recurring in
                     guard let homeId = homeManager.homeId else { return }
                     await expensesVM.addExpense(
@@ -111,10 +120,10 @@ struct MoneyHomeView: View {
 
     private var scrollContent: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-
-                FigmaPageHeader(title: "Money")
-                    .padding(.horizontal, DesignSystem.Spacing.page)
+            VStack(alignment: .leading, spacing: 0) {
+                pageHeader
+                    .padding(.top, 16)
+                    .padding(.horizontal, moneyPageInset)
 
                 VStack(alignment: .leading, spacing: Spacing.lg) {
 
@@ -145,13 +154,45 @@ struct MoneyHomeView: View {
                         upcomingBillsSection
                     }
                 }
-                .padding(.horizontal, DesignSystem.Spacing.page)
+                .padding(.horizontal, moneyPageInset)
+                .padding(.top, 22)
                 .animation(.easeOut(duration: 0.25), value: partnerBalance == 0)
             }
-            .padding(.top, DesignSystem.Spacing.screenTop)
             .padding(.bottom, DesignSystem.Spacing.screenBottom + DesignSystem.Spacing.tabContentBottomInset + 72)
-            .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
             .frame(maxWidth: .infinity, alignment: .top)
+        }
+    }
+
+    private var pageHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Money")
+                    .font(.roostLargeGreeting)
+                    .foregroundStyle(Color.roostForeground)
+
+                Text(moneyHeaderSubtitle)
+                    .font(.roostBody)
+                    .foregroundStyle(Color.roostMutedForeground)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showAddExpense = true
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Add")
+                        .font(.roostLabel)
+                }
+                .foregroundStyle(Color.roostCard)
+                .padding(.horizontal, 13)
+                .frame(height: 38)
+                .background(Color.roostPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -214,7 +255,7 @@ struct MoneyHomeView: View {
                     }
                 }
                 .font(.system(size: 13))
-                .foregroundStyle(Color(hex: 0xD4795E))
+                .foregroundStyle(Color.roostMoneyTint)
                 .buttonStyle(.plain)
             }
         }
@@ -264,7 +305,7 @@ struct MoneyHomeView: View {
                 Text("Set\nincome")
                     .font(.system(size: 10, weight: .medium))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(hex: 0xD4795E))
+                    .foregroundStyle(Color.roostMoneyTint)
             }
         }
         .frame(width: 80, height: 80)
@@ -304,11 +345,11 @@ struct MoneyHomeView: View {
                     HStack(spacing: 4) {
                         Text("Not set")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color(hex: 0xD4795E))
+                            .foregroundStyle(Color.roostMoneyTint)
                         NavigationLink { MoneyOverviewView() } label: {
                             Text("Set →")
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(Color(hex: 0xD4795E))
+                                .foregroundStyle(Color.roostMoneyTint)
                         }
                         .buttonStyle(.plain)
                     }
@@ -388,12 +429,12 @@ struct MoneyHomeView: View {
                 showSettleUp = true
             }
             .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color(hex: 0xD4795E))
+            .foregroundStyle(Color.roostMoneyTint)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color(hex: 0xD4795E), lineWidth: 0.5)
+                    .stroke(Color.roostMoneyTint, lineWidth: 0.5)
             )
         }
         .padding(.horizontal, 14)
@@ -414,8 +455,8 @@ struct MoneyHomeView: View {
             NavigationLink { MoneyOverviewView() } label: {
                 MoneyNavCard(
                     icon: "chart.bar.fill",
-                    iconBg: Color(hex: 0xE6F1FB),
-                    iconColour: Color(hex: 0x185FA5),
+                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconColour: Color.roostMoneyTint,
                     title: "Overview",
                     subtitle: overviewSubtitle
                 )
@@ -425,8 +466,8 @@ struct MoneyHomeView: View {
             NavigationLink { MoneySpendingView() } label: {
                 MoneyNavCard(
                     icon: "cart.fill",
-                    iconBg: Color(hex: 0xE1F5EE),
-                    iconColour: Color(hex: 0x0F6E56),
+                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconColour: Color.roostMoneyTint,
                     title: "Spending",
                     subtitle: spendingSubtitle
                 )
@@ -436,12 +477,12 @@ struct MoneyHomeView: View {
             NavigationLink { MoneyBudgetsView() } label: {
                 MoneyNavCard(
                     icon: "list.bullet.rectangle.fill",
-                    iconBg: Color(hex: 0xFAEEDA),
-                    iconColour: Color(hex: 0x854F0B),
+                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconColour: Color.roostMoneyTint,
                     title: "Budgets",
                     subtitle: budgetsSubtitle,
                     subtitleColour: budgetVM.activeLines.isEmpty
-                        ? Color(hex: 0xD4795E)
+                        ? Color.roostDestructive
                         : Color.roostMutedForeground
                 )
             }
@@ -450,8 +491,8 @@ struct MoneyHomeView: View {
             NavigationLink { MoneyGoalsView() } label: {
                 MoneyNavCard(
                     icon: "target",
-                    iconBg: Color(hex: 0xFAECE7),
-                    iconColour: Color(hex: 0x993C1D),
+                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconColour: Color.roostMoneyTint,
                     title: "Goals",
                     subtitle: "What are you saving toward?"
                 )
@@ -481,7 +522,7 @@ struct MoneyHomeView: View {
                         NavigationLink { MoneySpendingView() } label: {
                             Text("\(bars.count - 4) more categories →")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: 0xD4795E))
+                                .foregroundStyle(Color.roostMoneyTint)
                         }
                         .buttonStyle(.plain)
                     }
@@ -574,7 +615,7 @@ struct MoneyHomeView: View {
                 NavigationLink { MoneyBudgetsView() } label: {
                     Text("Get started →")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color(hex: 0xD4795E))
+                        .foregroundStyle(Color.roostMoneyTint)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 2)
@@ -611,6 +652,20 @@ struct MoneyHomeView: View {
     // MARK: - Computed: data
 
     private var sym: String { settingsVM.settings.currencySymbol }
+
+    private var moneyHeaderSubtitle: String {
+        if summaryVM.isLoading {
+            return "Loading this month"
+        }
+        if let summary = summaryVM.summary, summary.hasIncome {
+            let spent = scramble.format(summary.actualSpend, symbol: sym)
+            return "\(spent) spent this month"
+        }
+        if !thisMonthExpenses.isEmpty {
+            return "\(thisMonthExpenses.count) expense\(thisMonthExpenses.count == 1 ? "" : "s") this month"
+        }
+        return "This month"
+    }
 
     private var myUserId: UUID? { homeManager.currentUserId }
     private var partnerUserId: UUID? { homeManager.partner?.userID }
@@ -782,7 +837,7 @@ struct MoneyHomeView: View {
     }
 
     private func barColour(fillRatio: CGFloat, hasBudget: Bool) -> Color {
-        guard hasBudget else { return Color(hex: 0xD4795E) }
+        guard hasBudget else { return Color.roostMoneyTint }
         switch fillRatio {
         case ..<0.70: return Color(hex: 0x9DB19F)
         case 0.70..<0.90: return Color(hex: 0xE6A563)
@@ -931,7 +986,7 @@ private struct BillDayCard: View {
         }
         .frame(width: 70)
         .padding(8)
-        .background(isImminent ? Color(hex: 0xD4795E) : DesignSystem.Palette.card)
+        .background(isImminent ? Color.roostMoneyTint : DesignSystem.Palette.card)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -954,4 +1009,3 @@ private struct BillDayCard: View {
         return "\(day)\(suffix)"
     }
 }
-

@@ -20,7 +20,7 @@ extension Color {
     static let roostShadow = DesignSystem.Shadow.sheetColor
     static let roostBorderLight = DesignSystem.Palette.border
     static let roostBorderDark = DesignSystem.Palette.border
-    static let roostMoneyTint = DesignSystem.Palette.chart1
-    static let roostShoppingTint = DesignSystem.Palette.chart3
-    static let roostChoreTint = DesignSystem.Palette.chart2
+    static let roostMoneyTint = DesignSystem.Palette.moneyAccent
+    static let roostShoppingTint = DesignSystem.Palette.shoppingAccent
+    static let roostChoreTint = DesignSystem.Palette.choresAccent
 }

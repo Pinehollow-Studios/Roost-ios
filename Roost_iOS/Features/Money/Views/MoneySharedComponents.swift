@@ -69,39 +69,37 @@ struct BudgetViewPicker: View {
     @Binding var showSplit: Bool
 
     var body: some View {
-        HStack(spacing: 2) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) { showSplit = false }
-            } label: {
-                Text("Household")
-                    .font(.system(size: 13, weight: showSplit ? .regular : .medium))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(!showSplit ? Color(hex: 0xF2EBE0) : Color.clear)
-                    .foregroundStyle(!showSplit ? Color(hex: 0x3D3229) : Color(hex: 0x6B6157))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        HStack(spacing: 3) {
+            pickerButton(title: "Home", isSelected: !showSplit) {
+                withAnimation(.easeInOut(duration: 0.18)) { showSplit = false }
             }
-            .buttonStyle(.plain)
 
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) { showSplit = true }
-            } label: {
-                Text("Split")
-                    .font(.system(size: 13, weight: showSplit ? .medium : .regular))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(showSplit ? Color(hex: 0xF2EBE0) : Color.clear)
-                    .foregroundStyle(showSplit ? Color(hex: 0x3D3229) : Color(hex: 0x6B6157))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            pickerButton(title: "Split", isSelected: showSplit) {
+                withAnimation(.easeInOut(duration: 0.18)) { showSplit = true }
             }
-            .buttonStyle(.plain)
         }
         .padding(3)
-        .background(Color(hex: 0xEBE3D5))
+        .background(Color.roostMuted.opacity(0.55))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color(hex: 0x3D3229).opacity(0.12), lineWidth: 0.5)
+                .stroke(Color.roostHairline, lineWidth: 1)
         )
+    }
+
+    private func pickerButton(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .foregroundStyle(isSelected ? Color.roostCard : Color.roostMutedForeground)
+                .frame(width: 48, height: 28)
+                .background(
+                    isSelected ? Color.roostMoneyTint : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }

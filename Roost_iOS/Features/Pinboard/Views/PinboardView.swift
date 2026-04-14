@@ -3,7 +3,6 @@ import SwiftUI
 struct PinboardView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(HomeManager.self) private var homeManager
-    @Environment(NotificationRouter.self) private var notificationRouter
     @Environment(PinboardViewModel.self) private var sharedViewModel
     @Environment(ChoresViewModel.self) private var choresViewModel
     @Environment(SettingsViewModel.self) private var settingsViewModel
@@ -74,14 +73,6 @@ struct PinboardView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.section) {
-            if !embeddedInParentScroll {
-                PlanSectionPicker(selected: .pinboard) { section in
-                    navigateTo(section)
-                }
-                .padding(.horizontal, DesignSystem.Spacing.page)
-                .modifier(PinboardEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
-            }
-
             FigmaPageHeader(
                 title: "Pinboard",
                 subtitle: "\(viewModel.liveCount) live · \(viewModel.unseenCount) unseen"
@@ -91,14 +82,14 @@ struct PinboardView: View {
                 }
             }
             .padding(.horizontal, DesignSystem.Spacing.page)
-            .modifier(PinboardEntranceModifier(index: embeddedInParentScroll ? 0 : 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+            .modifier(PinboardEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
             filterRow
                 .padding(.horizontal, DesignSystem.Spacing.page)
-                .modifier(PinboardEntranceModifier(index: embeddedInParentScroll ? 1 : 2, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                .modifier(PinboardEntranceModifier(index: 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
             notesSection
-                .modifier(PinboardEntranceModifier(index: embeddedInParentScroll ? 2 : 3, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                .modifier(PinboardEntranceModifier(index: 2, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
         }
         .padding(.top, embeddedInParentScroll ? 0 : DesignSystem.Spacing.screenTop)
         .padding(.bottom, embeddedInParentScroll ? 0 : 120)
@@ -270,18 +261,6 @@ struct PinboardView: View {
             }
         }
     }
-
-    private func navigateTo(_ section: PlanSectionPicker.Section) {
-        switch section {
-        case .chores:
-            notificationRouter.selectedLifeSection = .chores
-        case .calendar:
-            notificationRouter.selectedLifeSection = .calendar
-        case .pinboard:
-            notificationRouter.selectedLifeSection = .pinboard
-        }
-    }
-
     private func member(for userID: UUID?) -> HomeMember? {
         guard let userID else { return nil }
         return homeManager.members.first { $0.userID == userID }

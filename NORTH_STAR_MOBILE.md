@@ -7,6 +7,49 @@
 
 ## Session Log
 
+### Session 11 — Banking-Grade App Security Rebuild (April 2026)
+
+**Goal:** Replace the old overlay-based app lock with a root-level security boundary, move PIN data out of UserDefaults, and enforce a stronger lockout policy.
+
+**Status: COMPLETE — build succeeds with no Swift warnings.** Xcode still emits its standard AppIntents metadata warning because the app has no AppIntents dependency.
+
+**Root security architecture:** `ContentView` now routes authenticated users through `RootAuthenticatedView`, which switches between `LockScreenView` and `MainTabView`. When `lockManager.isLocked == true`, `MainTabView` is not in the view hierarchy. This removes the previous race where app content could render behind a lock overlay.
+
+**Storage and hashing:**
+- Added `Security/KeychainHelper.swift` for security-sensitive values.
+- `AppLockManager` now stores PIN hash, PIN salt, lock enabled, and biometric preference in the iOS Keychain.
+- PIN hashes use PBKDF2-HMAC-SHA256 with 100,000 iterations and a random 32-byte per-device salt.
+- PIN verification uses constant-time `Data` comparison.
+- Old UserDefaults PIN state (`roost-pin-hash`, lock enabled, biometrics, autolock delay) is cleared on first launch and sets `roost-pin-migration-needed`.
+
+**Lock policy:**
+- Roost locks when the app is actually backgrounded and remains locked when reopened. Foreground transitions only enforce the lock if Roost previously reached `.background`, so internal navigation and transient active-state changes do not relock the app.
+- The configurable auto-lock delay has been removed. Security settings now state: "Locks when you leave the app."
+- Lockout escalates every 3 failed PIN attempts: 30 seconds, 2 minutes, 10 minutes, then Supabase email re-authentication.
+- During cooldown, the keypad is visually muted and non-interactive; countdown updates every second.
+- At re-auth level, the PIN keypad is removed and replaced with a Supabase sign-out flow that sends the user back through email sign-in.
+
+**UI and flows:**
+- `LockScreenView` was rebuilt around explicit `UnlockResult` and `BiometricResult` states.
+- Biometrics auto-prompt once when the lock screen appears, never auto-retry, and always leave PIN entry available after cancellation or failure.
+- Every keypad press and successful/failed unlock path has haptic feedback.
+- The lock screen includes a secure text field backing view for screen capture hardening.
+- Disabling app lock now requires PIN confirmation in a full-screen keypad sheet, not an alert text field.
+- Users affected by the old UserDefaults PIN format see a one-time post-unlock banner asking them to set up their PIN again.
+
+**Files modified:**
+- `Security/KeychainHelper.swift`
+- `Managers/AppLockManager.swift`
+- `Features/Auth/Views/LockScreenView.swift`
+- `Features/Auth/Views/PINSetupView.swift`
+- `Features/Settings/Views/SecuritySettingsView.swift`
+- `ContentView.swift`
+- `Features/Shell/Views/MainTabView.swift`
+
+**Session 8 security notes are superseded by this session.** The app no longer uses UserDefaults PIN hashes, SHA-256 static salt, configurable auto-lock delay, lock overlays, or `MainTabView` lock-state coordination.
+
+---
+
 ### Session 10 — Money Navigation & Title Consistency (April 2026)
 
 **Goal:** Visual consistency fix — replace system navigation bar titles and white pill back buttons across all Money screens with the app's custom header pattern. No data or logic changes.

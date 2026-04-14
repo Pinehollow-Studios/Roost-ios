@@ -43,6 +43,7 @@ struct MoreMenuView: View {
                 settingsSection(
                     title: "Household Setup",
                     rows: [
+                        settingsRow("Pinboard", icon: "pin", destination: .pinboard, iconBackground: Color.roostPrimary.opacity(0.1), iconColor: .roostPrimary),
                         settingsRow("Rooms", icon: "door.left.hand.open", destination: .rooms)
                     ]
                 )

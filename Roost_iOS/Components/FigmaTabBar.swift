@@ -2,26 +2,21 @@ import SwiftUI
 
 struct FigmaTabBar: View {
     @Binding var selectedTab: NotificationRouter.AppTab
-    @Namespace private var tabNamespace
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(TabItem.allCases, id: \.self) { item in
                 Button {
                     guard selectedTab != item.tab else { return }
-                    withAnimation(DesignSystem.Motion.tabSwitch) {
-                        selectedTab = item.tab
-                    }
+                    selectedTab = item.tab
                     UISelectionFeedbackGenerator().selectionChanged()
                 } label: {
                     VStack(spacing: 3) {
                         ZStack(alignment: .topTrailing) {
-                            // Pill + icon layer
                             ZStack {
                                 if selectedTab == item.tab {
                                     Capsule()
                                         .fill(Color.roostPrimary.opacity(0.11))
-                                        .matchedGeometryEffect(id: "tabSelectionPill", in: tabNamespace)
                                 }
 
                                 tabIcon(for: item)
@@ -47,7 +42,6 @@ struct FigmaTabBar: View {
                                     ? Color.roostPrimary
                                     : Color.roostMutedForeground
                             )
-                            .animation(DesignSystem.Motion.tabSwitch, value: selectedTab == item.tab)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 8)
@@ -76,6 +70,10 @@ struct FigmaTabBar: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
         }
+        .transaction { transaction in
+            transaction.disablesAnimations = true
+            transaction.animation = nil
+        }
     }
 
     @ViewBuilder
@@ -88,12 +86,10 @@ struct FigmaTabBar: View {
                         .frame(width: 4, height: 4)
                 }
             }
-            .animation(DesignSystem.Motion.tabSwitch, value: selectedTab == item.tab)
         } else {
             Image(systemName: selectedTab == item.tab ? item.activeSymbol : item.symbol)
                 .font(.system(size: 20, weight: selectedTab == item.tab ? .semibold : .regular))
                 .foregroundStyle(selectedTab == item.tab ? Color.roostPrimary : Color.roostMutedForeground)
-                .animation(DesignSystem.Motion.tabSwitch, value: selectedTab == item.tab)
         }
     }
 }
@@ -101,17 +97,17 @@ struct FigmaTabBar: View {
 private extension FigmaTabBar {
     enum TabItem: CaseIterable {
         case home
-        case shopping
+        case tasks
         case money
-        case plan
+        case calendar
         case more
 
         var tab: NotificationRouter.AppTab {
             switch self {
             case .home: .home
-            case .shopping: .shopping
+            case .tasks: .tasks
             case .money: .money
-            case .plan: .life
+            case .calendar: .calendar
             case .more: .more
             }
         }
@@ -119,9 +115,9 @@ private extension FigmaTabBar {
         var title: String {
             switch self {
             case .home: "Home"
-            case .shopping: "Shopping"
+            case .tasks: "Tasks"
             case .money: "Money"
-            case .plan: "Plan"
+            case .calendar: "Calendar"
             case .more: "More"
             }
         }
@@ -129,9 +125,9 @@ private extension FigmaTabBar {
         var symbol: String {
             switch self {
             case .home: "house"
-            case .shopping: "cart"
+            case .tasks: "checklist"
             case .money: "creditcard"
-            case .plan: "checkmark.circle"
+            case .calendar: "calendar"
             case .more: "ellipsis"
             }
         }
@@ -139,17 +135,16 @@ private extension FigmaTabBar {
         var activeSymbol: String {
             switch self {
             case .home: "house.fill"
-            case .shopping: "cart.fill"
+            case .tasks: "checkmark.circle.fill"
             case .money: "creditcard.fill"
-            case .plan: "checkmark.circle.fill"
+            case .calendar: "calendar"
             case .more: "ellipsis"
             }
         }
 
         var badge: Int? {
             switch self {
-            case .shopping: 3
-            case .plan: 2
+            case .tasks: 3
             default: nil
             }
         }

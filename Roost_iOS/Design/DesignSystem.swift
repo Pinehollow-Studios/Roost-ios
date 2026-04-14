@@ -29,6 +29,9 @@ enum DesignSystem {
         static let chart3 = Color(light: 0xE6A563, dark: 0xE6A563)
         static let chart4 = Color(light: 0xB88B7E, dark: 0xB88B7E)
         static let chart5 = Color(light: 0x7FA087, dark: 0x7FA087)
+        static let shoppingAccent = Color(light: 0xE9822A, dark: 0xF39A3D)
+        static let choresAccent = Color(light: 0x2FAE63, dark: 0x45C978)
+        static let moneyAccent = Color(light: 0x337DD6, dark: 0x5B9BE8)
 
         static let authGradientStart = primary
         static let authGradientEnd = Color(light: 0x9DB19F, dark: 0x7A8C7C)

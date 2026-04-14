@@ -8,20 +8,20 @@ private struct BudgetSectionDef: Identifiable {
     let isFixed: Bool
 
     var headerBorderColour: Color {
-        isFixed ? Color(hex: 0xc75146) : Color(hex: 0x534ab7)
+        isFixed ? Color(hex: 0xF06F48) : Color(hex: 0x22BFA6)
     }
     var headerBgColour: Color {
-        isFixed ? Color(hex: 0xc75146).opacity(0.04) : Color(hex: 0x534ab7).opacity(0.04)
+        isFixed ? Color(hex: 0xF06F48).opacity(0.10) : Color(hex: 0x22BFA6).opacity(0.10)
     }
     var allocationColour: Color {
         switch id {
-        case "housing-bills":       return Color(hex: 0xc75146)
-        case "subscriptions-leisure": return Color(hex: 0x854f0b)
-        case "transport":           return Color(hex: 0x185fa5)
-        case "food-drink":          return Color(hex: 0x3b6d11)
-        case "household":           return Color(hex: 0x0f6e56)
-        case "personal":            return Color(hex: 0x534ab7)
-        case "savings":             return Color(hex: 0x993356)
+        case "housing-bills":       return Color(hex: 0xFF7048)
+        case "subscriptions-leisure": return Color(hex: 0xF7A928)
+        case "transport":           return Color(hex: 0x3E96D8)
+        case "food-drink":          return Color(hex: 0x2EBA70)
+        case "household":           return Color(hex: 0x23BFA8)
+        case "personal":            return Color(hex: 0x9172E8)
+        case "savings":             return Color(hex: 0xE25B8D)
         default:                    return Color.roostMutedForeground
         }
     }
@@ -54,6 +54,7 @@ struct MoneyBudgetsView: View {
 
     @Environment(HomeManager.self) private var homeManager
     @Environment(ExpensesViewModel.self) private var expensesVM
+    @Environment(BudgetViewModel.self) private var monthlyBudgetVM
     @Environment(BudgetTemplateViewModel.self) private var budgetVM
     @Environment(MonthlyMoneyViewModel.self) private var summaryVM
     @Environment(MoneySettingsViewModel.self) private var settingsVM
@@ -86,15 +87,6 @@ struct MoneyBudgetsView: View {
     // Remove
     @State private var removeTarget: BudgetTemplateLine? = nil
 
-    // Bill clash dismissal
-    @State private var dismissedClashIds: Set<UUID> = []
-
-    // Carry-forward
-    @State private var showCarryForwardPrompt = false
-
-    // Pro upsell
-    @State private var showHistoryUpsell = false
-
     // MARK: - Derived
 
     private var sym: String { settingsVM.settings.currencySymbol }
@@ -114,8 +106,15 @@ struct MoneyBudgetsView: View {
             .map(\.expense)
     }
 
+    private var historicalBudgets: [Budget] {
+        monthlyBudgetVM.budgetRows(in: currentMonth)
+    }
+
     private var income: Decimal { summaryVM.summary?.income ?? 0 }
-    private var totalBudgeted: Decimal { budgetVM.totalBudgeted }
+    private var totalBudgeted: Decimal {
+        if isCurrentMonth { return budgetVM.totalBudgeted }
+        return historicalBudgets.reduce(0) { $0 + $1.amount }
+    }
     private var unallocated: Decimal { income - totalBudgeted }
     private var actualSpend: Decimal { summaryVM.summary?.actualSpend ?? 0 }
     private var spentPct: Double {
@@ -123,7 +122,13 @@ struct MoneyBudgetsView: View {
         return NSDecimalNumber(decimal: actualSpend / totalBudgeted).doubleValue * 100
     }
     private var healthScore: Int {
-        budgetVM.calculateHealthScore(income: income, hasGoals: false)
+        guard isCurrentMonth else {
+            guard totalBudgeted > 0 else { return 0 }
+            if actualSpend <= totalBudgeted { return 82 }
+            let overspendRatio = NSDecimalNumber(decimal: (actualSpend - totalBudgeted) / totalBudgeted).doubleValue
+            return max(20, 72 - Int(overspendRatio * 100))
+        }
+        return budgetVM.calculateHealthScore(income: income, hasGoals: false)
     }
     private var healthRating: String {
         switch healthScore {
@@ -135,16 +140,16 @@ struct MoneyBudgetsView: View {
     }
     private var healthColour: Color {
         switch healthScore {
-        case 80...100: return Color(hex: 0x3b6d11)
-        case 60..<80:  return Color(hex: 0x3b6d11)
-        case 40..<60:  return Color(hex: 0x854f0b)
-        default:       return Color(hex: 0xa32d2d)
+        case 80...100: return Color(hex: 0x2EBA70)
+        case 60..<80:  return Color(hex: 0x2EBA70)
+        case 40..<60:  return Color(hex: 0xF7A928)
+        default:       return Color.roostDestructive
         }
     }
     private var unallocatedColour: Color {
-        if unallocated > 50 { return Color(hex: 0x3b6d11) }
-        if unallocated >= 0 { return Color(hex: 0x854f0b) }
-        return Color(hex: 0xa32d2d)
+        if unallocated > 50 { return Color(hex: 0x2EBA70) }
+        if unallocated >= 0 { return Color(hex: 0xF7A928) }
+        return Color.roostDestructive
     }
 
     // Income allocation bar segments
@@ -195,82 +200,76 @@ struct MoneyBudgetsView: View {
                 VStack(alignment: .leading, spacing: 0) {
 
                     FigmaBackHeader(title: "Budgets") {
-                        Button {
-                            let entering = !editMode
-                            if entering {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                            } else {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            }
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                editMode.toggle()
-                                if !editMode {
-                                    editingAmountId = nil
-                                    editingNameId = nil
+                        if isCurrentMonth {
+                            Button {
+                                let entering = !editMode
+                                if entering {
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                } else {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                }
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    editMode.toggle()
+                                    if !editMode {
+                                        editingAmountId = nil
+                                        editingNameId = nil
+                                    }
+                                }
+                            } label: {
+                                if editMode {
+                                    Text("Done")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundStyle(Color.roostPrimary)
+                                } else {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(Color.roostForeground)
+                                        .padding(8)
+                                        .background(Color.roostMuted.opacity(0.65), in: Circle())
                                 }
                             }
-                        } label: {
-                            if editMode {
-                                Text("Done")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Color.roostPrimary)
-                            } else {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(Color.roostForeground)
-                                    .padding(8)
-                                    .background(Color(.systemFill))
-                                    .clipShape(Circle())
-                            }
                         }
                     }
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
-                    // Edit mode banner
-                    if editMode {
-                        editingBanner
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
+                    VStack(alignment: .leading, spacing: 18) {
+                        monthNavigatorRow
 
-                    // Carry-forward prompt
-                    if showCarryForwardPrompt {
-                        carryForwardPromptCard
-                            .padding(.horizontal, DesignSystem.Spacing.page)
-                            .padding(.top, Spacing.md)
-                    }
+                        if isCurrentMonth {
+                            viewModeRow
+                        }
 
-                    VStack(alignment: .leading, spacing: Spacing.lg) {
-
-                        // Summary cards
                         summaryCardsSection
 
-                        // Income allocation bar
-                        if income > 0 && !budgetVM.activeLines.isEmpty {
+                        if isCurrentMonth && income > 0 && !budgetVM.activeLines.isEmpty {
                             incomeAllocationBar(scrollProxy: scrollProxy)
                         }
-
-                        // Bill clash cards
-                        let clashes = budgetVM.detectBillClashes().filter { !dismissedClashIds.contains($0.id) }
-                        if !clashes.isEmpty {
-                            billClashSection(clashes: clashes)
-                        }
-
-                        // Month navigator
-                        monthNavigatorRow
                     }
                     .padding(.horizontal, DesignSystem.Spacing.page)
+                    .padding(.top, 18)
 
                     // Budget table
-                    if budgetVM.activeLines.isEmpty && !budgetVM.isLoading {
-                        emptyState
+                    if isCurrentMonth {
+                        if budgetVM.activeLines.isEmpty && !budgetVM.isLoading {
+                            emptyState
+                                .padding(.horizontal, DesignSystem.Spacing.page)
+                                .padding(.top, Spacing.xxl)
+                        } else {
+                            budgetTable(scrollProxy: scrollProxy)
+                                .padding(.top, Spacing.lg)
+                                .padding(.horizontal, DesignSystem.Spacing.page)
+                        }
+                    } else if historicalBudgets.isEmpty {
+                        historicalEmptyState
                             .padding(.horizontal, DesignSystem.Spacing.page)
-                            .padding(.top, Spacing.xxl)
+                            .padding(.top, Spacing.xl)
                     } else {
-                        budgetTable(scrollProxy: scrollProxy)
+                        historicalBudgetTable
                             .padding(.top, Spacing.lg)
+                            .padding(.horizontal, DesignSystem.Spacing.page)
                     }
 
-                    Spacer(minLength: DesignSystem.Spacing.screenBottom)
+                    Spacer(minLength: DesignSystem.Size.tabBarHeight + DesignSystem.Spacing.screenBottom + 18)
                 }
             }
             .background(Color.roostBackground.ignoresSafeArea())
@@ -279,12 +278,13 @@ struct MoneyBudgetsView: View {
         .swipeBackEnabled()
         .task(id: homeManager.homeId) {
             guard let homeId = homeManager.homeId else { return }
-            await summaryVM.loadSummary(homeId: homeId)
-            await checkCarryForward(homeId: homeId)
+            async let summary: Void = summaryVM.loadSummary(homeId: homeId)
+            async let monthlyBudgets: Void = monthlyBudgetVM.load(homeId: homeId)
+            async let carryForward: Void = checkCarryForward(homeId: homeId)
+            _ = await (summary, monthlyBudgets, carryForward)
         }
         .onAppear {
             loadCollapsedSections()
-            loadDismissedClashes()
         }
         .sheet(isPresented: $showAddSheet) {
             if let section = addSheetSection {
@@ -333,21 +333,6 @@ struct MoneyBudgetsView: View {
         } message: {
             Text("This removes it from your budget permanently.")
         }
-        .nestUpsell(isPresented: $showHistoryUpsell, feature: .budgetHistory)
-    }
-}
-
-// MARK: - Edit mode banner
-
-private extension MoneyBudgetsView {
-
-    var editingBanner: some View {
-        Text("Editing — changes save automatically")
-            .font(.system(size: 11))
-            .foregroundStyle(Color.roostMutedForeground)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color(hex: 0xFAEEDA))
     }
 }
 
@@ -356,51 +341,65 @@ private extension MoneyBudgetsView {
 private extension MoneyBudgetsView {
 
     var summaryCardsSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 10) {
-                metricCard(
+        VStack(spacing: 0) {
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 0),
+                    GridItem(.flexible(), spacing: 0)
+                ],
+                spacing: 0
+            ) {
+                metricCell(
                     label: "INCOME",
                     value: income > 0 ? scramble.format(income, symbol: sym) : "Not set",
-                    valueColour: income > 0 ? Color.roostForeground : Color.roostPrimary,
-                    subtext: memberNames.names.hasPartner
-                        ? "\(memberNames.names.me) + \(memberNames.names.partner)"
-                        : memberNames.names.me
+                    valueColour: income > 0 ? Color.roostForeground : Color.roostPrimary
                 )
-                metricCard(
+                metricCell(
                     label: "BUDGETED",
                     value: scramble.format(totalBudgeted, symbol: sym)
                 )
-                metricCard(
+                metricCell(
                     label: "UNALLOCATED",
                     value: scramble.format(unallocated, symbol: sym),
-                    valueColour: unallocatedColour,
-                    subtext: unallocated >= 0 ? "Available for savings" : "Over-allocated"
+                    valueColour: unallocatedColour
                 )
-                metricCard(
-                    label: "SPENT SO FAR",
-                    value: scramble.format(actualSpend, symbol: sym),
-                    subtext: actualSpend > 0 ? "\(Int(spentPct))% of budget" : nil
-                )
-                metricCard(
-                    label: "BUDGET HEALTH",
-                    value: healthRating,
-                    valueColour: healthColour,
-                    subtext: "\(healthScore)/100"
+                metricCell(
+                    label: "SPENT",
+                    value: scramble.format(actualSpend, symbol: sym)
                 )
             }
-            .padding(.horizontal, DesignSystem.Spacing.page)
+
+            moneyHairline
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("BUDGET HEALTH")
+                        .font(.system(size: 9, weight: .medium))
+                        .tracking(1.0)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text(healthRating)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(healthColour)
+                }
+                Spacer()
+                Text("\(healthScore)/100")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal, -DesignSystem.Spacing.page)
+        .moneyBudgetPanel()
     }
 
-    func metricCard(label: String, value: String, valueColour: Color = Color.roostForeground, subtext: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+    func metricCell(label: String, value: String, valueColour: Color = Color.roostForeground, subtext: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
             Text(label)
                 .font(.system(size: 9, weight: .medium))
-                .tracking(1.2)
+                .tracking(1.0)
                 .foregroundStyle(Color.roostMutedForeground)
             Text(value)
-                .font(.system(size: 15, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(valueColour)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -408,16 +407,23 @@ private extension MoneyBudgetsView {
                 Text(sub)
                     .font(.system(size: 10))
                     .foregroundStyle(Color.roostMutedForeground)
-                    .lineLimit(2)
+                    .lineLimit(1)
             }
         }
-        .padding(12)
-        .frame(width: 130, alignment: .leading)
-        .background(DesignSystem.Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(DesignSystem.Palette.border, lineWidth: 1)
+            Rectangle()
+                .fill(Color.roostHairline)
+                .frame(width: 1),
+            alignment: .trailing
+        )
+        .overlay(
+            Rectangle()
+                .fill(Color.roostHairline)
+                .frame(height: 1),
+            alignment: .bottom
         )
     }
 }
@@ -464,13 +470,16 @@ private extension MoneyBudgetsView {
                                         .fill(seg.colour)
                                         .frame(width: 6, height: 6)
                                     Text("\(seg.label) \(Int(seg.pct))%")
-                                        .font(.system(size: 10))
+                                        .font(.system(size: 10, weight: .medium))
                                         .foregroundStyle(Color.roostMutedForeground)
                                 }
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color(.systemFill))
-                                .clipShape(Capsule())
+                                .frame(height: 24)
+                                .background(seg.colour.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .stroke(seg.colour.opacity(0.22), lineWidth: 1)
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -478,53 +487,8 @@ private extension MoneyBudgetsView {
                 }
             }
         }
-    }
-}
-
-// MARK: - Bill clashes
-
-private extension MoneyBudgetsView {
-
-    func billClashSection(clashes: [BillClash]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(clashes) { clash in
-                billClashCard(clash: clash)
-            }
-        }
-    }
-
-    func billClashCard(clash: BillClash) -> some View {
-        let names = clash.lines.prefix(2).map(\.name)
-        let extra = clash.lines.count - 2
-        let nameList = extra > 0
-            ? names.joined(separator: ", ") + " and \(extra) more"
-            : names.joined(separator: ", ")
-        let text = "\(sym)\(compact(clash.totalAmount)) goes out between the \(ordinal(clash.earliestDay)) and \(ordinal(clash.latestDay)) — \(nameList)"
-
-        return HStack(spacing: 8) {
-            Circle()
-                .fill(Color(hex: 0xE6A563))
-                .frame(width: 6, height: 6)
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundStyle(Color.roostMutedForeground)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer()
-            Button("×") {
-                dismissedClashIds.insert(clash.id)
-                persistDismissedClashes()
-            }
-            .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(Color.roostMutedForeground)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(Color(hex: 0xFAEEDA))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(hex: 0xE6A563).opacity(0.5), lineWidth: 0.5)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(12)
+        .moneyBudgetPanel()
     }
 }
 
@@ -533,29 +497,61 @@ private extension MoneyBudgetsView {
 private extension MoneyBudgetsView {
 
     var monthNavigatorRow: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Text("MONTH")
+                .font(.system(size: 10, weight: .medium))
+                .tracking(1.2)
+                .foregroundStyle(Color.roostMutedForeground)
+
+            Spacer(minLength: 8)
+
             MonthNavigator(
                 label: monthLabel,
-                onPrevious: {
-                    summaryVM.navigateMonth(direction: -1)
-                    Task {
-                        guard let homeId = homeManager.homeId else { return }
-                        await summaryVM.loadSummary(homeId: homeId)
-                    }
-                },
-                onNext: {
-                    summaryVM.navigateMonth(direction: 1)
-                    Task {
-                        guard let homeId = homeManager.homeId else { return }
-                        await summaryVM.loadSummary(homeId: homeId)
-                    }
-                },
+                onPrevious: { navigateBudgetMonth(direction: -1) },
+                onNext: { navigateBudgetMonth(direction: 1) },
                 canGoNext: !isCurrentMonth,
-                isPro: !isFreeTier,
-                onProGate: { showHistoryUpsell = true }
+                isPro: true,
+                onProGate: {}
             )
+        }
+        .padding(12)
+        .moneyBudgetPanel()
+    }
+
+    var viewModeRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("VIEW")
+                    .font(.system(size: 10, weight: .medium))
+                    .tracking(1.2)
+                    .foregroundStyle(Color.roostMutedForeground)
+                Text("Current budget")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+            }
+
             Spacer()
+
             BudgetViewPicker(showSplit: $showSplit)
+        }
+        .padding(12)
+        .moneyBudgetPanel()
+    }
+
+    func navigateBudgetMonth(direction: Int) {
+        summaryVM.navigateMonth(direction: direction)
+        let targetMonth = summaryVM.selectedMonth
+        if !Calendar.current.isDate(targetMonth, equalTo: Date(), toGranularity: .month) {
+            editMode = false
+            editingAmountId = nil
+            editingNameId = nil
+        }
+        Task {
+            guard let homeId = homeManager.homeId else { return }
+            async let summary: Void = summaryVM.loadSummary(homeId: homeId)
+            async let rollover: Void = budgetVM.loadRolloverHistory(homeId: homeId, month: targetMonth)
+            async let monthlyBudgets: Void = monthlyBudgetVM.load(homeId: homeId)
+            _ = await (summary, rollover, monthlyBudgets)
         }
     }
 
@@ -571,8 +567,126 @@ private extension MoneyBudgetsView {
 
 private extension MoneyBudgetsView {
 
-    func budgetTable(scrollProxy: ScrollViewProxy) -> some View {
+    var historicalBudgetTable: some View {
         VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("SAVED MONTH")
+                        .font(.system(size: 9, weight: .medium))
+                        .tracking(1.0)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text(monthLabel)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.roostForeground)
+                }
+
+                Spacer()
+
+                Text(scramble.format(totalBudgeted, symbol: sym))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 12)
+            .background(Color.roostMuted.opacity(0.22))
+
+            historicalColumnHeader
+
+            ForEach(historicalBudgets) { budget in
+                historicalBudgetRow(budget)
+            }
+
+            historicalTotalRow
+        }
+        .moneyBudgetPanel()
+    }
+
+    var historicalColumnHeader: some View {
+        HStack(spacing: 0) {
+            Text("CATEGORY")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("BUDGETED")
+                .frame(width: 78, alignment: .trailing)
+            Text("REMAINING")
+                .frame(width: 78, alignment: .trailing)
+        }
+        .font(.system(size: 9, weight: .medium))
+        .tracking(1.0)
+        .foregroundStyle(Color.roostMutedForeground)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .background(Color.roostMuted.opacity(0.24))
+        .overlay(moneyHairline, alignment: .bottom)
+    }
+
+    func historicalBudgetRow(_ budget: Budget) -> some View {
+        let spent = historicalSpent(for: budget.category)
+        let remaining = budget.amount - spent
+
+        return HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(budget.category)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                if spent > 0 {
+                    Text("\(scramble.format(spent, symbol: sym)) spent")
+                        .font(.system(size: 10, weight: .regular))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(scramble.format(budget.amount, symbol: sym))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.roostForeground)
+                .frame(width: 78, alignment: .trailing)
+
+            Text(scramble.format(remaining, symbol: sym))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(remaining >= 0 ? Color(hex: 0x2EBA70) : Color.roostDestructive)
+                .frame(width: 78, alignment: .trailing)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .overlay(moneyHairline, alignment: .bottom)
+    }
+
+    var historicalTotalRow: some View {
+        let spent = historicalBudgets.reduce(Decimal(0)) { $0 + historicalSpent(for: $1.category) }
+        let remaining = totalBudgeted - spent
+
+        return HStack(spacing: 0) {
+            Text("Month total")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.roostForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(scramble.format(totalBudgeted, symbol: sym))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.roostForeground)
+                .frame(width: 78, alignment: .trailing)
+
+            Text(scramble.format(remaining, symbol: sym))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(remaining >= 0 ? Color(hex: 0x2EBA70) : Color.roostDestructive)
+                .frame(width: 78, alignment: .trailing)
+        }
+        .padding(.vertical, 11)
+        .padding(.horizontal, 12)
+        .background(Color.roostMuted.opacity(0.30))
+    }
+
+    func historicalSpent(for category: String) -> Decimal {
+        thisMonthExpenses
+            .filter { ($0.category ?? "Other").caseInsensitiveCompare(category) == .orderedSame }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    func budgetTable(scrollProxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             ForEach(BudgetSectionDef.all) { section in
                 let lines = budgetVM.activeLines
                     .filter { $0.sectionGroup == section.id }
@@ -599,7 +713,6 @@ private extension MoneyBudgetsView {
         let collapsed = collapsedSections.contains(section.id)
 
         VStack(alignment: .leading, spacing: 0) {
-            // Section header
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     if collapsed {
@@ -618,7 +731,7 @@ private extension MoneyBudgetsView {
                         .animation(.easeInOut(duration: 0.2), value: collapsed)
 
                     Text(section.label)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
 
                     Spacer()
@@ -627,17 +740,12 @@ private extension MoneyBudgetsView {
                     Text(section.isFixed ? "Fixed" : "Lifestyle")
                         .font(.system(size: 9, weight: .medium))
                         .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(section.isFixed
-                            ? Color(hex: 0xfaece7)
-                            : Color(hex: 0xf0eafa))
-                        .foregroundStyle(section.isFixed
-                            ? Color(hex: 0x712b13)
-                            : Color(hex: 0x3c3489))
-                        .clipShape(Capsule())
+                        .frame(height: 22)
+                        .background(section.headerBorderColour.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .foregroundStyle(section.headerBorderColour)
                 }
-                .padding(.vertical, 10)
-                .padding(.horizontal, 14)
+                .padding(.vertical, 11)
+                .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity)
                 .background(section.headerBgColour)
                 .overlay(
@@ -754,6 +862,7 @@ private extension MoneyBudgetsView {
                     .transition(.opacity)
             }
         }
+        .moneyBudgetPanel()
     }
 
     // MARK: Column header
@@ -783,14 +892,9 @@ private extension MoneyBudgetsView {
         .tracking(1.0)
         .foregroundStyle(Color.roostMutedForeground)
         .padding(.vertical, 5)
-        .padding(.horizontal, 14)
-        .background(Color(.systemBackground).opacity(0.6))
-        .overlay(
-            Rectangle()
-                .fill(DesignSystem.Palette.border)
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
+        .padding(.horizontal, 12)
+        .background(Color.roostMuted.opacity(0.24))
+        .overlay(moneyHairline, alignment: .bottom)
     }
 
     // MARK: Add row
@@ -809,7 +913,7 @@ private extension MoneyBudgetsView {
                     .foregroundStyle(Color(hex: 0x9DB19F))
             }
             .padding(.vertical, 8)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
@@ -874,14 +978,9 @@ private extension MoneyBudgetsView {
             }
         }
         .padding(.vertical, 8)
-        .padding(.horizontal, 14)
-        .background(Color(.systemFill).opacity(0.5))
-        .overlay(
-            Rectangle()
-                .fill(DesignSystem.Palette.border)
-                .frame(height: 0.5),
-            alignment: .top
-        )
+        .padding(.horizontal, 12)
+        .background(Color.roostMuted.opacity(0.32))
+        .overlay(moneyHairline, alignment: .top)
     }
 
     // MARK: Grand total
@@ -929,13 +1028,8 @@ private extension MoneyBudgetsView {
             }
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .overlay(
-            Rectangle()
-                .fill(DesignSystem.Palette.border)
-                .frame(height: 1),
-            alignment: .top
-        )
+        .padding(.horizontal, 12)
+        .moneyBudgetPanel()
     }
 }
 
@@ -965,39 +1059,26 @@ private extension MoneyBudgetsView {
         .frame(maxWidth: .infinity)
     }
 
-    var carryForwardPromptCard: some View {
-        RoostCard(padding: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Carry forward last month's budget?")
-                    .font(.roostCardTitle)
-                    .foregroundStyle(Color.roostForeground)
-                Text("Your previous budget has rollover-enabled lines. Would you like to carry forward underspend?")
-                    .font(.roostCaption)
-                    .foregroundStyle(Color.roostMutedForeground)
-                HStack(spacing: Spacing.sm) {
-                    Button("Yes, carry forward") {
-                        showCarryForwardPrompt = false
-                        Task {
-                            guard let homeId = homeManager.homeId else { return }
-                            await budgetVM.processMonthRollover(
-                                homeId: homeId,
-                                month: currentMonth,
-                                expenses: thisMonthExpenses
-                            )
-                        }
-                    }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.roostPrimary)
-
-                    Button("Set up fresh") {
-                        showCarryForwardPrompt = false
-                    }
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.roostMutedForeground)
-                }
-            }
+    var historicalEmptyState: some View {
+        VStack(spacing: Spacing.sm) {
+            Text("No budget saved")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.roostForeground)
+            Text(monthLabel)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.roostMutedForeground)
+            Text("This month has no budget records.")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.roostMutedForeground)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
         }
+        .padding(.vertical, 26)
+        .padding(.horizontal, 18)
+        .frame(maxWidth: .infinity)
+        .moneyBudgetPanel()
     }
+
 }
 
 // MARK: - Helpers & persistence
@@ -1014,18 +1095,6 @@ private extension MoneyBudgetsView {
                 }
             }
         }
-    }
-
-    func loadDismissedClashes() {
-        let ids = (UserDefaults.standard.array(forKey: "roost-dismissed-clashes") as? [String]) ?? []
-        dismissedClashIds = Set(ids.compactMap { UUID(uuidString: $0) })
-    }
-
-    func persistDismissedClashes() {
-        UserDefaults.standard.set(
-            Array(dismissedClashIds.map(\.uuidString)),
-            forKey: "roost-dismissed-clashes"
-        )
     }
 
     func checkCarryForward(homeId: UUID) async {
@@ -1045,8 +1114,6 @@ private extension MoneyBudgetsView {
                 month: currentMonth,
                 expenses: thisMonthExpenses
             )
-        } else {
-            showCarryForwardPrompt = true
         }
     }
 
@@ -1064,6 +1131,31 @@ private extension MoneyBudgetsView {
         case 3 where n != 13: return "\(n)rd"
         default: return "\(n)th"
         }
+    }
+
+    var moneyHairline: some View {
+        BudgetHairline()
+    }
+}
+
+private struct BudgetHairline: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.roostHairline)
+            .frame(height: 1)
+            .opacity(0.72)
+    }
+}
+
+private extension View {
+    func moneyBudgetPanel() -> some View {
+        self
+            .background(DesignSystem.Palette.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(DesignSystem.Palette.border, lineWidth: 1)
+            )
     }
 }
 
@@ -1222,7 +1314,7 @@ private struct FixedBudgetRow: View {
                 }
             }
             .padding(.vertical, 9)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
 
             // Split slider (edit mode, shared ownership only)
             if editMode && line.ownership == "shared" && memberNames.hasPartner {
@@ -1240,8 +1332,8 @@ private struct FixedBudgetRow: View {
             }
 
             // Separator
-            Divider()
-                .padding(.leading, 14)
+            BudgetHairline()
+                .padding(.leading, 12)
         }
         .background(Color.clear)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -1251,7 +1343,7 @@ private struct FixedBudgetRow: View {
             Button { onNote() } label: {
                 Label("Note", systemImage: "note.text")
             }
-            .tint(.blue)
+            .tint(Color.roostSecondary)
         }
     }
 
@@ -1345,7 +1437,7 @@ private struct LifestyleBudgetRow: View {
         let pct = (spent / budget) * 100
         if pct > 100 { return Color(hex: 0xa32d2d) }
         if pct >= 80 { return Color(hex: 0x854f0b) }
-        return Color(hex: 0x3b6d11)
+        return Color(hex: 0x36A873)
     }
     private var remainingColour: Color {
         if remaining < 0 { return Color(hex: 0xa32d2d) }
@@ -1461,14 +1553,14 @@ private struct LifestyleBudgetRow: View {
                 }
             }
             .padding(.vertical, 9)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
 
             // Progress bar (read mode, household view only)
             if !editMode && !showSplit {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(Color(.systemFill))
+                            .fill(Color.roostMuted.opacity(0.72))
                             .frame(height: 3)
                         RoundedRectangle(cornerRadius: 2, style: .continuous)
                             .fill(barColour)
@@ -1476,7 +1568,7 @@ private struct LifestyleBudgetRow: View {
                     }
                 }
                 .frame(height: 3)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 6)
             }
 
@@ -1497,14 +1589,13 @@ private struct LifestyleBudgetRow: View {
                                 .font(.system(size: 11))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
-                                .background(active ? Color.roostPrimary : Color(.systemFill))
-                                .foregroundStyle(active ? Color.white : Color.roostForeground)
+                                .background(active ? Color.roostPrimary : Color.roostMuted.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .foregroundStyle(active ? Color.roostCard : Color.roostForeground)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 6)
                 .transition(.opacity.combined(with: .move(edge: .top)))
 
@@ -1525,7 +1616,7 @@ private struct LifestyleBudgetRow: View {
             }
 
             // Separator
-            Divider().padding(.leading, 14)
+            BudgetHairline().padding(.leading, 12)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) { onRemove() } label: {
@@ -1534,7 +1625,7 @@ private struct LifestyleBudgetRow: View {
             Button { onNote() } label: {
                 Label("Note", systemImage: "note.text")
             }
-            .tint(.blue)
+            .tint(Color.roostSecondary)
         }
     }
 
@@ -1607,9 +1698,7 @@ private struct SplitSliderRow: View {
                 Text("\(Int(value))%")
                     .font(.system(size: 11, weight: .medium))
                     .frame(width: 30, alignment: .trailing)
-                Slider(value: $value, in: 0...100, step: 5)
-                    .tint(Color.roostPrimary)
-                    .onChange(of: value) { _, v in onCommit(v) }
+                splitTrack
                 Text("\(Int(100 - value))%")
                     .font(.system(size: 11, weight: .medium))
                     .frame(width: 30, alignment: .leading)
@@ -1624,6 +1713,47 @@ private struct SplitSliderRow: View {
         .padding(.horizontal, 14)
         .padding(.bottom, 8)
         .onAppear { value = initialValue }
+    }
+
+    private var splitTrack: some View {
+        GeometryReader { geo in
+            let width = max(geo.size.width, 1)
+            let x = width * (value / 100)
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.roostMuted.opacity(0.78))
+                    .frame(height: 6)
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [meColour.opacity(0.9), partnerColour.opacity(0.9)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 6)
+
+                Circle()
+                    .fill(Color.roostCard)
+                    .frame(width: 18, height: 18)
+                    .overlay(Circle().stroke(Color.roostPrimary.opacity(0.7), lineWidth: 2))
+                    .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
+                    .offset(x: min(max(x - 9, 0), width - 18))
+            }
+            .frame(height: 24)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        let raw = min(max(gesture.location.x / width, 0), 1) * 100
+                        value = (raw / 5).rounded() * 5
+                        onCommit(value)
+                    }
+            )
+        }
+        .frame(height: 24)
     }
 
     private func avatarCircle(initials: String, colour: Color) -> some View {

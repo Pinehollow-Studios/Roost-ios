@@ -19,10 +19,10 @@ private struct CategoryGroup: Identifiable {
     }
 
     var barColour: Color {
-        if budgeted == 0 { return Color(hex: 0xd4795e) }
-        if spendPct < 70  { return Color(hex: 0x9db19f) }
-        if spendPct < 90  { return Color(hex: 0xe6a563) }
-        return Color(hex: 0xc75146)
+        if budgeted == 0 { return colour }
+        if spendPct < 70  { return colour }
+        if spendPct < 90  { return Color.roostWarning }
+        return Color.roostDestructive
     }
 }
 
@@ -105,8 +105,7 @@ struct MoneySpendingView: View {
             let bucket = buckets[key] ?? []
             let spent = bucket.reduce(Decimal(0)) { $0 + $1.amount }
             let budgeted = budgetVM.getEffectiveAmount(lineId: line.id, month: currentMonth)
-            let colour = budgetVM.categories
-                .first { $0.name.lowercased() == key }?.colour ?? Color(hex: 0x9db19f)
+            let colour = spendingColour(for: line.name)
             return CategoryGroup(
                 id: line.name,
                 name: line.name,
@@ -133,7 +132,7 @@ struct MoneySpendingView: View {
                 name: "Uncategorised",
                 spent: spent,
                 budgeted: 0,
-                colour: Color.roostMutedForeground.opacity(0.45),
+                colour: Color(hex: 0x8E7A66),
                 expenses: orphans.sorted {
                     ($0.incurredOnDate ?? Date.distantPast) > ($1.incurredOnDate ?? Date.distantPast)
                 }
@@ -160,52 +159,57 @@ struct MoneySpendingView: View {
         chartGroups.reduce(0) { $0 + $1.spent }
     }
 
+    private var topCategory: CategoryGroup? {
+        chartGroups.first
+    }
+
+    private var averageSpend: Decimal {
+        guard !thisMonthExpenses.isEmpty else { return 0 }
+        return totalSpent / Decimal(thisMonthExpenses.count)
+    }
+
+    private func spendingColour(for name: String) -> Color {
+        let palette: [Color] = [
+            Color(hex: 0xF06F48),
+            Color(hex: 0x36A873),
+            Color(hex: 0xF2A33A),
+            Color(hex: 0x35AFA6),
+            Color(hex: 0x4D8ECF),
+            Color(hex: 0xD75B83),
+            Color(hex: 0x8F73D9),
+            Color(hex: 0xB8832F),
+            Color(hex: 0x5BAA50),
+            Color(hex: 0xD65F45)
+        ]
+        let hash = name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
+        return palette[abs(hash) % palette.count]
+    }
+
     // MARK: - Body
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-
-                    FigmaBackHeader(title: "Spending")
-                        .padding(.horizontal, DesignSystem.Spacing.page)
-
-                    // Month navigator + pie chart + insight
-                    VStack(alignment: .leading, spacing: Spacing.xl) {
-                        monthNavigatorRow
-                        pieChartSection
-                        if let insight = hazelInsight, !thisMonthExpenses.isEmpty {
-                            Text(insight)
-                                .font(.system(size: 13).italic())
-                                .foregroundStyle(Color.roostMutedForeground)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .padding(.horizontal, DesignSystem.Spacing.page)
-
-                    // Category bars + all expenses
-                    VStack(alignment: .leading, spacing: Spacing.xl) {
-                        categoryBarsSection
-                        allExpensesSection
-                    }
-                    .padding(.horizontal, DesignSystem.Spacing.page)
-                    .padding(.top, Spacing.xl)
-
-                    Spacer(minLength: DesignSystem.Spacing.screenBottom + 64)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 12) {
+                FigmaBackHeader(title: "Spending") {
+                    addExpenseButton
                 }
-            }
-            .background(Color.roostBackground.ignoresSafeArea())
+                .padding(.horizontal, DesignSystem.Spacing.page)
 
-            // FAB
-            FigmaFloatingActionButton(systemImage: "plus") {
-                showAddExpense = true
+                VStack(alignment: .leading, spacing: 12) {
+                    monthNavigatorRow
+                    spendingBriefSection
+                    categoryBarsSection
+                    allExpensesSection
+                }
+                .padding(.horizontal, DesignSystem.Spacing.page)
+
+                Spacer(minLength: DesignSystem.Spacing.screenBottom + 28)
             }
-            .padding(.trailing, 20)
-            .padding(.bottom, 16)
         }
+        .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .swipeBackEnabled()
-        .sheet(isPresented: $showAddExpense) {
+        .navigationDestination(isPresented: $showAddExpense) {
             addExpenseSheetView(defaultCategory: expandedCategory)
         }
         .sheet(item: $editingExpense) { expense in
@@ -232,6 +236,25 @@ struct MoneySpendingView: View {
             Text("This can't be undone.")
         }
         .nestUpsell(isPresented: $showHistoryUpsell, feature: .budgetHistory)
+    }
+
+    private var addExpenseButton: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            showAddExpense = true
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Add")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundStyle(Color.roostCard)
+            .padding(.horizontal, 13)
+            .frame(height: 38)
+            .background(Color.roostPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -270,81 +293,154 @@ private extension MoneySpendingView {
     }
 }
 
-// MARK: - Pie chart
+// MARK: - Spending brief
 
 private extension MoneySpendingView {
 
-    var pieChartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    var spendingBriefSection: some View {
+        RoostCard(padding: 12, prominence: .quiet) {
             if chartGroups.isEmpty {
-                emptyChartCard
+                emptySpendingBrief
             } else {
-                Chart(chartGroups) { group in
-                    SectorMark(
-                        angle: .value("Spent",
-                            NSDecimalNumber(decimal: group.spent).doubleValue),
-                        innerRadius: .ratio(0.55),
-                        angularInset: 1.5
-                    )
-                    .foregroundStyle(group.colour)
-                    .cornerRadius(4)
-                }
-                .chartBackground { _ in
-                    VStack(spacing: 2) {
-                        Text(scramble.format(totalSpent, symbol: sym))
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color.roostForeground)
-                        Text("spent")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .center, spacing: 14) {
+                        compactDonut
+                        spendingSummaryMetrics
+                    }
+
+                    if let insight = hazelInsight {
+                        Text(insight)
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                }
-                .frame(height: 200)
 
-                // Legend
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(chartGroups) { group in
-                            HStack(spacing: 5) {
-                                RoundedRectangle(cornerRadius: 2)
+                    topCategoryStrip
+                }
+            }
+        }
+    }
+
+    var compactDonut: some View {
+        Chart(chartGroups) { group in
+            SectorMark(
+                angle: .value("Spent", NSDecimalNumber(decimal: group.spent).doubleValue),
+                innerRadius: .ratio(0.62),
+                angularInset: 1.6
+            )
+            .foregroundStyle(group.colour)
+            .cornerRadius(3)
+        }
+        .chartBackground { _ in
+            VStack(spacing: 1) {
+                Text(scramble.format(totalSpent, symbol: sym))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("spent")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(Color.roostMutedForeground)
+            }
+        }
+        .frame(width: 124, height: 124)
+    }
+
+    var spendingSummaryMetrics: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            spendingMetric(label: "Logged", value: "\(thisMonthExpenses.count)")
+            spendingMetric(label: "Average", value: scramble.format(averageSpend, symbol: sym))
+            if let topCategory {
+                spendingMetric(label: "Top", value: topCategory.name)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    func spendingMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.roostMutedForeground)
+            Text(value)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color.roostForeground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+        }
+    }
+
+    var topCategoryStrip: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("Top categories")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.roostMutedForeground)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(chartGroups.prefix(6)) { group in
+                        Button {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                expandedCategory = group.id
+                                showAllForCategories.remove(group.id)
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Circle()
                                     .fill(group.colour)
-                                    .frame(width: 8, height: 8)
+                                    .frame(width: 7, height: 7)
                                 Text(group.name)
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 11, weight: .medium))
                                     .foregroundStyle(Color.roostForeground)
                                 Text(scramble.format(group.spent, symbol: sym))
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(Color.roostForeground)
+                                    .foregroundStyle(Color.roostMutedForeground)
                             }
+                            .padding(.horizontal, 9)
+                            .frame(height: 30)
+                            .background(group.colour.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(group.colour.opacity(0.24), lineWidth: 1)
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
         }
     }
 
-    var emptyChartCard: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "chart.pie")
-                .font(.system(size: 40))
-                .foregroundStyle(Color(hex: 0xd4795e).opacity(0.4))
-            Text("Nothing logged yet")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Color.roostForeground)
-            Text("Start adding expenses to see your spending breakdown.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.roostMutedForeground)
-                .multilineTextAlignment(.center)
+    var emptySpendingBrief: some View {
+        HStack(alignment: .center, spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(Color.roostMuted.opacity(0.8), lineWidth: 8)
+                    .frame(width: 78, height: 78)
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color.roostPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("No spending logged")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+                Text("Add an expense to start the monthly breakdown.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.roostMutedForeground)
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showAddExpense = true
+                } label: {
+                    Text("Add expense")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.roostPrimary)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .padding(.horizontal, 20)
-        .background(DesignSystem.Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(DesignSystem.Palette.border, lineWidth: 1)
-        )
     }
 }
 
@@ -392,11 +488,8 @@ private extension MoneySpendingView {
 private extension MoneySpendingView {
 
     var categoryBarsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("YOUR BUDGETS")
-                .font(.system(size: 10, weight: .medium))
-                .tracking(1.5)
-                .foregroundStyle(Color.roostMutedForeground)
+        VStack(alignment: .leading, spacing: 7) {
+            moneyEyebrow("CATEGORIES")
 
             if budgetVM.lifestyleLines.isEmpty {
                 noBudgetsCard
@@ -407,23 +500,22 @@ private extension MoneySpendingView {
                     MoneyBudgetsView()
                 } label: {
                     Text("Manage budgets →")
-                        .font(.system(size: 13))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.roostMutedForeground)
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, 4)
             }
         }
     }
 
     var noBudgetsCard: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 7) {
             Text("No lifestyle budgets set up")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.roostForeground)
             Text("Head to Budgets to add categories and track spending.")
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(Color.roostMutedForeground)
                 .multilineTextAlignment(.center)
             NavigationLink {
@@ -434,17 +526,11 @@ private extension MoneySpendingView {
                     .foregroundStyle(Color.roostPrimary)
             }
             .buttonStyle(.plain)
-            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .padding(.horizontal, 16)
-        .background(DesignSystem.Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(DesignSystem.Palette.border, lineWidth: 1)
-        )
+        .padding(.vertical, 20)
+        .padding(.horizontal, 14)
+        .moneyPanel()
     }
 
     var budgetCard: some View {
@@ -453,17 +539,12 @@ private extension MoneySpendingView {
             ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
                 categoryRow(group: group)
                 if index < groups.count - 1 {
-                    Divider()
-                        .padding(.horizontal, 14)
+                    moneyHairline
+                        .padding(.horizontal, 12)
                 }
             }
         }
-        .background(DesignSystem.Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(DesignSystem.Palette.border, lineWidth: 1)
-        )
+        .moneyPanel()
     }
 
     @ViewBuilder
@@ -480,14 +561,14 @@ private extension MoneySpendingView {
                     }
                 }
             } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(spacing: 7) {
                         Circle()
                             .fill(group.colour)
-                            .frame(width: 8, height: 8)
+                            .frame(width: 7, height: 7)
 
                         Text(group.name)
-                            .font(.system(size: 13))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(Color.roostForeground)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -495,11 +576,11 @@ private extension MoneySpendingView {
                             Text(scramble.format(group.spent, symbol: sym)
                                  + " / "
                                  + scramble.format(group.budgeted, symbol: sym))
-                                .font(.system(size: 12))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(Color.roostMutedForeground)
                         } else {
                             Text(scramble.format(group.spent, symbol: sym))
-                                .font(.system(size: 12))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(Color.roostMutedForeground)
                         }
 
@@ -513,8 +594,8 @@ private extension MoneySpendingView {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 2.5)
-                                .fill(Color(.systemFill))
-                                .frame(height: 5)
+                                .fill(Color.roostMuted.opacity(0.72))
+                                .frame(height: 4)
 
                             let fillWidth: CGFloat = {
                                 if group.budgeted > 0 {
@@ -531,20 +612,20 @@ private extension MoneySpendingView {
 
                             RoundedRectangle(cornerRadius: 2.5)
                                 .fill(group.barColour)
-                                .frame(width: max(fillWidth, 0), height: 5)
+                                .frame(width: max(fillWidth, 0), height: 4)
 
                             if group.isOverspent {
                                 Rectangle()
-                                    .fill(Color(hex: 0xa32d2d))
-                                    .frame(width: 4, height: 10)
+                                    .fill(Color.roostDestructive)
+                                    .frame(width: 3, height: 9)
                                     .offset(x: geo.size.width - 2)
                             }
                         }
                     }
-                    .frame(height: 5)
-                    .padding(.bottom, 4)
+                    .frame(height: 4)
                 }
-                .padding(14)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 11)
             }
             .buttonStyle(.plain)
 
@@ -565,12 +646,12 @@ private extension MoneySpendingView {
         }
 
         VStack(alignment: .leading, spacing: 4) {
-            Divider().padding(.horizontal, 14)
+            moneyHairline.padding(.horizontal, 12)
 
             ForEach(visible, id: \.id) { exp in
                 let isOld = isFreeTier && (exp.incurredOnDate ?? Date()) < historyCutoff
                 inlineExpenseRow(expense: exp, isLocked: isOld)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
             }
 
             if hasFreeGate && !showAll {
@@ -585,7 +666,7 @@ private extension MoneySpendingView {
                     }
                     .foregroundStyle(Color.roostMutedForeground)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                 }
                 .buttonStyle(.plain)
@@ -597,15 +678,15 @@ private extension MoneySpendingView {
                 } label: {
                     Text("\(expenses.count - 5) more")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: 0xd4795e))
+                        .foregroundStyle(Color.roostPrimary)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 2)
             }
         }
-        .padding(.bottom, 10)
-        .background(Color(.secondarySystemBackground))
+        .padding(.bottom, 9)
+        .background(Color.roostMuted.opacity(0.32))
     }
 }
 
@@ -614,40 +695,42 @@ private extension MoneySpendingView {
 private extension MoneySpendingView {
 
     var allExpensesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("ALL EXPENSES")
-                .font(.system(size: 10, weight: .medium))
-                .tracking(1.5)
-                .foregroundStyle(Color.roostMutedForeground)
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                moneyEyebrow("RECENT SPEND")
+                Spacer()
+                if !expensesByDateDesc.isEmpty {
+                    Text("\(expensesByDateDesc.count)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .padding(.horizontal, 7)
+                        .frame(height: 22)
+                        .background(Color.roostMuted.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+            }
 
             if expensesByDateDesc.isEmpty {
                 Text("No expenses this month.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(Color.roostMutedForeground)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-                    .background(DesignSystem.Palette.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(DesignSystem.Palette.border, lineWidth: 1)
-                    )
+                    .padding(.vertical, 18)
+                    .moneyPanel()
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     let expenses = expensesByDateDesc
                     ForEach(Array(expenses.enumerated()), id: \.element.id) { index, exp in
                         let isOld = isFreeTier && (exp.incurredOnDate ?? Date()) < historyCutoff
                         inlineExpenseRow(expense: exp, isLocked: isOld)
-                            .padding(.horizontal, 14)
+                            .padding(.horizontal, 12)
 
                         if index < expenses.count - 1 {
-                            Divider().padding(.horizontal, 14)
+                            moneyHairline.padding(.horizontal, 12)
                         }
                     }
 
-                    // Pro gate footer
                     if isFreeTier && expenses.contains(where: { ($0.incurredOnDate ?? Date()) < historyCutoff }) {
-                        Divider().padding(.horizontal, 14)
+                        moneyHairline.padding(.horizontal, 12)
                         HStack {
                             Text("See full history with Roost Pro")
                                 .font(.system(size: 12))
@@ -657,18 +740,13 @@ private extension MoneySpendingView {
                                 showHistoryUpsell = true
                             }
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color(hex: 0xd4795e))
+                            .foregroundStyle(Color.roostPrimary)
                         }
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                     }
                 }
-                .background(DesignSystem.Palette.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(DesignSystem.Palette.border, lineWidth: 1)
-                )
+                .moneyPanel()
             }
         }
     }
@@ -684,14 +762,14 @@ private extension MoneySpendingView {
             // Locked placeholder for free tier
             HStack {
                 Text("Older expense")
-                    .font(.system(size: 13))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground.opacity(0.35))
                 Spacer()
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.roostMutedForeground.opacity(0.4))
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 9)
         } else {
             let payerName = expense.paidBy == homeManager.currentUserId
                 ? memberNames.names.me
@@ -700,7 +778,7 @@ private extension MoneySpendingView {
             HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(expense.title)
-                        .font(.system(size: 13))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
                         .lineLimit(1)
                     HStack(spacing: 6) {
@@ -726,7 +804,7 @@ private extension MoneySpendingView {
                         .foregroundStyle(Color.roostMutedForeground)
                 }
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 9)
             .contentShape(Rectangle())
             .contextMenu {
                 Button {
@@ -757,7 +835,9 @@ private extension MoneySpendingView {
                 myUserId: myId,
                 partnerUserId: homeManager.partner?.userID,
                 suggestedCategories: budgetVM.categories,
-                defaultSplitType: defaultSplitType
+                defaultSplitType: defaultSplitType,
+                currencySymbol: sym,
+                hidesTabBar: true
             ) { title, amount, paidBy, splitType, category, notes, date, recurring in
                 guard let homeId = homeManager.homeId else { return }
                 await expensesVM.addExpense(
@@ -837,5 +917,31 @@ private extension MoneySpendingView {
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         return formatter.string(from: NSDecimalNumber(decimal: value)) ?? "\(value)"
+    }
+
+    func moneyEyebrow(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .tracking(1.2)
+            .foregroundStyle(Color.roostMutedForeground)
+    }
+
+    var moneyHairline: some View {
+        Rectangle()
+            .fill(Color.roostHairline)
+            .frame(height: 1)
+            .opacity(0.72)
+    }
+}
+
+private extension View {
+    func moneyPanel() -> some View {
+        self
+            .background(DesignSystem.Palette.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(DesignSystem.Palette.border, lineWidth: 1)
+            )
     }
 }

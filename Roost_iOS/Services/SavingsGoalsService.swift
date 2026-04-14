@@ -9,6 +9,7 @@ struct SavingsGoalsService {
             .from("savings_goals")
             .select()
             .eq("home_id", value: homeId)
+            .order("sort_order")
             .order("created_at")
             .execute()
             .value
@@ -25,7 +26,7 @@ struct SavingsGoalsService {
             .value
     }
 
-    /// Adds an amount to saved_amount by fetching the current value first,
+    /// Adds an amount to current_amount by fetching the current value first,
     /// then updating with the new total (PostgREST does not support column increments).
     func addToGoal(id: UUID, amount: Decimal) async throws -> SavingsGoal {
         let client = try SupabaseClientProvider.shared.requireClient()
@@ -36,10 +37,23 @@ struct SavingsGoalsService {
             .single()
             .execute()
             .value
-        let newSaved = current.savedAmount + amount
+        let newSaved = min(current.targetAmount, current.savedAmount + amount)
+        var updates: [String: AnyJSON] = [
+            "current_amount": AnyJSON.double(NSDecimalNumber(decimal: newSaved).doubleValue)
+        ]
+        if newSaved >= current.targetAmount, !current.isCompleted {
+            if let budgetLineId = current.budgetLineId {
+                try await BudgetTemplateService().removeLine(id: budgetLineId)
+                updates["monthly_contribution"] = AnyJSON.null
+                updates["contribution_day"] = AnyJSON.null
+                updates["budget_line_id"] = AnyJSON.null
+            }
+            updates["is_complete"] = AnyJSON.bool(true)
+            updates["completed_at"] = AnyJSON.string(ISO8601DateFormatter().string(from: Date()))
+        }
         return try await client
             .from("savings_goals")
-            .update(["saved_amount": newSaved])
+            .update(updates)
             .eq("id", value: id)
             .select()
             .single()
@@ -64,7 +78,10 @@ struct SavingsGoalsService {
         let now = ISO8601DateFormatter().string(from: Date())
         return try await client
             .from("savings_goals")
-            .update(["completed_at": AnyJSON.string(now)])
+            .update([
+                "is_complete": AnyJSON.bool(true),
+                "completed_at": AnyJSON.string(now)
+            ])
             .eq("id", value: id)
             .select()
             .single()
@@ -101,17 +118,19 @@ struct SavingsGoalsService {
                 updates: UpdateBudgetLine(
                     name: "\(name) — savings",
                     amount: amount,
+                    budgetType: "envelope",
+                    sectionGroup: "savings",
                     dayOfMonth: contributionDay
                 )
             )
         } else {
-            // Create new fixed line under "goals" section
+            // Create a visible line under the Savings allocation section on the budgets page.
             let newLine = CreateBudgetLine(
                 homeId: homeId,
                 name: "\(name) — savings",
                 amount: amount,
-                budgetType: "fixed",
-                sectionGroup: "goals",
+                budgetType: "envelope",
+                sectionGroup: "savings",
                 dayOfMonth: contributionDay,
                 isAnnual: false,
                 annualAmount: nil,

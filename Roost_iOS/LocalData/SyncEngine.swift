@@ -16,7 +16,11 @@ import SwiftData
 struct SyncEngine {
     private let container: ModelContainer
 
-    init(container: ModelContainer = LocalDataManager.shared.container) {
+    init() {
+        self.container = LocalDataManager.shared.container
+    }
+
+    init(container: ModelContainer) {
         self.container = container
     }
 

@@ -239,7 +239,7 @@ struct MoneyOverviewView: View {
 
     private func categoryColour(for name: String) -> Color {
         let palette: [Color] = [
-            Color(hex: 0xD4795E), Color(hex: 0x9DB19F), Color(hex: 0xE6A563),
+            Color.roostMoneyTint, Color(hex: 0x9DB19F), Color(hex: 0xE6A563),
             Color(hex: 0xC17A6F), Color(hex: 0x7A9199), Color(hex: 0xA08AB8),
             Color(hex: 0xC4789A), Color(hex: 0x8B9E7D)
         ]
@@ -278,7 +278,7 @@ struct MoneyOverviewView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
 
                 FigmaBackHeader(title: "Overview")
                     .padding(.horizontal, DesignSystem.Spacing.page)
@@ -286,7 +286,7 @@ struct MoneyOverviewView: View {
                 monthNavigator
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
-                VStack(alignment: .leading, spacing: Spacing.lg) {
+                VStack(alignment: .leading, spacing: 12) {
 
                     // Zone 1 — Ring + stats + Hazel insight
                     zone1RingCard
@@ -315,7 +315,7 @@ struct MoneyOverviewView: View {
                 }
                 .padding(.horizontal, DesignSystem.Spacing.page)
             }
-            .padding(.bottom, DesignSystem.Spacing.screenBottom)
+            .padding(.bottom, DesignSystem.Spacing.screenBottom + 4)
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -367,26 +367,24 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone1RingCard: some View {
-        RoostCard {
+        RoostCard(padding: 12, prominence: .quiet) {
             if let error = summaryVM.error, summaryVM.summary == nil {
                 errorState(error: error)
             } else {
-                VStack(alignment: .leading, spacing: Spacing.md) {
-                    HStack(alignment: .center, spacing: Spacing.xl) {
-                        ringArc120
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 14) {
+                        ringArc104
                         zone1Stats
                     }
                     if let insight = hazelInsight {
                         Text(insight)
-                            .font(.system(size: 12))
-                            .italic()
+                            .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 4)
+                            .padding(.top, 2)
                     } else if isLoading {
-                        Text("Analysing your spending patterns...")
-                            .font(.system(size: 12))
-                            .italic()
+                        Text("Loading spending pace.")
+                            .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
                             .redacted(reason: .placeholder)
                     }
@@ -395,102 +393,107 @@ private extension MoneyOverviewView {
         }
     }
 
-    var ringArc120: some View {
+    var ringArc104: some View {
         ZStack {
-            // Track
             Circle()
-                .stroke(Color(.systemFill), lineWidth: 10)
-                .frame(width: 120, height: 120)
+                .stroke(Color.roostMuted.opacity(0.65), lineWidth: 8)
+                .frame(width: 104, height: 104)
 
-            // Fill arc
             Circle()
                 .trim(from: 0, to: arcProgress)
-                .stroke(arcColour, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .stroke(arcColour, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .frame(width: 120, height: 120)
+                .frame(width: 104, height: 104)
                 .animation(.easeOut(duration: 0.8), value: arcProgress)
 
-            // Centre label
             if isLoading {
-                ProgressView()
-                    .scaleEffect(0.8)
+                loadingPulse
             } else if let summary = summaryVM.summary, summary.hasIncome {
                 VStack(spacing: 2) {
                     Text("\(Int(NSDecimalNumber(decimal: summary.pctSpent).doubleValue))%")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
                     Text("spent")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.roostMutedForeground)
                 }
             } else {
                 VStack(spacing: 2) {
                     Text("Set")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color(hex: 0xD4795E))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.roostMoneyTint)
                     Text("income")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color(hex: 0xD4795E))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.roostMoneyTint)
                 }
             }
         }
-        .frame(width: 120, height: 120)
+        .frame(width: 104, height: 104)
+    }
+
+    var loadingPulse: some View {
+        ZStack {
+            Circle()
+                .fill(Color.roostMuted.opacity(0.55))
+                .frame(width: 34, height: 34)
+            Circle()
+                .stroke(Color.roostMutedForeground.opacity(0.18), lineWidth: 5)
+                .frame(width: 52, height: 52)
+        }
+        .redacted(reason: .placeholder)
     }
 
     var zone1Stats: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Income
+        VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Income")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.roostMutedForeground)
                 if isLoading {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.roostMutedForeground.opacity(0.15))
-                        .frame(width: 70, height: 16)
+                        .frame(width: 70, height: 14)
                 } else if let s = summaryVM.summary, s.hasIncome {
                     Text(scramble.format(s.income, symbol: sym))
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
                 } else {
                     Text("Not set")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color(hex: 0xD4795E))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.roostMoneyTint)
                 }
             }
 
-            // Budget coverage
             VStack(alignment: .leading, spacing: 1) {
                 Text("Budgeted")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.roostMutedForeground)
                 if isLoading {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.roostMutedForeground.opacity(0.15))
-                        .frame(width: 80, height: 16)
+                        .frame(width: 80, height: 14)
                 } else if let s = summaryVM.summary, s.hasIncome {
                     let pct = Int(NSDecimalNumber(decimal: s.pctOfIncomeBudgeted).doubleValue)
                     Text("\(pct)% of income")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
                 } else {
                     Text("—")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color.roostMutedForeground)
                 }
             }
 
-            // Health score
             VStack(alignment: .leading, spacing: 1) {
                 Text("Health")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.roostMutedForeground)
                 let score = isLoading ? 50 : healthScore
-                let scoreColour: Color = score >= 70 ? Color(hex: 0x9DB19F)
-                    : score >= 40 ? Color(hex: 0xE6A563)
-                    : Color(hex: 0xC75146)
+                let scoreColour: Color = score >= 70 ? Color.roostSecondary
+                    : score >= 40 ? Color.roostWarning
+                    : Color.roostDestructive
                 Text(isLoading ? "—" : "\(score) / 100")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(isLoading ? Color.roostMutedForeground : scoreColour)
             }
         }
@@ -501,7 +504,7 @@ private extension MoneyOverviewView {
         HStack(spacing: Spacing.md) {
             Image(systemName: "exclamationmark.circle.fill")
                 .font(.system(size: 24))
-                .foregroundStyle(Color(hex: 0xD4795E))
+                .foregroundStyle(Color.roostMoneyTint)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Couldn't load summary")
                     .font(.roostCardTitle)
@@ -510,7 +513,7 @@ private extension MoneyOverviewView {
                     reloadSummary()
                 }
                 .font(.roostCaption)
-                .foregroundStyle(Color(hex: 0xD4795E))
+                .foregroundStyle(Color.roostMoneyTint)
                 .buttonStyle(.plain)
             }
         }
@@ -523,61 +526,58 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone2MoneyFlow: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: 7) {
             eyebrow("MONEY FLOW")
 
-            RoostCard(padding: Spacing.md) {
-                VStack(alignment: .leading, spacing: Spacing.md) {
+            RoostCard(padding: 12, prominence: .quiet) {
+                VStack(alignment: .leading, spacing: 10) {
                     let income = summaryVM.summary?.income ?? 0
                     let fixed = summaryVM.summary?.fixedCosts ?? budgetVM.totalFixed
                     let lifestyle = summaryVM.summary?.envelopesTotal ?? budgetVM.totalLifestyle
                     let surplus = income > 0 ? income - fixed - lifestyle : nil
 
-                    // Income row
                     HStack {
                         Image(systemName: "arrow.down.circle.fill")
-                            .foregroundStyle(Color(hex: 0x9DB19F))
-                            .font(.system(size: 14))
-                        Text("Monthly income")
+                            .foregroundStyle(Color.roostSecondary)
                             .font(.system(size: 13))
+                        Text("Monthly income")
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(Color.roostMutedForeground)
                         Spacer()
                         if income > 0 {
                             Text(scramble.format(income, symbol: sym))
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(Color.roostForeground)
                         } else {
                             Text("Not set")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color(hex: 0xD4795E))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.roostMoneyTint)
                         }
                     }
 
-                    Divider()
+                    moneyHairline
 
-                    // Fixed costs bar
-                    flowBarRow(icon: "lock.fill", iconColour: Color(hex: 0xD4795E),
+                    flowBarRow(icon: "lock.fill", iconColour: Color.roostMoneyTint,
                                label: "Fixed costs", amount: fixed, income: income,
-                               fillColour: Color(hex: 0xD4795E))
+                               fillColour: Color.roostMoneyTint)
 
-                    // Lifestyle envelopes bar
-                    flowBarRow(icon: "cart.fill", iconColour: Color(hex: 0xE6A563),
+                    flowBarRow(icon: "cart.fill", iconColour: Color.roostWarning,
                                label: "Lifestyle", amount: lifestyle, income: income,
-                               fillColour: Color(hex: 0xE6A563))
+                               fillColour: Color.roostWarning)
 
                     if let surplus {
-                        Divider()
+                        moneyHairline
                         HStack {
                             Image(systemName: surplus >= 0 ? "arrow.up.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundStyle(surplus >= 0 ? Color(hex: 0x9DB19F) : Color(hex: 0xC75146))
-                                .font(.system(size: 14))
-                            Text("Est. unallocated")
+                                .foregroundStyle(surplus >= 0 ? Color.roostSecondary : Color.roostDestructive)
                                 .font(.system(size: 13))
+                            Text("Est. unallocated")
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(Color.roostMutedForeground)
                             Spacer()
                             Text(scramble.format(surplus, symbol: sym))
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(surplus >= 0 ? Color(hex: 0x9DB19F) : Color(hex: 0xC75146))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(surplus >= 0 ? Color.roostSecondary : Color.roostDestructive)
                         }
                     }
                 }
@@ -591,13 +591,13 @@ private extension MoneyOverviewView {
             HStack {
                 Image(systemName: icon)
                     .foregroundStyle(iconColour)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostMutedForeground)
                 Spacer()
                 Text(scramble.format(amount, symbol: sym))
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.roostForeground)
             }
             GeometryReader { geo in
@@ -623,11 +623,11 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone3BudgetStatus: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: 7) {
             eyebrow("BUDGET THIS MONTH")
 
-            RoostCard(padding: Spacing.md) {
-                VStack(alignment: .leading, spacing: Spacing.md) {
+            RoostCard(padding: 12, prominence: .quiet) {
+                VStack(alignment: .leading, spacing: 10) {
                     if isLoading {
                         ForEach(0..<3, id: \.self) { _ in skeletonBudgetRow }
                     } else {
@@ -653,13 +653,13 @@ private extension MoneyOverviewView {
             : item.fillRatio > 0.8 ? Color(hex: 0xE6A563)
             : item.colour
 
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Circle()
                     .fill(item.colour)
-                    .frame(width: 8, height: 8)
+                    .frame(width: 7, height: 7)
                 Text(item.name)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground)
                 Spacer()
                 if item.isOverspent {
@@ -680,13 +680,13 @@ private extension MoneyOverviewView {
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(barColour.opacity(0.15))
-                        .frame(height: 5)
+                        .frame(height: 4)
                     Capsule()
                         .fill(barColour)
-                        .frame(width: geo.size.width * item.fillRatio, height: 5)
+                        .frame(width: geo.size.width * item.fillRatio, height: 4)
                 }
             }
-            .frame(height: 5)
+            .frame(height: 4)
         }
     }
 
@@ -716,10 +716,10 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone4ComingUp: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: 7) {
             eyebrow("COMING UP")
 
-            RoostCard(padding: Spacing.md) {
+            RoostCard(padding: 12, prominence: .quiet) {
                 VStack(alignment: .leading, spacing: 0) {
                     let upcoming = upcomingBills
                     let past = pastBills
@@ -730,27 +730,41 @@ private extension MoneyOverviewView {
                             .foregroundStyle(Color.roostMutedForeground)
                     } else {
                         ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, bill in
-                            if index > 0 { Divider().padding(.vertical, 6) }
+                            if index > 0 { moneyHairline.padding(.vertical, 6) }
                             billRow(bill: bill, isDueSoon: billIsDueSoon(bill))
                         }
 
                         if !past.isEmpty {
-                            if !upcoming.isEmpty { Divider().padding(.vertical, 6) }
-                            DisclosureGroup(isExpanded: $pastBillsExpanded) {
+                            if !upcoming.isEmpty { moneyHairline.padding(.vertical, 6) }
+                            Button {
+                                withAnimation(.easeOut(duration: 0.18)) {
+                                    pastBillsExpanded.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text("\(past.count) paid this month")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.roostMutedForeground)
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 9, weight: .medium))
+                                        .foregroundStyle(Color.roostMutedForeground)
+                                        .rotationEffect(.degrees(pastBillsExpanded ? 180 : 0))
+                                    Spacer()
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if pastBillsExpanded {
                                 VStack(alignment: .leading, spacing: 0) {
                                     ForEach(Array(past.enumerated()), id: \.element.id) { index, bill in
-                                        if index > 0 { Divider().padding(.vertical, 6) }
+                                        if index > 0 { moneyHairline.padding(.vertical, 6) }
                                         billRow(bill: bill, isDueSoon: false)
                                             .opacity(0.55)
                                     }
                                 }
-                                .padding(.top, Spacing.sm)
-                            } label: {
-                                Text("\(past.count) paid this month")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color.roostMutedForeground)
+                                .padding(.top, 8)
                             }
-                            .tint(Color.roostMutedForeground)
                         }
                     }
                 }
@@ -769,27 +783,27 @@ private extension MoneyOverviewView {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground)
                 if let day = bill.dayOfMonth {
                     Text(billDateLabel(day: day))
                         .font(.system(size: 11))
-                        .foregroundStyle(isDueSoon ? Color(hex: 0xD4795E) : Color.roostMutedForeground)
+                        .foregroundStyle(isDueSoon ? Color.roostMoneyTint : Color.roostMutedForeground)
                 }
             }
             Spacer()
             Text(scramble.format(bill.displayAmount, symbol: sym))
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.roostForeground)
         }
-        .padding(isDueSoon ? 10 : 0)
-        .background(isDueSoon ? Color(hex: 0xFAEEDA) : Color.clear)
+        .padding(isDueSoon ? 8 : 0)
+        .background(isDueSoon ? Color.roostWarning.opacity(0.12) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
             Group {
                 if isDueSoon {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color(hex: 0xE6A563).opacity(0.5), lineWidth: 1)
+                        .stroke(Color.roostWarning.opacity(0.34), lineWidth: 1)
                 }
             }
         )
@@ -801,11 +815,11 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone5SpendingTrend: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: 7) {
             eyebrow("SPENDING TREND")
 
-            RoostCard(padding: Spacing.md) {
-                VStack(alignment: .leading, spacing: Spacing.md) {
+            RoostCard(padding: 12, prominence: .quiet) {
+                VStack(alignment: .leading, spacing: 10) {
                     let allData = sixMonthSpend
                     let chartData = isFreeTier ? Array(allData.suffix(1)) : allData
 
@@ -820,8 +834,8 @@ private extension MoneyOverviewView {
                                     x: .value("Month", point.label),
                                     y: .value("Spend", NSDecimalNumber(decimal: point.total).doubleValue)
                                 )
-                                .foregroundStyle(Color(hex: 0x9DB19F))
-                                .cornerRadius(4)
+                                .foregroundStyle(Color.roostSecondary)
+                                .cornerRadius(3)
                             }
                         }
                         .chartYAxis {
@@ -829,7 +843,7 @@ private extension MoneyOverviewView {
                                 AxisValueLabel {
                                     if let v = value.as(Double.self) {
                                         Text("\(sym)\(Int(v))")
-                                            .font(.system(size: 9))
+                                            .font(.system(size: 9, weight: .medium))
                                             .foregroundStyle(Color.roostMutedForeground)
                                     }
                                 }
@@ -841,20 +855,20 @@ private extension MoneyOverviewView {
                             AxisMarks { value in
                                 AxisValueLabel {
                                     Text(value.as(String.self) ?? "")
-                                        .font(.system(size: 10))
+                                        .font(.system(size: 9, weight: .medium))
                                         .foregroundStyle(Color.roostMutedForeground)
                                 }
                             }
                         }
-                        .frame(height: 140)
+                        .frame(height: 116)
 
                         if isFreeTier {
                             Button {
                                 showHistoryUpsell = true
                             } label: {
                                 Text("See 6-month history with Roost Pro →")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(Color(hex: 0xD4795E))
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(Color.roostMoneyTint)
                             }
                             .buttonStyle(.plain)
                         }
@@ -870,7 +884,7 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone6MonthComparison: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack {
                 eyebrow("MONTH COMPARISON")
                 Spacer()
@@ -892,17 +906,17 @@ private extension MoneyOverviewView {
                 Button {
                     showInsightsUpsell = true
                 } label: {
-                    RoostCard(padding: Spacing.md) {
-                        HStack(spacing: Spacing.md) {
+                    RoostCard(padding: 12, prominence: .quiet) {
+                        HStack(spacing: 10) {
                             Image(systemName: "chart.bar.xaxis")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: 0xD4795E))
+                                .font(.system(size: 15))
+                                .foregroundStyle(Color.roostMoneyTint)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Month comparison")
-                                    .font(.roostCardTitle)
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundStyle(Color.roostForeground)
                                 Text("See how this month compares to last with Roost Pro.")
-                                    .font(.roostCaption)
+                                    .font(.system(size: 11))
                                     .foregroundStyle(Color.roostMutedForeground)
                             }
                             Spacer()
@@ -914,8 +928,8 @@ private extension MoneyOverviewView {
                 }
                 .buttonStyle(.plain)
             } else {
-                RoostCard(padding: Spacing.md) {
-                    VStack(alignment: .leading, spacing: Spacing.md) {
+                RoostCard(padding: 12, prominence: .quiet) {
+                    VStack(alignment: .leading, spacing: 10) {
                         let comp = categoryComparison
 
                         if comp.isEmpty {
@@ -928,10 +942,10 @@ private extension MoneyOverviewView {
                                 let up = mover.changePct > 0
                                 HStack(spacing: 6) {
                                     Image(systemName: up ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
-                                        .foregroundStyle(up ? Color(hex: 0xC75146) : Color(hex: 0x9DB19F))
-                                        .font(.system(size: 13))
-                                    Text("\(mover.name) \(up ? "up" : "down") \(Int(abs(mover.changePct) * 100))% vs last month")
+                                        .foregroundStyle(up ? Color.roostDestructive : Color.roostSecondary)
                                         .font(.system(size: 12))
+                                    Text("\(mover.name) \(up ? "up" : "down") \(Int(abs(mover.changePct) * 100))% vs last month")
+                                        .font(.system(size: 11))
                                         .foregroundStyle(Color.roostMutedForeground)
                                 }
                                 .padding(.bottom, 2)
@@ -963,7 +977,7 @@ private extension MoneyOverviewView {
                     .fill(item.colour)
                     .frame(width: 7, height: 7)
                 Text(item.name)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground)
                 Spacer()
                 Text(scramble.format(item.thisMonth, symbol: sym))
@@ -1027,7 +1041,14 @@ private extension MoneyOverviewView {
     func eyebrow(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .medium))
-            .tracking(1.5)
+            .tracking(1.2)
             .foregroundStyle(Color.roostMutedForeground)
+    }
+
+    var moneyHairline: some View {
+        Rectangle()
+            .fill(Color.roostHairline)
+            .frame(height: 1)
+            .opacity(0.72)
     }
 }

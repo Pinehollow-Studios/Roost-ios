@@ -21,7 +21,6 @@ struct RoostApp: App {
     @State private var subscriptionPricingStore = SubscriptionPricingStore()
     @State private var appearanceSettings = AppearanceSettings()
     @State private var budgetCarrySettings = BudgetCarrySettings()
-    @State private var resumeSnapshotStore = ResumeSnapshotStore()
     @State private var hazelViewModel = HazelViewModel()
     // Money rebuild — Session 1A data foundation
     @State private var budgetTemplateViewModel = BudgetTemplateViewModel()
@@ -29,6 +28,7 @@ struct RoostApp: App {
     @State private var moneySettingsViewModel = MoneySettingsViewModel()
     @State private var memberNamesHelper = MemberNamesHelper()
     @State private var scrambleModeEnvironment = ScrambleModeEnvironment()
+    @State private var appBootManager = AppBootManager()
     // Money rebuild — Session 6 savings goals
     @State private var savingsGoalsViewModel = SavingsGoalsViewModel()
 
@@ -55,13 +55,13 @@ struct RoostApp: App {
                 .environment(subscriptionPricingStore)
                 .environment(appearanceSettings)
                 .environment(budgetCarrySettings)
-                .environment(resumeSnapshotStore)
                 .environment(hazelViewModel)
                 .environment(budgetTemplateViewModel)
                 .environment(monthlyMoneyViewModel)
                 .environment(moneySettingsViewModel)
                 .environment(memberNamesHelper)
                 .environment(scrambleModeEnvironment)
+                .environment(appBootManager)
                 .environment(savingsGoalsViewModel)
                 .modelContainer(LocalDataManager.shared.container)
                 .onOpenURL { url in
