@@ -119,6 +119,12 @@ final class BudgetViewModel {
         !budgets(in: month).isEmpty
     }
 
+    func budgetRows(in month: Date) -> [Budget] {
+        budgets(in: month).sorted {
+            $0.category.localizedCaseInsensitiveCompare($1.category) == .orderedAscending
+        }
+    }
+
     func budget(for category: String, in month: Date) -> Budget? {
         budgets(in: month).first { $0.category.caseInsensitiveCompare(category) == .orderedSame }
     }
@@ -222,7 +228,7 @@ final class BudgetViewModel {
 
         do {
             for budget in copyable {
-                try await budgetService.upsertBudget(
+                _ = try await budgetService.upsertBudget(
                     UpsertBudget(
                         homeID: homeId,
                         category: budget.category,

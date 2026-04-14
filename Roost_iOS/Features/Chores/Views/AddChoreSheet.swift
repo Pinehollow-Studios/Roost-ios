@@ -5,11 +5,13 @@ struct AddChoreSheet: View {
     let partnerName: String?
     let myUserId: UUID
     let partnerUserId: UUID?
-    let suggestedRooms: [String]
+    let rooms: [Room]
+    let roomGroups: [RoomGroup]
     let onAdd: (String, String?, UUID?, String, Date?, String?) async -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var focusedField: Field?
 
     @State private var title = ""
     @State private var description = ""
@@ -19,10 +21,15 @@ struct AddChoreSheet: View {
     @State private var dueDate = Date()
     @State private var room = ""
     @State private var isSaving = false
-    @State private var hasAnimatedIn = false
+    @State private var hasAppeared = false
+
+    private enum Field {
+        case title
+        case description
+    }
 
     private let frequencies = [
-        ("once", "One-off"),
+        ("once", "Once"),
         ("daily", "Daily"),
         ("weekly", "Weekly"),
         ("monthly", "Monthly")
@@ -33,192 +40,519 @@ struct AddChoreSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: Spacing.xl) {
-                    RoostSheetHeader(
-                        title: "Add Chore",
-                        subtitle: "Set up the task once so the household can act on it right away."
-                    ) {
-                        dismiss()
-                    }
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                    .addChoreEntrance(at: 0, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                    RoostAddSection(
-                        title: "Chore",
-                        helper: "Write the task the way you want it to appear in the household plan."
-                    ) {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            RoostTextField(title: "e.g. Take bins out", text: $title)
-                            RoostTextField(title: "Optional description", text: $description)
-                        }
-                    }
-                    .addChoreEntrance(at: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
+                choreBlock
+                    .addChoreEntrance(at: 1, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                    RoostAddSection(title: "Assigned to") {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.sm), count: 2), spacing: Spacing.sm) {
-                            RoostAddChoiceChip(title: myName, isSelected: assignment == "me") {
-                                assignment = "me"
-                            }
+                roomBlock
+                    .addChoreEntrance(at: 2, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                            if let partnerName {
-                                RoostAddChoiceChip(title: partnerName, isSelected: assignment == "partner") {
-                                    assignment = "partner"
-                                }
-                            }
+                assignmentBlock
+                    .addChoreEntrance(at: 3, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                            RoostAddChoiceChip(title: "Unassigned", isSelected: assignment == "unassigned") {
-                                assignment = "unassigned"
-                            }
-                        }
-                    }
-                    .addChoreEntrance(at: 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
+                frequencyBlock
+                    .addChoreEntrance(at: 4, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                    RoostAddSection(title: "Frequency") {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.sm), count: 2), spacing: Spacing.sm) {
-                            ForEach(frequencies, id: \.0) { option in
-                                RoostAddChoiceChip(title: option.1, isSelected: frequency == option.0) {
-                                    frequency = option.0
-                                }
-                            }
-                        }
-                    }
-                    .addChoreEntrance(at: 2, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
+                scheduleBlock
+                    .addChoreEntrance(at: 5, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
 
-                    RoostAddSection(title: "Schedule") {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            HStack(spacing: Spacing.sm) {
-                                RoostAddChoiceChip(title: "Due date", isSelected: includeDueDate) {
-                                    includeDueDate = true
-                                }
-                                RoostAddChoiceChip(title: "No date", isSelected: !includeDueDate) {
-                                    includeDueDate = false
-                                }
-                            }
-
-                            if includeDueDate {
-                                DatePicker("Due on", selection: $dueDate, displayedComponents: .date)
-                                    .font(.roostBody)
-                                    .foregroundStyle(Color.roostForeground)
-                                    .padding(.horizontal, Spacing.md)
-                                    .frame(height: DesignSystem.Size.inputHeight)
-                                    .background(Color.roostInput, in: RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous)
-                                            .stroke(Color.roostHairline, lineWidth: 1)
-                                    )
-                                    .tint(.roostPrimary)
-                            }
-                        }
-                    }
-                    .addChoreEntrance(at: 3, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
-
-                    RoostAddSection(
-                        title: "Room",
-                        helper: suggestedRooms.isEmpty ? "No rooms have been set up yet." : "Suggested from the rooms already in your home."
-                    ) {
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            RoostTextField(title: "Optional room", text: $room)
-
-                            if !suggestedRooms.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: Spacing.sm) {
-                                        ForEach(suggestedRooms, id: \.self) { suggestedRoom in
-                                            RoostAddCapsuleChip(title: suggestedRoom, isSelected: room == suggestedRoom) {
-                                                room = suggestedRoom
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .addChoreEntrance(at: 4, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
-
-                    RoostAddPreviewCard {
-                        HStack(alignment: .top, spacing: Spacing.md) {
-                            RoostListControl(
-                                state: .idle,
-                                tint: .roostPrimary,
-                                size: 40
-                            )
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(trimmedTitle.isEmpty ? "Your chore title" : trimmedTitle)
-                                    .font(.roostLabel)
-                                    .foregroundStyle(Color.roostForeground)
-                                Text(previewAssignment)
-                                    .font(.roostMeta)
-                                    .foregroundStyle(Color.roostMutedForeground)
-                                if let roomValue {
-                                    Text(roomValue)
-                                        .font(.roostMeta)
-                                        .foregroundStyle(Color.roostPrimary)
-                                }
-                            }
-
-                            Spacer()
-
-                            Text(frequencyLabel)
-                                .font(.roostMeta)
-                                .foregroundStyle(Color.roostMutedForeground)
-                        }
-                        .padding(Spacing.md)
-                        .background(Color.roostBackground.opacity(0.55))
-                        .clipShape(RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous))
-                    }
-                    .addChoreEntrance(at: 5, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion)
-                }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.top, Spacing.md)
-                .padding(.bottom, 120)
+                notesBlock
+                    .addChoreEntrance(at: 6, hasAppeared: hasAppeared, reduceMotion: reduceMotion)
             }
-            .roostDisableVerticalBounce()
-            .roostAddDismissOnPullDown {
-                dismiss()
+            .padding(.horizontal, addChorePageInset)
+            .padding(.top, DesignSystem.Spacing.screenTop)
+            .padding(.bottom, 116)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = nil
+        }
+        .background(Color.roostBackground.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
+        .safeAreaInset(edge: .bottom) {
+            addBar
+        }
+        .task {
+            NotificationCenter.default.post(name: .roostTabBarHiddenChanged, object: true)
+            focusedField = .title
+            guard !reduceMotion else {
+                hasAppeared = true
+                return
             }
-            .background(Color.roostBackground.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .bottom) {
-                RoostAddBottomBar(
-                    actionTitle: "Add chore",
-                    isSaving: isSaving,
-                    isDisabled: !canSubmit
-                ) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Plan")
-                            .font(.roostMeta)
-                            .foregroundStyle(Color.roostMutedForeground)
-                        Text(trimmedTitle.isEmpty ? "Waiting for a chore" : trimmedTitle)
-                            .font(.roostLabel)
-                            .foregroundStyle(Color.roostForeground)
-                            .lineLimit(1)
-                    }
-                } action: {
-                    Task {
-                        isSaving = true
-                        await onAdd(
-                            trimmedTitle,
-                            descriptionValue,
-                            resolvedAssignedUserId,
-                            frequency,
-                            includeDueDate ? dueDate : nil,
-                            roomValue
-                        )
-                        isSaving = false
-                        dismiss()
-                    }
-                }
-            }
-            .task {
-                guard !reduceMotion else {
-                    hasAnimatedIn = true
-                    return
-                }
+            if !hasAppeared {
                 withAnimation(.roostSmooth) {
-                    hasAnimatedIn = true
+                    hasAppeared = true
                 }
             }
         }
+        .onDisappear {
+            NotificationCenter.default.post(name: .roostTabBarHiddenChanged, object: false)
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button {
+                dismiss()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Chores")
+                        .font(.roostLabel)
+                }
+                .foregroundStyle(addChoreAccent)
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(addChoreAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("ADD CHORE")
+                    .font(.roostMeta)
+                    .foregroundStyle(addChoreAccent)
+                    .tracking(1.0)
+
+                Text("New chore")
+                    .font(.roostTitle)
+                    .foregroundStyle(Color.roostForeground)
+            }
+        }
+    }
+
+    private var choreBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Task")
+
+            TextField("Take bins out", text: $title)
+                .font(.roostCardTitle)
+                .foregroundStyle(Color.roostForeground)
+                .textInputAutocapitalization(.sentences)
+                .disableAutocorrection(false)
+                .submitLabel(.next)
+                .focused($focusedField, equals: .title)
+                .onSubmit {
+                    focusedField = .description
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: 58)
+                .background(Color.roostCard, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(focusedField == .title ? addChoreAccent.opacity(0.62) : Color.roostHairline, lineWidth: focusedField == .title ? 1.5 : 1)
+                )
+        }
+    }
+
+    private var roomBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                sectionLabel("Room")
+                Spacer(minLength: 0)
+                Text(roomValue ?? "Optional")
+                    .font(.roostMeta)
+                    .foregroundStyle(roomValue == nil ? Color.roostMutedForeground : roomAccent)
+                    .lineLimit(1)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                if roomGroupChoices.isEmpty && roomChoices.isEmpty {
+                    Text("Add rooms in Settings to use them here.")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color.roostCard.opacity(0.72), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                } else {
+                    if !roomGroupChoices.isEmpty {
+                        roomChoiceSection("Groups", choices: roomGroupChoices, tint: groupAccent)
+                    }
+
+                    if !roomChoices.isEmpty {
+                        roomChoiceSection("Rooms", choices: roomChoices, tint: roomAccent)
+                    }
+
+                    Button {
+                        UISelectionFeedbackGenerator().selectionChanged()
+                        withAnimation(.roostEaseOut) {
+                            room = ""
+                        }
+                    } label: {
+                        Text("No room")
+                            .font(.roostMeta)
+                            .foregroundStyle(room.isEmpty ? Color.roostCard : Color.roostMutedForeground)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 34)
+                            .background(room.isEmpty ? addChoreAccent : Color.roostCard.opacity(0.76), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(room.isEmpty ? addChoreAccent.opacity(0.35) : Color.roostHairline, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+                }
+            }
+            .padding(12)
+            .background(
+                LinearGradient(
+                    colors: [roomAccent.opacity(0.18), groupAccent.opacity(0.11)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(roomAccent.opacity(0.34), lineWidth: 1)
+            )
+        }
+    }
+
+    private var assignmentBlock: some View {
+        compactSection(title: "Assigned to") {
+            LazyVGrid(columns: compactColumns, spacing: 8) {
+                choiceButton(
+                    title: myName,
+                    detail: "You",
+                    isSelected: assignment == "me",
+                    tint: addChoreAccent
+                ) {
+                    assignment = "me"
+                }
+
+                if let partnerName {
+                    choiceButton(
+                        title: partnerName,
+                        detail: "Partner",
+                        isSelected: assignment == "partner",
+                        tint: addChoreAccent
+                    ) {
+                        assignment = "partner"
+                    }
+                }
+
+                choiceButton(
+                    title: "Unassigned",
+                    detail: "Anyone",
+                    isSelected: assignment == "unassigned",
+                    tint: addChoreAccent
+                ) {
+                    assignment = "unassigned"
+                }
+            }
+        }
+    }
+
+    private var frequencyBlock: some View {
+        compactSection(title: "Repeats") {
+            LazyVGrid(columns: compactColumns, spacing: 8) {
+                ForEach(frequencies, id: \.0) { option in
+                    choiceButton(
+                        title: option.1,
+                        detail: repeatDetail(for: option.0),
+                        isSelected: frequency == option.0,
+                        tint: repeatAccent
+                    ) {
+                        frequency = option.0
+                    }
+                }
+            }
+        }
+    }
+
+    private var scheduleBlock: some View {
+        compactSection(title: "Due date") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    smallPill("Due", isSelected: includeDueDate, tint: dateAccent) {
+                        includeDueDate = true
+                    }
+                    smallPill("No date", isSelected: !includeDueDate, tint: dateAccent) {
+                        includeDueDate = false
+                    }
+                }
+
+                if includeDueDate {
+                    HStack(spacing: 8) {
+                        quickDateButton("Today", date: Date())
+                        quickDateButton("Tomorrow", date: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
+                        quickDateButton("Next week", date: Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date())
+                    }
+
+                    DatePicker("Date", selection: $dueDate, displayedComponents: .date)
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostForeground)
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .background(Color.roostCard, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(Color.roostHairline, lineWidth: 1)
+                        )
+                        .tint(dateAccent)
+                }
+            }
+        }
+    }
+
+    private var notesBlock: some View {
+        compactSection(title: "Notes") {
+            TextField("Optional details", text: $description, axis: .vertical)
+                .font(.roostBody)
+                .foregroundStyle(Color.roostForeground)
+                .textInputAutocapitalization(.sentences)
+                .disableAutocorrection(false)
+                .lineLimit(2...4)
+                .submitLabel(.done)
+                .focused($focusedField, equals: .description)
+                .onSubmit {
+                    focusedField = nil
+                }
+                .padding(12)
+                .frame(minHeight: 76, alignment: .topLeading)
+                .background(Color.roostCard, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(focusedField == .description ? addChoreAccent.opacity(0.54) : Color.roostHairline, lineWidth: focusedField == .description ? 1.5 : 1)
+                )
+        }
+    }
+
+    private var addBar: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(Color.roostHairline.opacity(0.65))
+                .frame(height: 1)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(roomValue ?? "No room")
+                        .font(.roostMeta)
+                        .foregroundStyle(roomValue == nil ? Color.roostMutedForeground : roomAccent)
+                        .lineLimit(1)
+
+                    Text(trimmedTitle.isEmpty ? "Waiting for a chore" : trimmedTitle)
+                        .font(.roostLabel)
+                        .foregroundStyle(Color.roostForeground)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Button {
+                    Task { await addAndClose() }
+                } label: {
+                    Text(isSaving ? "Adding" : "Add chore")
+                        .font(.roostLabel)
+                        .foregroundStyle(Color.roostCard)
+                        .padding(.horizontal, 18)
+                        .frame(height: 48)
+                        .background(canSubmit ? addChoreButtonAccent : Color.roostMutedForeground.opacity(0.34), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+                .disabled(!canSubmit)
+            }
+            .padding(.horizontal, addChorePageInset)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            .background(Color.roostBackground.opacity(0.98))
+        }
+    }
+
+    private func compactSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel(title)
+            content()
+        }
+        .padding(12)
+        .background(Color.roostCard.opacity(0.74), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
+    }
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.roostMeta)
+            .foregroundStyle(Color.roostMutedForeground)
+            .tracking(0.8)
+    }
+
+    private func choiceButton(
+        title: String,
+        detail: String,
+        isSelected: Bool,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.roostEaseOut) {
+                action()
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.roostLabel)
+                    .foregroundStyle(isSelected ? Color.roostCard : Color.roostForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(detail)
+                    .font(.roostMeta)
+                    .foregroundStyle(isSelected ? Color.roostCard.opacity(0.76) : Color.roostMutedForeground)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 50)
+            .padding(.horizontal, 12)
+            .background(isSelected ? tint : tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(isSelected ? tint.opacity(0.25) : tint.opacity(0.18), lineWidth: 1)
+            )
+        }
+        .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+    }
+
+    private func roomChoiceSection(_ title: String, choices: [RoomChoice], tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.roostMeta)
+                .foregroundStyle(Color.roostMutedForeground)
+
+            LazyVGrid(columns: compactColumns, spacing: 8) {
+                ForEach(choices) { choice in
+                    roomChoiceButton(choice, tint: tint)
+                }
+            }
+        }
+    }
+
+    private func roomChoiceButton(_ choice: RoomChoice, tint: Color) -> some View {
+        let selected = room.caseInsensitiveCompare(choice.name) == .orderedSame
+
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.roostEaseOut) {
+                room = selected ? "" : choice.name
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: choice.systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(selected ? Color.roostCard : tint)
+                    .frame(width: 28, height: 28)
+                    .background(selected ? Color.roostCard.opacity(0.14) : tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(choice.name)
+                        .font(.roostLabel)
+                        .foregroundStyle(selected ? Color.roostCard : Color.roostForeground)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Text(choice.detail)
+                        .font(.roostMeta)
+                        .foregroundStyle(selected ? Color.roostCard.opacity(0.76) : Color.roostMutedForeground)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 50)
+            .background(selected ? tint : Color.roostCard.opacity(0.82), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(selected ? tint.opacity(0.35) : tint.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+    }
+
+    private func smallPill(_ title: String, isSelected: Bool, tint: Color, action: @escaping () -> Void) -> some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.roostEaseOut) {
+                action()
+            }
+        } label: {
+            Text(title)
+                .font(.roostMeta)
+                .foregroundStyle(isSelected ? Color.roostCard : Color.roostForeground)
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(isSelected ? tint : tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(isSelected ? tint.opacity(0.28) : tint.opacity(0.18), lineWidth: 1)
+                )
+        }
+        .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+    }
+
+    private func quickDateButton(_ title: String, date: Date) -> some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.roostEaseOut) {
+                dueDate = date
+                includeDueDate = true
+            }
+        } label: {
+            Text(title)
+                .font(.roostMeta)
+                .foregroundStyle(Calendar.current.isDate(dueDate, inSameDayAs: date) ? Color.roostCard : Color.roostForeground)
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+                .background(
+                    Calendar.current.isDate(dueDate, inSameDayAs: date) ? dateAccent : dateAccent.opacity(0.09),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(dateAccent.opacity(0.18), lineWidth: 1)
+                )
+        }
+        .buttonStyle(AddChorePressStyle(reduceMotion: reduceMotion))
+    }
+
+    private func repeatDetail(for value: String) -> String {
+        switch value {
+        case "daily":
+            return "Every day"
+        case "weekly":
+            return "Each week"
+        case "monthly":
+            return "Each month"
+        default:
+            return "No repeat"
+        }
+    }
+
+    private func addAndClose() async {
+        guard canSubmit else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.68)
+        isSaving = true
+        focusedField = nil
+        await onAdd(
+            trimmedTitle,
+            descriptionValue,
+            resolvedAssignedUserId,
+            frequency,
+            includeDueDate ? dueDate : nil,
+            roomValue
+        )
+        isSaving = false
+        dismiss()
     }
 
     private var trimmedTitle: String {
@@ -246,41 +580,96 @@ struct AddChoreSheet: View {
         }
     }
 
-    private var previewAssignment: String {
-        switch assignment {
-        case "me":
-            return "Assigned to \(myName)"
-        case "partner":
-            return "Assigned to \(partnerName ?? "Partner")"
-        default:
-            return "Unassigned"
+    private var roomChoices: [RoomChoice] {
+        rooms.map {
+            RoomChoice(
+                id: "room-\($0.id.uuidString)",
+                name: $0.name,
+                detail: "Room",
+                systemImage: mappedIcon($0.icon ?? "Home")
+            )
         }
     }
 
-    private var frequencyLabel: String {
-        frequencies.first(where: { $0.0 == frequency })?.1 ?? frequency.capitalized
+    private var roomGroupChoices: [RoomChoice] {
+        let systemChoices = RoomsData.systemGroups.map {
+            RoomChoice(
+                id: "system-\($0.name)",
+                name: $0.name,
+                detail: "Built-in",
+                systemImage: mappedIcon($0.icon)
+            )
+        }
+
+        let customChoices = roomGroups.map {
+            RoomChoice(
+                id: "group-\($0.id.uuidString)",
+                name: $0.name,
+                detail: groupDetail(for: $0),
+                systemImage: mappedIcon($0.icon ?? "Layers")
+            )
+        }
+
+        return systemChoices + customChoices
+    }
+
+    private var compactColumns: [GridItem] {
+        [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    }
+
+    private func groupDetail(for group: RoomGroup) -> String {
+        let count = group.memberRoomIDs.count
+        if count == 1 { return "1 room" }
+        return "\(count) rooms"
+    }
+
+    private func mappedIcon(_ icon: String) -> String {
+        LucideIcon.sfSymbolName(for: icon) ?? icon
+    }
+}
+
+private let addChorePageInset: CGFloat = 12
+private let addChoreAccent = Color.roostChoreTint
+private let roomAccent = Color.roostChoreTint
+private let groupAccent = Color.roostMoneyTint
+private let repeatAccent = Color.roostShoppingTint
+private let dateAccent = Color.roostShoppingTint
+private let addChoreButtonAccent = Color(hex: 0xD76446)
+
+private struct RoomChoice: Identifiable {
+    let id: String
+    let name: String
+    let detail: String
+    let systemImage: String
+}
+
+private struct AddChorePressStyle: ButtonStyle {
+    let reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.975 : 1)
+            .opacity(configuration.isPressed ? 0.86 : 1)
+            .animation(reduceMotion ? nil : DesignSystem.Motion.buttonPress, value: configuration.isPressed)
     }
 }
 
 private struct AddChoreEntranceModifier: ViewModifier {
     let index: Int
-    let hasAnimatedIn: Bool
+    let hasAppeared: Bool
     let reduceMotion: Bool
 
     func body(content: Content) -> some View {
         content
-            .opacity(hasAnimatedIn ? 1 : 0)
-            .offset(y: hasAnimatedIn || reduceMotion ? 0 : 18)
-            .animation(
-                reduceMotion ? nil : .roostSmooth.delay(Double(index) * 0.05),
-                value: hasAnimatedIn
-            )
+            .opacity(hasAppeared ? 1 : 0)
+            .offset(y: reduceMotion || hasAppeared ? 0 : CGFloat(14 + (index * 3)))
+            .animation(reduceMotion ? nil : .roostSmooth.delay(Double(index) * 0.035), value: hasAppeared)
     }
 }
 
 private extension View {
-    func addChoreEntrance(at index: Int, hasAnimatedIn: Bool, reduceMotion: Bool) -> some View {
-        modifier(AddChoreEntranceModifier(index: index, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+    func addChoreEntrance(at index: Int, hasAppeared: Bool, reduceMotion: Bool) -> some View {
+        modifier(AddChoreEntranceModifier(index: index, hasAppeared: hasAppeared, reduceMotion: reduceMotion))
     }
 }
 
@@ -291,7 +680,12 @@ private extension View {
             partnerName: "Alex",
             myUserId: UUID(),
             partnerUserId: UUID(),
-            suggestedRooms: ["Kitchen", "Bathroom", "Hallway"]
+            rooms: [
+                Room(id: UUID(), homeID: UUID(), name: "Kitchen", icon: "ChefHat"),
+                Room(id: UUID(), homeID: UUID(), name: "Bathroom", icon: "Bath"),
+                Room(id: UUID(), homeID: UUID(), name: "Hallway", icon: "DoorOpen")
+            ],
+            roomGroups: []
         ) { _, _, _, _, _, _ in }
     }
 }

@@ -39,59 +39,30 @@ struct DashboardView: View {
                         .padding(.top, 16)
                         .modifier(DashEntrance(index: 0, appeared: hasAppeared, reduceMotion: reduceMotion))
 
-                    // Balance + budget card
-                    financialBlock
+                    moneyStatusPanel
                         .padding(.top, 22)
                         .modifier(DashEntrance(index: 1, appeared: hasAppeared, reduceMotion: reduceMotion))
 
-                    // Shopping + Chores grid
-                    statGrid
-                        .padding(.top, 10)
+                    householdActionRail
+                        .padding(.top, 12)
                         .modifier(DashEntrance(index: 2, appeared: hasAppeared, reduceMotion: reduceMotion))
 
-                    // Today
-                    sectionHeader("Today")
-                        .padding(.top, 28)
-                        .modifier(DashEntrance(index: 3, appeared: hasAppeared, reduceMotion: reduceMotion))
-                    todayContent
-                        .padding(.top, 10)
-                        .modifier(DashEntrance(index: 3, appeared: hasAppeared, reduceMotion: reduceMotion))
-
-                    // Recently
-                    sectionHeader("Recently")
+                    householdBriefing
                         .padding(.top, 24)
-                        .modifier(DashEntrance(index: 4, appeared: hasAppeared, reduceMotion: reduceMotion))
-                    activityContent
-                        .padding(.top, 10)
+                        .modifier(DashEntrance(index: 3, appeared: hasAppeared, reduceMotion: reduceMotion))
+
+                    nextMovePanel
+                        .padding(.top, 14)
                         .modifier(DashEntrance(index: 4, appeared: hasAppeared, reduceMotion: reduceMotion))
 
-                    // Spending
-                    HStack(spacing: 0) {
-                        sectionHeader("Spending")
-                        Spacer(minLength: 0)
-                        if !viewModel.expenses.isEmpty {
-                            Button {
-                                notificationRouter.selectedTab = .money
-                            } label: {
-                                Text("See all")
-                                    .font(.roostLabel)
-                                    .foregroundStyle(Color.roostPrimary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.top, 24)
-                    .modifier(DashEntrance(index: 5, appeared: hasAppeared, reduceMotion: reduceMotion))
-
-                    spendingContent
-                        .padding(.top, 10)
+                    dashboardDigest
+                        .padding(.top, 14)
                         .modifier(DashEntrance(index: 5, appeared: hasAppeared, reduceMotion: reduceMotion))
 
                     Spacer(minLength: DesignSystem.Spacing.screenBottom + DesignSystem.Spacing.tabContentBottomInset + 12)
                 }
-                .padding(.horizontal, DesignSystem.Spacing.page)
-                .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, dashboardPageInset)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
 
             // Thin terracotta accent line — the page's signature
@@ -173,124 +144,207 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Financial block
+    // MARK: - Money status
 
-    private var financialBlock: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Balance
-            VStack(alignment: .leading, spacing: 5) {
-                Text(balanceLabel.uppercased())
-                    .font(.roostMeta)
-                    .foregroundStyle(balanceStatusColor)
-                    .tracking(0.9)
+    private var moneyStatusPanel: some View {
+        Button {
+            notificationRouter.selectedTab = .money
+        } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("MONEY STATUS")
+                            .font(.roostMeta)
+                            .foregroundStyle(Color.roostPrimary)
+                            .tracking(1.0)
 
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(balance == 0 ? "All clear" : formattedCurrency(abs(balance)))
-                        .font(.roostHero)
-                        .foregroundStyle(balance == 0 ? Color.roostMutedForeground : balanceAmountColor)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        Text(moneyStatusHeadline)
+                            .font(.roostHero)
+                            .foregroundStyle(Color.roostForeground)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+
+                        Text(moneyStatusCopy)
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     Spacer(minLength: 0)
 
-                    if balance != 0 {
-                        Button {
-                            notificationRouter.selectedTab = .money
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("Settle up")
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 10, weight: .bold))
-                            }
-                            .font(.roostLabel)
-                            .foregroundStyle(Color.roostPrimary)
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 6)
-                            .background(Color.roostPrimary.opacity(0.1), in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 3 }
-                    }
+                    budgetDial
+                        .frame(width: 78, height: 78)
                 }
 
-                Text(balanceSupportingText)
-                    .font(.roostCaption)
+                moneyStatusBar
+
+                HStack(spacing: 8) {
+                    moneyMiniStatus(
+                        title: "Spent",
+                        value: formattedCurrency(currentMonthBudget.spent),
+                        tint: Color.roostPrimary
+                    )
+
+                    moneyMiniStatus(
+                        title: "Left",
+                        value: formattedCurrency(remainingBudget),
+                        tint: remainingBudget <= 0 ? Color.roostDestructive : Color.roostSecondary
+                    )
+                }
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: balanceStatusIcon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(balanceStatusColor)
+                        .frame(width: 28, height: 28)
+                        .background(balanceStatusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(balanceLabel)
+                            .font(.roostLabel)
+                            .foregroundStyle(Color.roostForeground)
+
+                        Text(balanceSupportingText)
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 2)
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                ZStack(alignment: .topTrailing) {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
+                        .fill(Color.roostCard)
+
+                    Circle()
+                        .fill(Color.roostAccent.opacity(0.32))
+                        .frame(width: 118, height: 118)
+                        .blur(radius: 34)
+                        .offset(x: 34, y: -48)
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
+                    .stroke(Color.roostHairline, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.045), radius: 12, x: 0, y: 5)
+            .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous))
+        }
+        .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+    }
+
+    private var budgetDial: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.roostMuted, lineWidth: 8)
+
+            Circle()
+                .trim(from: 0, to: budgetProgressValue)
+                .stroke(
+                    budgetBarColor,
+                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(DesignSystem.Motion.progressFill, value: budgetProgressValue)
+
+            VStack(spacing: 1) {
+                Text("\(Int(budgetProgressValue * 100))%")
+                    .font(.roostLabel)
+                    .foregroundStyle(Color.roostForeground)
+
+                Text("used")
+                    .font(.roostMeta)
                     .foregroundStyle(Color.roostMutedForeground)
             }
+        }
+    }
 
-            // Divider
-            Rectangle()
-                .fill(Color.roostHairline)
-                .frame(height: 1)
-                .padding(.vertical, 14)
+    private var moneyStatusBar: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(currentMonthLabel)
+                    .font(.roostLabel)
+                    .foregroundStyle(Color.roostForeground)
 
-            // Budget
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(currentMonthLabel.uppercased())
-                        .font(.roostMeta)
-                        .foregroundStyle(Color.roostMutedForeground)
-                        .tracking(0.6)
-
-                    Spacer(minLength: 8)
-
-                    Group {
-                        Text(formattedCurrency(currentMonthBudget.spent))
-                            .foregroundStyle(Color.roostForeground) +
-                        Text("  /  \(formattedCurrency(currentMonthBudget.limit))")
-                            .foregroundStyle(Color.roostMutedForeground)
-                    }
-                    .font(.roostCaption)
-                }
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.roostMuted)
-                        Capsule()
-                            .fill(budgetBarColor)
-                            .frame(width: geo.size.width * budgetProgressValue)
-                            .animation(DesignSystem.Motion.progressFill, value: budgetProgressValue)
-                    }
-                }
-                .frame(height: 4)
+                Spacer(minLength: 8)
 
                 Text(budgetFootnote)
                     .font(.roostCaption)
                     .foregroundStyle(Color.roostMutedForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.roostMuted)
+
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(budgetBarColor)
+                        .frame(width: geo.size.width * budgetProgressValue)
+                        .animation(DesignSystem.Motion.progressFill, value: budgetProgressValue)
+                }
+            }
+            .frame(height: 7)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-        .background(Color.roostCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
-                .stroke(Color.roostHairline, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
 
-    // MARK: - Stat grid
+    private func moneyMiniStatus(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.roostMeta)
+                .foregroundStyle(Color.roostMutedForeground)
+                .tracking(0.7)
 
-    private var statGrid: some View {
+            Text(value)
+                .font(.roostLabel)
+                .foregroundStyle(Color.roostForeground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Household rail
+
+    private var householdActionRail: some View {
         HStack(spacing: 10) {
-            Button { notificationRouter.selectedTab = .shopping } label: {
-                statTile(
-                    icon: "cart",
-                    count: uncheckedShoppingItems.count,
-                    noun: "items",
+            Button {
+                notificationRouter.selectedTasksSection = .shopping
+                notificationRouter.selectedTab = .tasks
+            } label: {
+                householdTile(
+                    eyebrow: "Shop",
+                    title: "\(uncheckedShoppingItems.count) open",
                     detail: nextShopDetail,
+                    icon: "cart",
                     tint: Color.roostShoppingTint
                 )
             }
             .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
 
-            Button { notificationRouter.selectedTab = .life } label: {
-                statTile(
-                    icon: "checkmark.circle",
-                    count: openChoreCount,
-                    noun: "chores",
+            Button {
+                notificationRouter.selectedTasksSection = .chores
+                notificationRouter.selectedTab = .tasks
+            } label: {
+                householdTile(
+                    eyebrow: "Home",
+                    title: "\(openChoreCount) chores",
                     detail: choresDetail,
+                    icon: "checkmark.circle",
                     tint: choresDetailColor
                 )
             }
@@ -298,200 +352,346 @@ struct DashboardView: View {
         }
     }
 
-    private func statTile(
-        icon: String,
-        count: Int,
-        noun: String,
+    private func householdTile(
+        eyebrow: String,
+        title: String,
         detail: String,
+        icon: String,
         tint: Color
     ) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
-                .background(tint.opacity(0.12), in: Circle())
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center) {
+                Text(eyebrow.uppercased())
+                    .font(.roostMeta)
+                    .foregroundStyle(Color.roostMutedForeground)
+                    .tracking(0.8)
 
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text("\(count)")
-                        .font(.roostCardTitle)
-                        .foregroundStyle(Color.roostForeground)
-                    Text(noun)
-                        .font(.roostCaption)
-                        .foregroundStyle(Color.roostMutedForeground)
-                }
+                Spacer(minLength: 0)
+
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.roostCardTitle)
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
                 Text(detail)
                     .font(.roostCaption)
                     .foregroundStyle(tint)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.roostCard)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
+        .background(Color.roostCard.opacity(0.82), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous)
                 .stroke(Color.roostHairline, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.025), radius: 5, x: 0, y: 2)
     }
 
-    // MARK: - Section header (editorial style: label + extending line)
+    // MARK: - Briefing
 
-    private func sectionHeader(_ title: String) -> some View {
-        HStack(spacing: 10) {
+    private var householdBriefing: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("HOUSEHOLD RHYTHM")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .tracking(1.0)
+
+                    Text(householdRhythmHeadline)
+                        .font(.roostTitle)
+                        .foregroundStyle(Color.roostForeground)
+
+                    Text(householdRhythmCopy)
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                rhythmMark
+                    .frame(width: 52, height: 52)
+            }
+
+            HStack(spacing: 8) {
+                briefingMetric(title: "Budget", value: "\(Int(budgetProgressValue * 100))%", tint: budgetBarColor)
+                briefingMetric(title: "Chores", value: "\(openChoreCount)", tint: choresDetailColor)
+                briefingMetric(title: "Shop", value: "\(uncheckedShoppingItems.count)", tint: Color.roostShoppingTint)
+            }
+        }
+        .padding(16)
+        .background(Color.roostSurface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
+    }
+
+    private var rhythmMark: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.roostAccent.opacity(0.28))
+
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(rhythmColors[index])
+                    .frame(width: 6, height: CGFloat(16 + (index * 7)))
+                    .offset(x: CGFloat(index - 1) * 10, y: CGFloat(2 - index))
+            }
+        }
+    }
+
+    private func briefingMetric(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
             Text(title.uppercased())
                 .font(.roostMeta)
                 .foregroundStyle(Color.roostMutedForeground)
-                .tracking(1.0)
-                .fixedSize()
+                .tracking(0.7)
 
-            Rectangle()
-                .fill(Color.roostHairline)
-                .frame(height: 1)
+            Text(value)
+                .font(.roostCardTitle)
+                .foregroundStyle(Color.roostForeground)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
+    }
+
+    // MARK: - Next move
+
+    private var nextMovePanel: some View {
+        Button {
+            if let tasksSection = nextMove.tasksSection {
+                notificationRouter.selectedTasksSection = tasksSection
+            }
+            notificationRouter.selectedTab = nextMove.destination
+        } label: {
+            HStack(alignment: .center, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(nextMove.tint.opacity(0.14))
+                    Image(systemName: nextMove.icon)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(nextMove.tint)
+                }
+                .frame(width: 48, height: 48)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("NEXT BEST MOVE")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .tracking(1.0)
+
+                    Text(nextMove.title)
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Text(nextMove.detail)
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Text(nextMove.action)
+                    .font(.roostLabel)
+                    .foregroundStyle(nextMove.tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(nextMove.tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .padding(15)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                    .stroke(Color.roostHairline, lineWidth: 1)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+    }
+
+    // MARK: - Digest
+
+    private var dashboardDigest: some View {
+        VStack(spacing: 14) {
+            spendingDigest
+            activityDigest
         }
     }
 
-    // MARK: - Today
+    private var spendingDigest: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            digestHeader(
+                eyebrow: "SPEND SIGNALS",
+                title: spendingDigestTitle,
+                detail: spendingDigestDetail,
+                tint: Color.roostPrimary
+            )
 
-    @ViewBuilder
-    private var todayContent: some View {
-        if viewModel.isLoading && viewModel.chores.isEmpty {
-            VStack(spacing: 10) {
-                skeletonRow()
-                skeletonRow(fraction: 0.7)
-            }
-        } else if todayEntries.isEmpty {
-            Text("Nothing on the schedule today")
-                .font(.roostBody)
-                .foregroundStyle(Color.roostMutedForeground)
-                .padding(.vertical, 4)
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(todayEntries.enumerated()), id: \.element.id) { index, entry in
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(entry.color)
-                            .frame(width: 6, height: 6)
-
-                        Text(entry.title)
-                            .font(.roostBody)
-                            .foregroundStyle(Color.roostForeground)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text(entry.detail)
-                            .font(.roostCaption)
-                            .foregroundStyle(Color.roostMutedForeground)
-                    }
-                    .padding(.vertical, 10)
-
-                    if index < todayEntries.count - 1 {
-                        Divider().padding(.leading, 18)
+            if viewModel.isLoading && viewModel.expenses.isEmpty {
+                VStack(spacing: 8) {
+                    skeletonRow()
+                    skeletonRow(fraction: 0.72)
+                }
+            } else if topSpendingCategories.isEmpty {
+                emptyDigestLine("No spending logged this month yet.")
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(topSpendingCategories) { category in
+                        categorySignal(category)
                     }
                 }
             }
         }
+        .padding(16)
+        .background(Color.roostCard.opacity(0.9), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
     }
 
-    // MARK: - Activity
+    private var activityDigest: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            digestHeader(
+                eyebrow: "RECENT RHYTHM",
+                title: activityDigestTitle,
+                detail: activityDigestDetail,
+                tint: Color.roostSecondary
+            )
 
-    @ViewBuilder
-    private var activityContent: some View {
-        if viewModel.isLoading && viewModel.activityItems.isEmpty {
-            VStack(spacing: 10) {
-                skeletonRow()
-                skeletonRow(fraction: 0.85)
-                skeletonRow(fraction: 0.6)
-            }
-        } else if viewModel.recentActivity.isEmpty {
-            Text("No activity yet")
-                .font(.roostBody)
-                .foregroundStyle(Color.roostMutedForeground)
-                .padding(.vertical, 4)
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(viewModel.recentActivity.enumerated()), id: \.element.id) { index, item in
-                    HStack(spacing: 0) {
-                        Text(activityLine(for: item))
-                            .font(.roostBody)
-                            .foregroundStyle(Color.roostForeground)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(relativeTimestamp(item.createdAt))
-                            .font(.roostCaption)
-                            .foregroundStyle(Color.roostMutedForeground)
-                            .fixedSize()
-                            .padding(.leading, 12)
-                    }
-                    .padding(.vertical, 10)
-
-                    if index < viewModel.recentActivity.count - 1 {
-                        Divider()
+            if viewModel.isLoading && viewModel.activityItems.isEmpty {
+                VStack(spacing: 8) {
+                    skeletonRow()
+                    skeletonRow(fraction: 0.62)
+                }
+            } else if viewModel.recentActivity.isEmpty {
+                emptyDigestLine("New shared actions will collect here.")
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(viewModel.recentActivity.prefix(3))) { item in
+                        activitySignal(item)
                     }
                 }
             }
         }
+        .padding(16)
+        .background(Color.roostSurface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
     }
 
-    // MARK: - Spending
+    private func digestHeader(eyebrow: String, title: String, detail: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(eyebrow)
+                    .font(.roostMeta)
+                    .foregroundStyle(tint)
+                    .tracking(1.0)
 
-    @ViewBuilder
-    private var spendingContent: some View {
-        if viewModel.isLoading && viewModel.expenses.isEmpty {
-            VStack(spacing: 10) {
-                skeletonRow()
-                skeletonRow(fraction: 0.8)
+                Text(title)
+                    .font(.roostCardTitle)
+                    .foregroundStyle(Color.roostForeground)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.roostCaption)
+                    .foregroundStyle(Color.roostMutedForeground)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } else if viewModel.expenses.isEmpty {
-            Text("No expenses yet this month")
-                .font(.roostBody)
-                .foregroundStyle(Color.roostMutedForeground)
-                .padding(.vertical, 4)
-        } else {
-            VStack(spacing: 0) {
-                ForEach(Array(viewModel.expenses.prefix(3).enumerated()), id: \.element.id) { index, expense in
-                    Button { notificationRouter.selectedTab = .money } label: {
-                        HStack(alignment: .center, spacing: 0) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(expense.title)
-                                    .font(.roostBody.weight(.medium))
-                                    .foregroundStyle(Color.roostForeground)
-                                    .lineLimit(1)
 
-                                HStack(spacing: 5) {
-                                    Circle()
-                                        .fill(categoryColor(for: expense.category))
-                                        .frame(width: 5, height: 5)
-                                    Text(expense.category ?? "Other")
-                                        .font(.roostCaption)
-                                        .foregroundStyle(Color.roostMutedForeground)
-                                }
-                            }
-
-                            Spacer(minLength: 12)
-
-                            Text(formattedCurrency(expense.amount))
-                                .font(.roostBody.weight(.medium))
-                                .foregroundStyle(Color.roostForeground)
-                        }
-                        .padding(.vertical, 10)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(RowPressStyle(reduceMotion: reduceMotion))
-
-                    if index < min(viewModel.expenses.count, 3) - 1 {
-                        Divider()
-                    }
-                }
-            }
+            Spacer(minLength: 0)
         }
+    }
+
+    private func categorySignal(_ category: SpendingCategorySignal) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(category.name)
+                    .font(.roostLabel)
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
+
+                Text(formattedCurrency(category.amount))
+                    .font(.roostLabel)
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.roostMuted)
+                    .overlay(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(category.tint)
+                            .frame(width: geo.size.width * category.share)
+                    }
+            }
+            .frame(height: 6)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(category.tint.opacity(0.1), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
+    }
+
+    private func activitySignal(_ item: ActivityFeedItem) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(activityTint(for: item).opacity(0.18))
+                .frame(width: 24, height: 24)
+                .overlay {
+                    Circle()
+                        .fill(activityTint(for: item))
+                        .frame(width: 7, height: 7)
+                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(activityLine(for: item))
+                    .font(.roostBody)
+                    .foregroundStyle(Color.roostForeground)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(relativeTimestamp(item.createdAt))
+                    .font(.roostCaption)
+                    .foregroundStyle(Color.roostMutedForeground)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 3)
+    }
+
+    private func emptyDigestLine(_ text: String) -> some View {
+        Text(text)
+            .font(.roostBody)
+            .foregroundStyle(Color.roostMutedForeground)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Skeleton
@@ -513,11 +713,6 @@ struct DashboardView: View {
 
     private func memberName(for userId: UUID) -> String {
         homeManager.members.first(where: { $0.userID == userId })?.displayName ?? "Housemate"
-    }
-
-    private func myShare(for expense: ExpenseWithSplits) -> Decimal {
-        guard let myUserId else { return 0 }
-        return expense.expenseSplits.first(where: { $0.userID == myUserId })?.amount ?? expense.amount
     }
 
     private func activityLine(for item: ActivityFeedItem) -> String {
@@ -549,6 +744,14 @@ struct DashboardView: View {
         }
     }
 
+    private func activityTint(for item: ActivityFeedItem) -> Color {
+        let type = item.entityType?.lowercased() ?? item.action.lowercased()
+        if type.contains("expense") || type.contains("budget") { return .roostPrimary }
+        if type.contains("shopping") || type.contains("shop") { return .roostShoppingTint }
+        if type.contains("chore") || type.contains("calendar") { return .roostSecondary }
+        return .roostMutedForeground
+    }
+
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
         if hour < 12 { return "Good morning" }
@@ -563,7 +766,7 @@ struct DashboardView: View {
     private var balanceLabel: String {
         if balance > 0 { return "You're owed" }
         if balance < 0 { return "You owe" }
-        return "All settled up"
+        return "Balanced together"
     }
 
     private var balanceStatusColor: Color {
@@ -572,17 +775,46 @@ struct DashboardView: View {
         return .roostMutedForeground
     }
 
-    private var balanceAmountColor: Color {
-        if balance > 0 { return .roostSuccess }
-        if balance < 0 { return .roostDestructive }
-        return .roostMutedForeground
+    private var balanceStatusIcon: String {
+        if balance > 0 { return "arrow.down.left" }
+        if balance < 0 { return "arrow.up.right" }
+        return "checkmark"
     }
 
     private var balanceSupportingText: String {
         let partnerName = homeManager.partner?.displayName ?? "your partner"
-        if balance > 0 { return "\(partnerName) owes you \(formattedCurrency(abs(balance)))" }
-        if balance < 0 { return "You owe \(partnerName) \(formattedCurrency(abs(balance)))" }
-        return "You're all settled up with \(partnerName)"
+        if balance > 0 { return "\(partnerName) is \(formattedCurrency(abs(balance))) behind your share." }
+        if balance < 0 { return "You're \(formattedCurrency(abs(balance))) behind \(partnerName)'s share." }
+        return "Shared spending is even with \(partnerName)."
+    }
+
+    private var remainingBudget: Decimal {
+        guard currentMonthBudget.limit > 0 else { return 0 }
+        return max(currentMonthBudget.limit - currentMonthBudget.spent, 0)
+    }
+
+    private var moneyStatusHeadline: String {
+        guard currentMonthBudget.limit > 0 else { return "Set a calm monthly plan" }
+        if remainingBudget <= 0 { return "Budget needs a reset" }
+        if budgetProgressValue > 0.9 { return "\(formattedCurrency(remainingBudget)) left" }
+        if budgetProgressValue > 0.7 { return "Keep an eye on spend" }
+        return "\(formattedCurrency(remainingBudget)) left"
+    }
+
+    private var moneyStatusCopy: String {
+        guard currentMonthBudget.limit > 0 else {
+            return "Add a monthly budget so Roost can turn spending into a shared household signal."
+        }
+        if remainingBudget <= 0 {
+            return "This month is over plan. Open Money to adjust categories before it becomes noise."
+        }
+        if budgetProgressValue > 0.9 {
+            return "You're close to the limit. Small choices now will keep the household plan steady."
+        }
+        if budgetProgressValue > 0.7 {
+            return "Most of the plan is used. Roost is watching the month with you."
+        }
+        return "Your household budget has room. Recent spending and shared balance are in one place."
     }
 
     private var nextShopDetail: String {
@@ -611,6 +843,98 @@ struct DashboardView: View {
         return .roostSecondary
     }
 
+    private var householdRhythmHeadline: String {
+        if viewModel.overdueChores.count > 0 { return "Needs a little attention" }
+        if budgetProgressValue > 0.9 { return "Money is the thing today" }
+        if dueTodayChores.count > 0 || uncheckedShoppingItems.count > 0 { return "A few things are moving" }
+        return "Quiet and on track"
+    }
+
+    private var householdRhythmCopy: String {
+        if viewModel.overdueChores.count > 0 {
+            return "\(viewModel.overdueChores.count) overdue chore\(viewModel.overdueChores.count == 1 ? "" : "s") could unblock the day."
+        }
+        if budgetProgressValue > 0.9 {
+            return "The monthly plan is nearly used, so spend decisions matter more right now."
+        }
+        if dueTodayChores.count > 0 {
+            return "\(dueTodayChores.count) chore\(dueTodayChores.count == 1 ? "" : "s") due today, with money and shopping nearby."
+        }
+        if uncheckedShoppingItems.count > 0 {
+            return "\(uncheckedShoppingItems.count) shopping item\(uncheckedShoppingItems.count == 1 ? "" : "s") waiting for the next run."
+        }
+        return "No urgent signals. Roost will surface the next household decision when it matters."
+    }
+
+    private var rhythmColors: [Color] {
+        [budgetBarColor, choresDetailColor, Color.roostShoppingTint]
+    }
+
+    private var nextMove: DashboardNextMove {
+        if let chore = viewModel.overdueChores.first {
+            return DashboardNextMove(
+                title: chore.title,
+                detail: "Overdue chore. Clear it before the household queue grows.",
+                action: "Open",
+                icon: "exclamationmark",
+                tint: .roostDestructive,
+                destination: .tasks,
+                tasksSection: .chores
+            )
+        }
+
+        if budgetProgressValue > 0.9, currentMonthBudget.limit > 0 {
+            return DashboardNextMove(
+                title: "Review this month's spend",
+                detail: "\(budgetFootnote). A quick look now prevents end-of-month surprises.",
+                action: "Review",
+                icon: "chart.line.uptrend.xyaxis",
+                tint: .roostPrimary,
+                destination: .money,
+                tasksSection: nil
+            )
+        }
+
+        if let chore = dueTodayChores.first {
+            return DashboardNextMove(
+                title: chore.title,
+                detail: "Due today\(assigneeText(for: chore)).",
+                action: "Open",
+                icon: "checkmark",
+                tint: .roostSecondary,
+                destination: .tasks,
+                tasksSection: .chores
+            )
+        }
+
+        if uncheckedShoppingItems.count > 0 {
+            return DashboardNextMove(
+                title: "\(uncheckedShoppingItems.count) shopping item\(uncheckedShoppingItems.count == 1 ? "" : "s") waiting",
+                detail: "Next shop: \(nextShopDetail.lowercased()). Add or clear the list before you go.",
+                action: "Shop",
+                icon: "cart",
+                tint: .roostShoppingTint,
+                destination: .tasks,
+                tasksSection: .shopping
+            )
+        }
+
+        return DashboardNextMove(
+            title: "Check the shared budget",
+            detail: "Money, chores, and shopping are calm. A quick budget glance keeps it that way.",
+            action: "Money",
+            icon: "leaf",
+            tint: .roostPrimary,
+            destination: .money,
+            tasksSection: nil
+        )
+    }
+
+    private func assigneeText(for chore: Chore) -> String {
+        guard let assignedTo = chore.assignedTo else { return "" }
+        return " for \(memberName(for: assignedTo))"
+    }
+
     private var currentMonthLabel: String {
         Date.now.formatted(.dateTime.month(.wide))
     }
@@ -635,16 +959,61 @@ struct DashboardView: View {
         return "\(used)% used · \(formattedCurrency(remaining)) remaining"
     }
 
-    private var todayEntries: [TodayEntry] {
-        var entries: [TodayEntry] = dueTodayChores.prefix(3).map {
-            TodayEntry(title: $0.title, detail: "Chore", color: .roostSecondary)
+    private var currentMonthExpenses: [ExpenseWithSplits] {
+        viewModel.expenses.filter {
+            guard let date = $0.incurredOnDate else { return false }
+            return Calendar.current.isDate(date, equalTo: .now, toGranularity: .month)
         }
-        if entries.count < 3,
-           let date = homeManager.home?.nextShopDateParsed,
-           Calendar.current.isDateInToday(date) {
-            entries.append(TodayEntry(title: "Groceries run", detail: "Shopping", color: .roostPrimary))
+    }
+
+    private var topSpendingCategories: [SpendingCategorySignal] {
+        let grouped = Dictionary(grouping: currentMonthExpenses) { expense in
+            expense.category?.isEmpty == false ? expense.category! : "Other"
         }
-        return entries
+
+        let total = currentMonthExpenses.reduce(Decimal(0)) { $0 + $1.amount }
+        guard total > 0 else { return [] }
+
+        return grouped.map { name, expenses in
+            let amount = expenses.reduce(Decimal(0)) { $0 + $1.amount }
+            let amountNumber = NSDecimalNumber(decimal: amount).doubleValue
+            let totalNumber = NSDecimalNumber(decimal: total).doubleValue
+            return SpendingCategorySignal(
+                name: name,
+                amount: amount,
+                share: min(max(amountNumber / totalNumber, 0), 1),
+                tint: categoryColor(for: name)
+            )
+        }
+        .sorted {
+            NSDecimalNumber(decimal: $0.amount).compare(NSDecimalNumber(decimal: $1.amount)) == .orderedDescending
+        }
+        .prefix(3)
+        .map { $0 }
+    }
+
+    private var spendingDigestTitle: String {
+        guard !currentMonthExpenses.isEmpty else { return "No spend pattern yet" }
+        return "\(currentMonthExpenses.count) purchase\(currentMonthExpenses.count == 1 ? "" : "s") this month"
+    }
+
+    private var spendingDigestDetail: String {
+        guard let topCategory = topSpendingCategories.first else {
+            return "Add expenses and Roost will turn them into a simpler household signal."
+        }
+        return "\(topCategory.name) is leading at \(formattedCurrency(topCategory.amount))."
+    }
+
+    private var activityDigestTitle: String {
+        guard let item = viewModel.recentActivity.first else { return "Nothing new yet" }
+        return "\(memberName(for: item.userID)) moved things forward"
+    }
+
+    private var activityDigestDetail: String {
+        guard let item = viewModel.recentActivity.first else {
+            return "Shared actions will appear here when the household starts moving."
+        }
+        return relativeTimestamp(item.createdAt)
     }
 
     private func isDueToday(_ chore: Chore) -> Bool {
@@ -652,6 +1021,8 @@ struct DashboardView: View {
         return Calendar.current.isDateInToday(dueDate)
     }
 }
+
+private let dashboardPageInset: CGFloat = 12
 
 // MARK: - Shimmer modifier
 
@@ -698,15 +1069,6 @@ private struct TileButtonStyle: ButtonStyle {
     }
 }
 
-private struct RowPressStyle: ButtonStyle {
-    let reduceMotion: Bool
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.72 : 1)
-            .animation(reduceMotion ? nil : DesignSystem.Motion.buttonPress, value: configuration.isPressed)
-    }
-}
-
 // MARK: - Entrance animation
 
 private struct DashEntrance: ViewModifier {
@@ -725,11 +1087,20 @@ private struct DashEntrance: ViewModifier {
     }
 }
 
-// MARK: - Supporting types
-
-private struct TodayEntry: Identifiable {
+private struct SpendingCategorySignal: Identifiable {
     let id = UUID()
+    let name: String
+    let amount: Decimal
+    let share: Double
+    let tint: Color
+}
+
+private struct DashboardNextMove {
     let title: String
     let detail: String
-    let color: Color
+    let action: String
+    let icon: String
+    let tint: Color
+    let destination: NotificationRouter.AppTab
+    let tasksSection: NotificationRouter.TasksSection?
 }

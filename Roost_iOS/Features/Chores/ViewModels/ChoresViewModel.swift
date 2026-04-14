@@ -7,6 +7,7 @@ import Realtime
 final class ChoresViewModel {
     var chores: [Chore] = []
     var rooms: [Room] = []
+    var roomGroups: [RoomGroup] = []
     var completionHistoryByChoreId: [UUID: [ActivityFeedItem]] = [:]
     var isLoading = false
     var errorMessage: String?
@@ -35,12 +36,14 @@ final class ChoresViewModel {
     init(
         chores: [Chore] = [],
         rooms: [Room] = [],
+        roomGroups: [RoomGroup] = [],
         completionHistoryByChoreId: [UUID: [ActivityFeedItem]] = [:],
         isLoading: Bool = false,
         errorMessage: String? = nil
     ) {
         self.chores = chores
         self.rooms = rooms
+        self.roomGroups = roomGroups
         self.completionHistoryByChoreId = completionHistoryByChoreId
         self.isLoading = isLoading
         self.errorMessage = errorMessage
@@ -72,10 +75,12 @@ final class ChoresViewModel {
         do {
             async let choresResult = choreService.fetchChores(for: homeId)
             async let roomsResult = roomService.fetchRooms(for: homeId)
+            async let roomGroupsResult = roomService.fetchRoomGroups(for: homeId)
             async let activityResult = activityService.fetchActivity(for: homeId)
 
             chores = try await choresResult
             rooms = try await roomsResult
+            roomGroups = try await roomGroupsResult
             completionHistoryByChoreId = groupedCompletionHistory(from: try await activityResult)
         } catch {
             if !isCancellation(error) {

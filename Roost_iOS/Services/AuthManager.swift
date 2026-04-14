@@ -46,7 +46,7 @@ final class AuthManager {
         if url.host == "auth" {
             Task {
                 guard let client = try? SupabaseClientProvider.shared.requireClient() else { return }
-                try? await client.auth.session(from: url)
+                _ = try? await client.auth.session(from: url)
             }
             return
         }

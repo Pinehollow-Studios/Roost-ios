@@ -4,28 +4,23 @@ import Observation
 @MainActor
 @Observable
 final class NotificationRouter {
-    enum LifeSection: Hashable {
+    enum TasksSection: Hashable {
+        case shopping
         case chores
-        case calendar
-        case pinboard
     }
 
     enum AppTab: Hashable {
         case home
-        case shopping
+        case tasks
         case money
-        case life
-        case more
-    }
-
-    enum LifeDestination: Hashable {
         case calendar
-        case pinboard
+        case more
     }
 
     enum MoreDestination: Hashable {
         case household
         case rooms
+        case pinboard
         case budgetCategories
         case appearance
         case activity
@@ -40,7 +35,7 @@ final class NotificationRouter {
     }
 
     var selectedTab: AppTab = .home
-    var selectedLifeSection: LifeSection = .chores
+    var selectedTasksSection: TasksSection = .shopping
     var morePath: [MoreDestination] = []
 
     func handle(url: URL) {
@@ -58,7 +53,8 @@ final class NotificationRouter {
         morePath = []
 
         if normalizedType.contains("shopping") || normalizedType.contains("cart") {
-            selectedTab = .shopping
+            selectedTasksSection = .shopping
+            selectedTab = .tasks
             return
         }
 
@@ -67,15 +63,20 @@ final class NotificationRouter {
             return
         }
 
-        if normalizedType.contains("chore") || normalizedType.contains("calendar") {
-            selectedTab = .life
-            selectedLifeSection = normalizedType.contains("calendar") ? .calendar : .chores
+        if normalizedType.contains("chore") {
+            selectedTasksSection = .chores
+            selectedTab = .tasks
+            return
+        }
+
+        if normalizedType.contains("calendar") {
+            selectedTab = .calendar
             return
         }
 
         if normalizedType.contains("pinboard") {
-            selectedTab = .life
-            selectedLifeSection = .pinboard
+            selectedTab = .more
+            morePath = [.pinboard]
             return
         }
 

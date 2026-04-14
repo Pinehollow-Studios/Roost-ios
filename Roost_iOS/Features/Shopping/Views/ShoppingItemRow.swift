@@ -10,8 +10,14 @@ struct ShoppingItemRow: View {
     @State private var ringScale: CGFloat = 1
     @State private var ringOpacity: Double = 0
 
+    private let checkAnimation = Animation.spring(response: 0.44, dampingFraction: 0.7)
+    private let settleAnimation = Animation.spring(response: 0.5, dampingFraction: 0.82)
+
     var body: some View {
-        Button(action: onToggle) {
+        Button {
+            ShoppingHaptics.itemToggled(willCheck: !item.checked)
+            onToggle()
+        } label: {
             HStack(alignment: .center, spacing: DesignSystem.Spacing.row) {
                 checkbox
 
@@ -44,19 +50,19 @@ struct ShoppingItemRow: View {
         .buttonStyle(ShoppingRowButtonStyle(reduceMotion: reduceMotion))
         .onChange(of: item.checked) { _, newValue in
             guard newValue, !reduceMotion else { return }
-            withAnimation(DesignSystem.Motion.checkmark) {
-                checkScale = 1.22
+            withAnimation(checkAnimation) {
+                checkScale = 1.34
                 ringOpacity = 1
                 ringScale = 1
             }
             Task {
-                try? await Task.sleep(for: .milliseconds(140))
-                withAnimation(DesignSystem.Motion.checkmark) {
+                try? await Task.sleep(for: .milliseconds(230))
+                withAnimation(settleAnimation) {
                     checkScale = 1
                 }
-                withAnimation(.easeOut(duration: 0.3)) {
+                withAnimation(.easeOut(duration: 0.46)) {
                     ringOpacity = 0
-                    ringScale = 1.55
+                    ringScale = 1.8
                 }
             }
         }
@@ -73,7 +79,7 @@ struct ShoppingItemRow: View {
             // Fill
             Circle()
                 .fill(item.checked ? Color.roostPrimary : Color.clear)
-                .animation(DesignSystem.Motion.checkmark, value: item.checked)
+                .animation(checkAnimation, value: item.checked)
 
             // Border
             Circle()
@@ -81,7 +87,7 @@ struct ShoppingItemRow: View {
                     item.checked ? Color.roostPrimary : Color.roostHairline,
                     lineWidth: 2
                 )
-                .animation(DesignSystem.Motion.checkmark, value: item.checked)
+                .animation(checkAnimation, value: item.checked)
 
             if item.checked {
                 Image(systemName: "checkmark")
@@ -125,5 +131,25 @@ private struct ShoppingRowButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
             .opacity(configuration.isPressed ? 0.88 : 1)
             .animation(reduceMotion ? nil : DesignSystem.Motion.buttonPress, value: configuration.isPressed)
+    }
+}
+
+enum ShoppingHaptics {
+    @MainActor
+    static func itemToggled(willCheck: Bool) {
+        #if os(iOS)
+        guard !ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        let generator = UIImpactFeedbackGenerator(style: willCheck ? .heavy : .medium)
+        generator.prepare()
+        generator.impactOccurred(intensity: willCheck ? 0.92 : 0.68)
+        #endif
+    }
+
+    @MainActor
+    static func shopCompleted() {
+        #if os(iOS)
+        guard !ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
     }
 }

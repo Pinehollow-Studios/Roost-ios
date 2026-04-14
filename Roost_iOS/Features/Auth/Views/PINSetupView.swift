@@ -12,6 +12,8 @@ struct PINSetupView: View {
     @State private var shakeOffset: CGFloat = 0
     @State private var justEntered = false
     @State private var mismatchError = false
+    @State private var saveError: String?
+    @State private var didSavePIN = false
 
     enum Step { case choose, confirm, success }
 
@@ -104,6 +106,15 @@ struct PINSetupView: View {
                     .foregroundStyle(Color.roostDestructive)
                     .padding(.top, 12)
             }
+
+            if let saveError {
+                Text(saveError)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.roostDestructive)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 12)
+            }
         }
     }
 
@@ -122,9 +133,19 @@ struct PINSetupView: View {
                 .padding(.horizontal, 32)
         }
         .onAppear {
-            lockManager.setupPIN(firstPIN.map(String.init).joined())
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                dismiss()
+            guard !didSavePIN else { return }
+            do {
+                try lockManager.setupPIN(firstPIN.map(String.init).joined())
+                didSavePIN = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dismiss()
+                }
+            } catch {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                saveError = "Could not save your PIN. Make sure a device passcode is set and try again."
+                firstPIN = []
+                secondPIN = []
+                step = .choose
             }
         }
     }
@@ -141,13 +162,14 @@ struct PINSetupView: View {
             HStack(spacing: 16) {
                 Color.clear.frame(width: 72, height: 72)
                 KeypadButton(number: 0) { appendDigit(0) }
-                KeypadButton(icon: "delete.left") { deleteLastDigit() }
+                KeypadButton(systemImage: "delete.left") { deleteLastDigit() }
             }
         }
     }
 
     private func appendDigit(_ digit: Int) {
         guard currentPIN.count < 6 else { return }
+        saveError = nil
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         justEntered = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { justEntered = false }

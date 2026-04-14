@@ -194,6 +194,11 @@ final class BudgetTemplateViewModel {
         isLoading = false
     }
 
+    func loadRolloverHistory(homeId: UUID, month: Date) async {
+        guard let history = try? await service.fetchRolloverHistory(homeId: homeId, month: month.startOfMonth) else { return }
+        rolloverHistory = history
+    }
+
     func addLine(_ data: CreateBudgetLine) async throws {
         let created = try await service.addLine(data)
         templateLines.append(created)

@@ -176,7 +176,7 @@ struct RoomsView: View {
                                     }
                                 },
                                 onDelete: {
-                                    guard let homeId = homeManager.homeId else { return }
+                                    guard homeManager.homeId != nil else { return }
                                     Task { await viewModel.deleteRoom(room) }
                                 },
                                 onSave: { name, icon in

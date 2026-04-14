@@ -202,7 +202,7 @@ struct ExpensesView: View {
             !showingCategoryFilterSheet &&
             !showingPayerFilterSheet
         ) {
-            guard let homeId = homeManager.homeId else { return }
+            guard let homeId = await homeManager.homeId else { return }
             await viewModel.loadExpenses(homeId: homeId)
         }
         .task {
