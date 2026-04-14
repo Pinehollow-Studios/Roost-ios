@@ -117,7 +117,7 @@ struct CalendarView: View {
 
     private var pageHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            FigmaBackHeader(title: "Calendar")
+            FigmaBackHeader(title: "Calendar", accent: .roostPrimary)
 
             Text(pageSubtitle)
                 .font(.roostBody)

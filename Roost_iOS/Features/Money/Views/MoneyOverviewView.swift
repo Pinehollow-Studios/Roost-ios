@@ -280,7 +280,7 @@ struct MoneyOverviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: Spacing.md) {
 
-                FigmaBackHeader(title: "Overview")
+                FigmaBackHeader(title: "Overview", accent: .roostMoneyTint)
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
                 monthNavigator

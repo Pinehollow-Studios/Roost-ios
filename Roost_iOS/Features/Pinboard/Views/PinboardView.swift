@@ -124,7 +124,7 @@ struct PinboardView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                FigmaBackHeader(title: "Pinboard") {
+                FigmaBackHeader(title: "Pinboard", accent: .roostShoppingTint) {
                     RoostAddPageButton {
                         showingAddNotePage = true
                     }
