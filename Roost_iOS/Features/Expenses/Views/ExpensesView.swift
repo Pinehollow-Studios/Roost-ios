@@ -231,7 +231,7 @@ struct ExpensesView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.section) {
             if !embeddedInParentScroll {
-                FigmaPageHeader(title: "Expenses") {
+                FigmaPageHeader(title: "Expenses", accent: .roostMoneyTint) {
                     RoostAddPageButton {
                         showingAddSheet = true
                     }
@@ -323,7 +323,7 @@ struct ExpensesView: View {
                             .foregroundStyle(Color.roostMutedForeground)
 
                         Text(balanceHeadline)
-                            .font(DesignSystem.Typography.heroNumber)
+                            .font(.roostFinancialHero)
                             .foregroundStyle(balanceAccent)
                             .lineLimit(1)
                             .minimumScaleFactor(0.68)

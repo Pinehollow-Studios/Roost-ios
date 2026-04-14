@@ -2,15 +2,18 @@ import SwiftUI
 
 struct FigmaBackHeader<Accessory: View>: View {
     let title: String
+    let accent: Color?
     @ViewBuilder var accessory: Accessory
 
     @Environment(\.dismiss) private var dismiss
 
     init(
         title: String,
+        accent: Color? = nil,
         @ViewBuilder accessory: () -> Accessory = { EmptyView() }
     ) {
         self.title = title
+        self.accent = accent
         self.accessory = accessory()
     }
 
@@ -27,9 +30,17 @@ struct FigmaBackHeader<Accessory: View>: View {
             }
             .buttonStyle(.plain)
 
-            Text(title)
-                .font(.roostPageTitle)
-                .foregroundStyle(Color.roostForeground)
+            HStack(alignment: .center, spacing: 10) {
+                if let accent {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(accent)
+                        .frame(width: 3, height: 26)
+                }
+
+                Text(title)
+                    .font(.roostPageTitle)
+                    .foregroundStyle(Color.roostForeground)
+            }
 
             Spacer(minLength: 0)
 

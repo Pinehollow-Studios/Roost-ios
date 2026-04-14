@@ -100,7 +100,7 @@ struct SettleUpSheet: View {
             }
 
             Text(formattedAmount)
-                .font(.roostHero)
+                .font(.roostFinancialHero)
                 .foregroundStyle(Color.roostPrimary)
 
             Text("This records the payment and clears the current shared balance.")

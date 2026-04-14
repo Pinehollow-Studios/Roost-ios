@@ -199,7 +199,7 @@ struct MoneyBudgetsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    FigmaBackHeader(title: "Budgets") {
+                    FigmaBackHeader(title: "Budgets", accent: .roostMoneyTint) {
                         if isCurrentMonth {
                             Button {
                                 let entering = !editMode

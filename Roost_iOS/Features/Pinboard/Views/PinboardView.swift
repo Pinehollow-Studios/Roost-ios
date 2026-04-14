@@ -34,12 +34,12 @@ struct PinboardView: View {
                     Rectangle()
                         .fill(
                             LinearGradient(
-                                colors: [Color.roostShoppingTint.opacity(0.42), Color.roostShoppingTint.opacity(0.12)],
+                                colors: [Color.roostShoppingTint.opacity(0.72), Color.roostShoppingTint.opacity(0.28)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .frame(height: 2)
+                        .frame(height: 3)
                         .ignoresSafeArea(edges: .top)
                 }
             }
@@ -115,7 +115,8 @@ struct PinboardView: View {
         if embeddedInParentScroll {
             FigmaPageHeader(
                 title: "Pinboard",
-                subtitle: pinboardSubtitle
+                subtitle: pinboardSubtitle,
+                accent: .roostShoppingTint
             ) {
                 RoostAddPageButton {
                     showingAddNotePage = true
@@ -123,7 +124,7 @@ struct PinboardView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                FigmaBackHeader(title: "Pinboard") {
+                FigmaBackHeader(title: "Pinboard", accent: .roostShoppingTint) {
                     RoostAddPageButton {
                         showingAddNotePage = true
                     }

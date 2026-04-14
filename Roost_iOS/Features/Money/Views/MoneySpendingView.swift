@@ -190,7 +190,7 @@ struct MoneySpendingView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                FigmaBackHeader(title: "Spending") {
+                FigmaBackHeader(title: "Spending", accent: .roostMoneyTint) {
                     addExpenseButton
                 }
                 .padding(.horizontal, DesignSystem.Spacing.page)

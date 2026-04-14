@@ -96,12 +96,12 @@ struct ChoresView: View {
                 Rectangle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.roostChoreTint.opacity(0.42), Color.roostChoreTint.opacity(0.14)],
+                            colors: [Color.roostChoreTint.opacity(0.72), Color.roostChoreTint.opacity(0.28)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .frame(height: 2)
+                    .frame(height: 3)
                     .ignoresSafeArea(edges: .top)
             }
         }

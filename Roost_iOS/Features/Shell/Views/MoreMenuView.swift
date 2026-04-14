@@ -29,12 +29,12 @@ struct MoreMenuView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostPrimary.opacity(0.38), Color.roostPrimary.opacity(0.12)],
+                        colors: [Color.roostPrimary.opacity(0.65), Color.roostPrimary.opacity(0.25)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())
@@ -254,12 +254,12 @@ struct MoreSettingsView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostMoneyTint.opacity(0.34), Color.roostPrimary.opacity(0.10)],
+                        colors: [Color.roostPrimary.opacity(0.65), Color.roostPrimary.opacity(0.25)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())

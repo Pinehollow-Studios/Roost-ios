@@ -53,7 +53,7 @@ struct MoneyGoalsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                FigmaBackHeader(title: "Goals") {
+                FigmaBackHeader(title: "Goals", accent: .roostMoneyTint) {
                     addGoalButton
                 }
                 .padding(.horizontal, goalPageInset)

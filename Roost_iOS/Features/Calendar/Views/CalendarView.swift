@@ -32,11 +32,11 @@ struct CalendarView: View {
 
                     // Top accent line
                     LinearGradient(
-                        colors: [Color.roostPrimary, Color.roostPrimary.opacity(0)],
+                        colors: [Color.roostPrimary.opacity(0.72), Color.roostPrimary.opacity(0.28)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .frame(height: 2)
+                    .frame(height: 3)
                     .ignoresSafeArea(edges: .top)
                 }
             }
@@ -117,7 +117,7 @@ struct CalendarView: View {
 
     private var pageHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            FigmaBackHeader(title: "Calendar")
+            FigmaBackHeader(title: "Calendar", accent: .roostPrimary)
 
             Text(pageSubtitle)
                 .font(.roostBody)
