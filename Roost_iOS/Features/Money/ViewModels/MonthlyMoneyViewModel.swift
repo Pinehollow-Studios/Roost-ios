@@ -18,6 +18,9 @@ final class MonthlyMoneyViewModel {
     private var incomeSubscriptionId: UUID?
 
     @ObservationIgnored
+    private var memberIncomeSubscriptionId: UUID?
+
+    @ObservationIgnored
     private var subscribedHomeId: UUID?
 
     // MARK: - Computed
@@ -76,11 +79,19 @@ final class MonthlyMoneyViewModel {
 
     func startRealtime(homeId: UUID) async {
         if let existing = subscribedHomeId, existing != homeId { await stopRealtime() }
-        guard incomeSubscriptionId == nil else { return }
+        guard incomeSubscriptionId == nil, memberIncomeSubscriptionId == nil else { return }
         subscribedHomeId = homeId
 
         incomeSubscriptionId = await RealtimeManager.shared.subscribe(
             table: "household_income",
+            filter: .eq("home_id", value: homeId.uuidString)
+        ) { [weak self] in
+            guard let self, let hid = self.subscribedHomeId else { return }
+            await self.loadSummary(homeId: hid)
+        }
+
+        memberIncomeSubscriptionId = await RealtimeManager.shared.subscribe(
+            table: "home_members",
             filter: .eq("home_id", value: homeId.uuidString)
         ) { [weak self] in
             guard let self, let hid = self.subscribedHomeId else { return }
@@ -92,6 +103,10 @@ final class MonthlyMoneyViewModel {
         if let id = incomeSubscriptionId {
             await RealtimeManager.shared.unsubscribe(table: "household_income", callbackId: id)
             incomeSubscriptionId = nil
+        }
+        if let id = memberIncomeSubscriptionId {
+            await RealtimeManager.shared.unsubscribe(table: "home_members", callbackId: id)
+            memberIncomeSubscriptionId = nil
         }
         subscribedHomeId = nil
     }

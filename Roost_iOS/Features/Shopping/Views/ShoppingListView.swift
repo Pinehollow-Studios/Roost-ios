@@ -31,7 +31,7 @@ struct ShoppingListView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostShoppingTint.opacity(0.52), Color.roostShoppingTint.opacity(0.18)],
+                        colors: [Color.roostShoppingTint.opacity(0.42), Color.roostShoppingTint.opacity(0.14)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -194,7 +194,7 @@ struct ShoppingListView: View {
                             .foregroundStyle(nextShopAccent)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 6)
-                            .background(nextShopAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(nextShopAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                 }
 
@@ -219,7 +219,7 @@ struct ShoppingListView: View {
                     .fill(Color.roostCard)
 
                 Circle()
-                    .fill(Color.roostShoppingTint.opacity(0.18))
+                    .fill(Color.roostShoppingTint.opacity(0.11))
                     .frame(width: 124, height: 124)
                     .blur(radius: 32)
                     .offset(x: 40, y: -52)
@@ -310,7 +310,7 @@ struct ShoppingListView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(tint)
                     .frame(width: 38, height: 38)
-                    .background(tint.opacity(isProminent ? 0.16 : 0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(tint.opacity(isProminent ? 0.13 : 0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
@@ -330,7 +330,7 @@ struct ShoppingListView: View {
             .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
-                    .stroke(isProminent ? tint.opacity(0.24) : Color.roostHairline, lineWidth: 1)
+                    .stroke(isProminent ? tint.opacity(0.20) : Color.roostHairline, lineWidth: 1)
             )
             .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
         }
@@ -363,7 +363,7 @@ struct ShoppingListView: View {
                 HStack(alignment: .center, spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.roostShoppingTint.opacity(0.14))
+                            .fill(Color.roostShoppingTint.opacity(0.11))
                         Image(systemName: categoryIcon(for: group.category))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Color.roostShoppingTint)
@@ -387,7 +387,7 @@ struct ShoppingListView: View {
                             .font(.roostLabel)
                             .foregroundStyle(Color.roostShoppingTint)
                             .frame(width: 30, height: 30)
-                            .background(Color.roostShoppingTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(Color.roostShoppingTint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                         Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
                             .font(.system(size: 11, weight: .bold))
@@ -441,7 +441,7 @@ struct ShoppingListView: View {
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.roostSuccess)
                     .frame(width: 30, height: 30)
-                    .background(Color.roostSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Color.roostSuccess.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(uncheckedItems.isEmpty ? "List complete" : "\(checkedItems.count) in basket")
@@ -464,7 +464,7 @@ struct ShoppingListView: View {
                     .foregroundStyle(Color.roostSuccess)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
-                    .background(Color.roostSuccess.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Color.roostSuccess.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(ShoppingPressStyle(reduceMotion: reduceMotion))
             .disabled(isClearingCompleted)
@@ -497,7 +497,7 @@ struct ShoppingListView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Color.roostSuccess)
                 .frame(width: 40, height: 40)
-                .background(Color.roostSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.roostSuccess.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
@@ -536,7 +536,7 @@ struct ShoppingListView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.roostShoppingTint)
                 .frame(width: 40, height: 40)
-                .background(Color.roostShoppingTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.roostShoppingTint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)

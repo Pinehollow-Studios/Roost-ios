@@ -16,7 +16,7 @@ struct FigmaTabBar: View {
                             ZStack {
                                 if selectedTab == item.tab {
                                     Capsule()
-                                        .fill(Color.roostPrimary.opacity(0.11))
+                                        .fill(item.accent.opacity(0.11))
                                 }
 
                                 tabIcon(for: item)
@@ -39,7 +39,7 @@ struct FigmaTabBar: View {
                             .font(.roostTabLabel)
                             .foregroundStyle(
                                 selectedTab == item.tab
-                                    ? Color.roostPrimary
+                                    ? item.accent
                                     : Color.roostMutedForeground
                             )
                     }
@@ -82,14 +82,14 @@ struct FigmaTabBar: View {
             HStack(spacing: 3) {
                 ForEach(0..<3, id: \.self) { _ in
                     Circle()
-                        .fill(selectedTab == item.tab ? Color.roostPrimary : Color.roostMutedForeground)
+                        .fill(selectedTab == item.tab ? item.accent : Color.roostMutedForeground)
                         .frame(width: 4, height: 4)
                 }
             }
         } else {
             Image(systemName: selectedTab == item.tab ? item.activeSymbol : item.symbol)
                 .font(.system(size: 20, weight: selectedTab == item.tab ? .semibold : .regular))
-                .foregroundStyle(selectedTab == item.tab ? Color.roostPrimary : Color.roostMutedForeground)
+                .foregroundStyle(selectedTab == item.tab ? item.accent : Color.roostMutedForeground)
         }
     }
 }
@@ -97,17 +97,17 @@ struct FigmaTabBar: View {
 private extension FigmaTabBar {
     enum TabItem: CaseIterable {
         case home
-        case tasks
         case money
-        case calendar
+        case shopping
+        case chores
         case more
 
         var tab: NotificationRouter.AppTab {
             switch self {
             case .home: .home
-            case .tasks: .tasks
             case .money: .money
-            case .calendar: .calendar
+            case .shopping: .shopping
+            case .chores: .chores
             case .more: .more
             }
         }
@@ -115,9 +115,9 @@ private extension FigmaTabBar {
         var title: String {
             switch self {
             case .home: "Home"
-            case .tasks: "Tasks"
             case .money: "Money"
-            case .calendar: "Calendar"
+            case .shopping: "Shop"
+            case .chores: "Chores"
             case .more: "More"
             }
         }
@@ -125,9 +125,9 @@ private extension FigmaTabBar {
         var symbol: String {
             switch self {
             case .home: "house"
-            case .tasks: "checklist"
             case .money: "creditcard"
-            case .calendar: "calendar"
+            case .shopping: "cart"
+            case .chores: "checkmark.circle"
             case .more: "ellipsis"
             }
         }
@@ -135,18 +135,30 @@ private extension FigmaTabBar {
         var activeSymbol: String {
             switch self {
             case .home: "house.fill"
-            case .tasks: "checkmark.circle.fill"
             case .money: "creditcard.fill"
-            case .calendar: "calendar"
+            case .shopping: "cart.fill"
+            case .chores: "checkmark.circle.fill"
             case .more: "ellipsis"
             }
         }
 
-        var badge: Int? {
+        var accent: Color {
             switch self {
-            case .tasks: 3
-            default: nil
+            case .home:
+                return .roostPrimary
+            case .money:
+                return .roostMoneyTint
+            case .shopping:
+                return .roostShoppingTint
+            case .chores:
+                return .roostChoreTint
+            case .more:
+                return .roostPrimary
             }
+        }
+
+        var badge: Int? {
+            nil
         }
 
         var badgeColor: Color {

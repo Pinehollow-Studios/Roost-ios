@@ -71,6 +71,23 @@ struct HouseholdIncomeService {
         return members.first(where: { $0.userID != currentUserId })?.personalIncome
     }
 
+    /// Fetch the live household income total from home_members.
+    /// This is the authoritative app-side value for Money screens because
+    /// household_income is a monthly cache that may not exist yet or may lag.
+    func fetchCombinedMemberIncome(homeId: UUID) async throws -> Decimal {
+        let client = try SupabaseClientProvider.shared.requireClient()
+        let members: [HomeMember] = try await client
+            .from("home_members")
+            .select()
+            .eq("home_id", value: homeId)
+            .execute()
+            .value
+
+        return members.reduce(Decimal(0)) { total, member in
+            total + (member.personalIncome ?? 0)
+        }
+    }
+
     /// Calculates the combined income from all home members and upserts it
     /// to the household_income table. Called whenever either partner updates
     /// their individual income.

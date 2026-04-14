@@ -5,11 +5,10 @@ struct PinboardView: View {
     @Environment(HomeManager.self) private var homeManager
     @Environment(PinboardViewModel.self) private var sharedViewModel
     @Environment(ChoresViewModel.self) private var choresViewModel
-    @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var hasAnimatedIn = false
-    @State private var showingComposer = false
+    @State private var showingAddNotePage = false
     private let embeddedInParentScroll: Bool
 
     private var viewModel: PinboardViewModel { sharedViewModel }
@@ -27,14 +26,28 @@ struct PinboardView: View {
             if embeddedInParentScroll {
                 content
             } else {
-                ScrollView(showsIndicators: false) {
-                    content
+                ZStack(alignment: .top) {
+                    ScrollView(showsIndicators: false) {
+                        content
+                    }
+
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.roostShoppingTint.opacity(0.42), Color.roostShoppingTint.opacity(0.12)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 2)
+                        .ignoresSafeArea(edges: .top)
                 }
             }
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
-        .conditionalRefreshable(!showingComposer) {
+        .swipeBackEnabled()
+        .conditionalRefreshable(!showingAddNotePage) {
             guard let homeId, let currentUserId else { return }
             await viewModel.load(homeId: homeId, userId: currentUserId)
         }
@@ -47,7 +60,7 @@ struct PinboardView: View {
                 hasAnimatedIn = true
             }
         }
-        .sheet(isPresented: $showingComposer) {
+        .navigationDestination(isPresented: $showingAddNotePage) {
             AddPinboardNoteSheet(
                 currentMemberName: currentMember?.displayName,
                 partnerName: partner?.displayName,
@@ -72,29 +85,108 @@ struct PinboardView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.section) {
-            FigmaPageHeader(
-                title: "Pinboard",
-                subtitle: "\(viewModel.liveCount) live · \(viewModel.unseenCount) unseen"
-            ) {
-                RoostAddPageButton {
-                    showingComposer = true
-                }
-            }
-            .padding(.horizontal, DesignSystem.Spacing.page)
-            .modifier(PinboardEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+        VStack(alignment: .leading, spacing: 0) {
+            pageHeader
+                .padding(.horizontal, DesignSystem.Spacing.page)
+                .modifier(PinboardEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+
+            statusRail
+                .padding(.horizontal, DesignSystem.Spacing.page)
+                .padding(.top, 14)
+                .modifier(PinboardEntranceModifier(index: 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
             filterRow
                 .padding(.horizontal, DesignSystem.Spacing.page)
-                .modifier(PinboardEntranceModifier(index: 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                .padding(.top, 12)
+                .modifier(PinboardEntranceModifier(index: 2, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
             notesSection
-                .modifier(PinboardEntranceModifier(index: 2, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                .padding(.top, 18)
+                .modifier(PinboardEntranceModifier(index: 3, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
         }
-        .padding(.top, embeddedInParentScroll ? 0 : DesignSystem.Spacing.screenTop)
+        .padding(.top, 0)
         .padding(.bottom, embeddedInParentScroll ? 0 : 120)
         .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
         .frame(maxWidth: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var pageHeader: some View {
+        if embeddedInParentScroll {
+            FigmaPageHeader(
+                title: "Pinboard",
+                subtitle: pinboardSubtitle
+            ) {
+                RoostAddPageButton {
+                    showingAddNotePage = true
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                FigmaBackHeader(title: "Pinboard") {
+                    RoostAddPageButton {
+                        showingAddNotePage = true
+                    }
+                }
+
+                Text(pinboardSubtitle)
+                    .font(.roostBody)
+                    .foregroundStyle(Color.roostMutedForeground)
+                    .padding(.leading, 56)
+            }
+        }
+    }
+
+    private var pinboardSubtitle: String {
+        "\(viewModel.liveCount) live · \(viewModel.unseenCount) unseen"
+    }
+
+    private var statusRail: some View {
+        HStack(spacing: DesignSystem.Spacing.inline) {
+            pinboardStat(
+                value: "\(viewModel.liveCount)",
+                label: "Live",
+                icon: "pin.fill",
+                tint: Color.roostShoppingTint
+            )
+
+            pinboardStat(
+                value: "\(viewModel.unseenCount)",
+                label: "Unseen",
+                icon: "eye.slash.fill",
+                tint: viewModel.unseenCount > 0 ? Color.roostPrimary : Color.roostMutedForeground
+            )
+        }
+    }
+
+    private func pinboardStat(value: String, label: String, icon: String, tint: Color) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.roostLabel)
+                    .foregroundStyle(Color.roostForeground)
+
+                Text(label)
+                    .font(.roostMeta)
+                    .foregroundStyle(Color.roostMutedForeground)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
     }
 
     private var filterRow: some View {
@@ -113,78 +205,92 @@ struct PinboardView: View {
     }
 
     private var notesSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             if viewModel.isLoading && viewModel.notes.isEmpty {
-                ProgressView()
-                    .tint(Color.roostPrimary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, DesignSystem.Spacing.section)
+                loadingState
+                    .padding(.horizontal, DesignSystem.Spacing.page)
             } else if viewModel.filteredNotes.isEmpty {
                 EmptyStateView(
                     icon: "pin",
                     title: "No live notes",
-                    message: "Everything on the board right now is coming from your shared home in Supabase. Add a note to pin the first one here.",
+                    message: "Add a note to keep something visible for the household.",
                     actionTitle: "Add Note"
                 ) {
-                    showingComposer = true
+                    showingAddNotePage = true
                 }
                 .padding(.horizontal, DesignSystem.Spacing.page)
             } else {
-                ForEach(Array(viewModel.filteredNotes.enumerated()), id: \.element.id) { index, note in
-                    noteCard(note)
-                        .padding(.horizontal, DesignSystem.Spacing.page)
-                        .modifier(PinboardEntranceModifier(index: index + 4, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                RoostSectionSurface(emphasis: .subtle) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SectionHeader(title: sectionTitle)
+
+                        ForEach(Array(viewModel.filteredNotes.enumerated()), id: \.element.id) { index, note in
+                            noteRow(note)
+                                .modifier(PinboardEntranceModifier(index: index + 4, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+
+                            if note.id != viewModel.filteredNotes.last?.id {
+                                Divider()
+                                    .overlay(Color.roostHairline)
+                                    .padding(.leading, 42)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, DesignSystem.Spacing.page)
+            }
+        }
+    }
+
+    private var loadingState: some View {
+        RoostSectionSurface(emphasis: .subtle) {
+            VStack(spacing: 14) {
+                ForEach(0..<4, id: \.self) { _ in
+                    LoadingSkeletonView()
+                        .frame(height: 76)
                 }
             }
         }
     }
 
-    private func noteCard(_ note: PinboardNote) -> some View {
+    private var sectionTitle: String {
+        switch viewModel.selectedFilter {
+        case .all, .active:
+            return "Pinned notes"
+        case .expiring:
+            return "Expiring soon"
+        case .permanent:
+            return "Permanent notes"
+        }
+    }
+
+    private func noteRow(_ note: PinboardNote) -> some View {
         let isExpanded = viewModel.expandedNoteIDs.contains(note.id)
-        let isLong = note.content.count > 120
-        let displayText = isLong && !isExpanded ? String(note.content.prefix(120)) + "..." : note.content
+        let isLong = note.content.count > 150
+        let displayText = isLong && !isExpanded ? String(note.content.prefix(150)) + "..." : note.content
         let author = member(for: note.authorID)
         let authorName = author?.displayName ?? "Someone"
         let hasAcknowledged = note.isAcknowledged(by: currentUserId)
         let canAcknowledge = note.authorID != currentUserId && !hasAcknowledged
 
-        return ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
-                .fill(hasAcknowledged ? Color.roostCard : Color.roostPrimary.opacity(0.03))
-                .overlay(
-                    RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
-                        .stroke(Color.roostBorderLight, lineWidth: 1)
-                )
-
-            if !hasAcknowledged {
-                UnevenRoundedRectangle(
-                    topLeadingRadius: RoostTheme.cornerRadius,
-                    bottomLeadingRadius: RoostTheme.cornerRadius
-                )
-                .fill(Color.roostPrimary)
+        return HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(hasAcknowledged ? Color.roostHairline : Color.roostPrimary)
                 .frame(width: 3)
-            }
+                .padding(.vertical, 4)
 
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-                HStack(alignment: .center, spacing: DesignSystem.Spacing.inline) {
-                    HStack(spacing: 8) {
-                        MemberAvatar(
-                            label: authorName,
-                            color: settingsViewModel.avatarColor(for: author?.avatarColor),
-                            icon: LucideIcon.sfSymbolName(for: author?.avatarIcon),
-                            size: .sm
-                        )
-
-                        Text(authorName)
-                            .font(.roostCaption.weight(.medium))
-                            .foregroundStyle(Color.roostForeground)
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(authorName)
+                        .font(.roostCaption.weight(.medium))
+                        .foregroundStyle(Color.roostForeground)
+                        .lineLimit(1)
 
                     Spacer(minLength: 0)
 
                     HStack(spacing: 6) {
                         Image(systemName: note.targetScope == .everyone ? "person.2" : "person")
                             .font(.system(size: 11, weight: .medium))
+
                         Text(audienceLabel(for: note))
                             .font(.roostMeta)
                     }
@@ -194,7 +300,7 @@ struct PinboardView: View {
                 Text(displayText)
                     .font(.roostBody)
                     .foregroundStyle(Color.roostForeground)
-                    .lineSpacing(3)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if isLong {
@@ -210,7 +316,11 @@ struct PinboardView: View {
                     .buttonStyle(.plain)
                 }
 
-                HStack(spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
+                    Text(createdLabel(for: note))
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+
                     if let expires = note.expiresLabel {
                         FigmaChip(
                             title: "Expires \(expires)",
@@ -237,7 +347,7 @@ struct PinboardView: View {
                             Text("Acknowledge")
                                 .font(.roostCaption)
                                 .foregroundStyle(Color.roostPrimary)
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, 10)
                                 .frame(height: 44)
                                 .contentShape(Rectangle())
                         }
@@ -245,8 +355,9 @@ struct PinboardView: View {
                     }
                 }
             }
-            .padding(DesignSystem.Spacing.card)
         }
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
         .contextMenu {
             if note.authorID == currentUserId,
                let homeId = homeId,
@@ -261,6 +372,7 @@ struct PinboardView: View {
             }
         }
     }
+
     private func member(for userID: UUID?) -> HomeMember? {
         guard let userID else { return nil }
         return homeManager.members.first { $0.userID == userID }
@@ -282,6 +394,16 @@ struct PinboardView: View {
             }
             return "For self"
         }
+    }
+
+    private func createdLabel(for note: PinboardNote) -> String {
+        if Calendar.current.isDateInToday(note.createdAt) {
+            return note.createdAt.formatted(.dateTime.hour().minute())
+        }
+        if Calendar.current.isDateInYesterday(note.createdAt) {
+            return "Yesterday"
+        }
+        return note.createdAt.formatted(.dateTime.day().month(.abbreviated))
     }
 
     private func composerTargetUserID(for scope: PinboardTargetScope, currentUserId: UUID) -> UUID? {

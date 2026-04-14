@@ -1,6 +1,6 @@
 import SwiftUI
 
-private let moneyPageInset: CGFloat = DesignSystem.Spacing.page
+private let moneyPageInset: CGFloat = 12
 
 // MARK: - MoneyHomeView
 
@@ -37,7 +37,7 @@ struct MoneyHomeView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostMoneyTint.opacity(0.52), Color.roostMoneyTint.opacity(0.18)],
+                        colors: [Color.roostMoneyTint.opacity(0.42), Color.roostMoneyTint.opacity(0.14)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -125,10 +125,10 @@ struct MoneyHomeView: View {
                     .padding(.top, 16)
                     .padding(.horizontal, moneyPageInset)
 
-                VStack(alignment: .leading, spacing: Spacing.lg) {
+                VStack(alignment: .leading, spacing: 12) {
 
-                    // Section 1 — Ring arc summary card
-                    ringCard
+                    // Section 1 — Monthly money hero
+                    moneyHero
 
                     // Section 2 — Balance card (conditional)
                     if partnerBalance != 0 {
@@ -190,53 +190,116 @@ struct MoneyHomeView: View {
                 .foregroundStyle(Color.roostCard)
                 .padding(.horizontal, 13)
                 .frame(height: 38)
-                .background(Color.roostPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(Color.roostMoneyTint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Section 1: Ring card
+    // MARK: - Section 1: Monthly hero
 
-    private var ringCard: some View {
-        RoostCard {
+    private var moneyHero: some View {
+        VStack(alignment: .leading, spacing: 14) {
             if let error = summaryVM.error, summaryVM.summary == nil {
                 ringErrorState(error: error)
             } else {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack(alignment: .center, spacing: Spacing.lg) {
-                    ringArc
-                    if hideBalances && !temporarilyRevealed {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Amounts hidden")
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color.roostMutedForeground)
-                            Text("Tap the ring to reveal for 5 seconds.")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.roostMutedForeground)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        statRows
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("MONTHLY MONEY")
+                            .font(.roostMeta)
+                            .foregroundStyle(Color.roostMoneyTint)
+                            .tracking(1.0)
+
+                        Text(moneyHeroTitle)
+                            .font(.system(size: 30, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
                     }
+
+                    Spacer(minLength: 0)
+
+                    ringArc
+                        .frame(width: 76, height: 76)
+                }
+
+                if hideBalances && !temporarilyRevealed {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Amounts hidden")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Tap the ring to reveal for 5 seconds.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    statRows
+                }
+
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(moneyPaceTitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 8)
+
+                        Text(moneyPaceChipTitle)
+                            .font(.roostMeta)
+                            .foregroundStyle(moneyPaceAccent)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(moneyPaceAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+
+                    GeometryReader { geo in
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(Color.roostMuted)
+                            .overlay(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(arcColour)
+                                    .frame(width: geo.size.width * pctSpentProgress)
+                                    .animation(DesignSystem.Motion.progressFill, value: pctSpentProgress)
+                            }
+                    }
+                    .frame(height: 7)
                 }
 
                 if temporarilyRevealed {
                     Text("Hiding in \(countdown)s")
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                 }
 
                 if let insight = hazelInsight, !hideBalances || temporarilyRevealed {
                     Text(insight)
-                        .font(.system(size: 12))
-                        .italic()
+                        .font(.system(size: 11))
                         .foregroundStyle(Color.roostMutedForeground)
-                        .padding(.top, 4)
+                        .padding(.top, 2)
                 }
             }
-            } // end error/content branch
         }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
+                    .fill(Color.roostCard)
+
+                Circle()
+                    .fill(Color.roostMoneyTint.opacity(0.11))
+                    .frame(width: 124, height: 124)
+                    .blur(radius: 32)
+                    .offset(x: 40, y: -52)
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.035), radius: 10, x: 0, y: 4)
     }
 
     private func ringErrorState(error: Error) -> some View {
@@ -265,12 +328,10 @@ struct MoneyHomeView: View {
 
     private var ringArc: some View {
         ZStack {
-            // Track
             Circle()
-                .stroke(Color(.systemFill), lineWidth: 8)
-                .frame(width: 80, height: 80)
+                .stroke(Color.roostMuted, lineWidth: 8)
+                .frame(width: 76, height: 76)
 
-            // Fill arc
             Circle()
                 .trim(from: 0, to: arcProgress)
                 .stroke(
@@ -278,10 +339,9 @@ struct MoneyHomeView: View {
                     style: StrokeStyle(lineWidth: 8, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .frame(width: 80, height: 80)
+                .frame(width: 76, height: 76)
                 .animation(.easeOut(duration: 0.8), value: arcProgress)
 
-            // Center label
             if hideBalances && !temporarilyRevealed {
                 VStack(spacing: 4) {
                     Image(systemName: "eye.slash")
@@ -308,7 +368,7 @@ struct MoneyHomeView: View {
                     .foregroundStyle(Color.roostMoneyTint)
             }
         }
-        .frame(width: 80, height: 80)
+        .frame(width: 76, height: 76)
         .contentShape(Circle())
         .onTapGesture {
             guard hideBalances && !temporarilyRevealed else { return }
@@ -451,11 +511,17 @@ struct MoneyHomeView: View {
     // MARK: - Section 3: Nav cards
 
     private var navCardsSection: some View {
-        VStack(spacing: 8) {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10)
+            ],
+            spacing: 10
+        ) {
             NavigationLink { MoneyOverviewView() } label: {
-                MoneyNavCard(
+                MoneyNavTile(
                     icon: "chart.bar.fill",
-                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconBg: Color.roostMoneyTint.opacity(0.10),
                     iconColour: Color.roostMoneyTint,
                     title: "Overview",
                     subtitle: overviewSubtitle
@@ -464,9 +530,9 @@ struct MoneyHomeView: View {
             .buttonStyle(.plain)
 
             NavigationLink { MoneySpendingView() } label: {
-                MoneyNavCard(
+                MoneyNavTile(
                     icon: "cart.fill",
-                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconBg: Color.roostMoneyTint.opacity(0.10),
                     iconColour: Color.roostMoneyTint,
                     title: "Spending",
                     subtitle: spendingSubtitle
@@ -475,9 +541,9 @@ struct MoneyHomeView: View {
             .buttonStyle(.plain)
 
             NavigationLink { MoneyBudgetsView() } label: {
-                MoneyNavCard(
+                MoneyNavTile(
                     icon: "list.bullet.rectangle.fill",
-                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconBg: Color.roostMoneyTint.opacity(0.10),
                     iconColour: Color.roostMoneyTint,
                     title: "Budgets",
                     subtitle: budgetsSubtitle,
@@ -489,9 +555,9 @@ struct MoneyHomeView: View {
             .buttonStyle(.plain)
 
             NavigationLink { MoneyGoalsView() } label: {
-                MoneyNavCard(
+                MoneyNavTile(
                     icon: "target",
-                    iconBg: Color.roostMoneyTint.opacity(0.12),
+                    iconBg: Color.roostMoneyTint.opacity(0.10),
                     iconColour: Color.roostMoneyTint,
                     title: "Goals",
                     subtitle: "What are you saving toward?"
@@ -667,6 +733,50 @@ struct MoneyHomeView: View {
         return "This month"
     }
 
+    private var moneyHeroTitle: String {
+        if hideBalances && !temporarilyRevealed {
+            return "Hidden"
+        }
+        guard let summary = summaryVM.summary, summary.hasIncome else {
+            return "Set income"
+        }
+        let remaining = summary.income - summary.actualSpend
+        if remaining < 0 {
+            return "\(scramble.format(abs(remaining), symbol: sym)) over"
+        }
+        return "\(scramble.format(remaining, symbol: sym)) left"
+    }
+
+    private var moneyPaceTitle: String {
+        guard let summary = summaryVM.summary, summary.hasIncome else {
+            return "Income needed"
+        }
+        let spent = Int(NSDecimalNumber(decimal: summary.pctSpent).doubleValue)
+        return "\(spent)% spent this month"
+    }
+
+    private var moneyPaceChipTitle: String {
+        guard let summary = summaryVM.summary, summary.hasIncome else {
+            return "Not set"
+        }
+        let remaining = summary.income - summary.actualSpend
+        if remaining < 0 { return "Over" }
+        let daysLeft = max(0, summaryVM.daysInMonth - summaryVM.daysElapsed)
+        return "\(daysLeft)d left"
+    }
+
+    private var moneyPaceAccent: Color {
+        guard let summary = summaryVM.summary, summary.hasIncome else {
+            return Color.roostMoneyTint
+        }
+        let remaining = summary.income - summary.actualSpend
+        if remaining < 0 { return Color.roostDestructive }
+        let ratio = NSDecimalNumber(decimal: summary.pctSpent).doubleValue
+        if ratio > 90 { return Color.roostDestructive }
+        if ratio > 75 { return Color.roostWarning }
+        return Color.roostMoneyTint
+    }
+
     private var myUserId: UUID? { homeManager.currentUserId }
     private var partnerUserId: UUID? { homeManager.partner?.userID }
 
@@ -715,7 +825,7 @@ struct MoneyHomeView: View {
     }
 
     private var arcColour: Color {
-        guard summaryVM.summary?.hasIncome == true else { return Color(.systemFill) }
+        guard summaryVM.summary?.hasIncome == true else { return Color.roostMoneyTint }
         switch pctSpentDouble {
         case ..<70:   return Color(hex: 0x9DB19F)
         case 70..<90: return Color(hex: 0xE6A563)
@@ -918,9 +1028,9 @@ struct MoneyHomeView: View {
     }
 }
 
-// MARK: - MoneyNavCard
+// MARK: - MoneyNavTile
 
-private struct MoneyNavCard: View {
+private struct MoneyNavTile: View {
     let icon: String
     let iconBg: Color
     let iconColour: Color
@@ -929,37 +1039,35 @@ private struct MoneyNavCard: View {
     var subtitleColour: Color = .roostMutedForeground
 
     var body: some View {
-        HStack(spacing: Spacing.md) {
+        VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(iconColour)
-                .frame(width: 36, height: 36)
+                .frame(width: 34, height: 34)
                 .background(iconBg, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.roostForeground)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(subtitleColour)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.roostMutedForeground)
+            Spacer(minLength: 0)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
         .background(DesignSystem.Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
                 .stroke(DesignSystem.Palette.border, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
     }
 }
 

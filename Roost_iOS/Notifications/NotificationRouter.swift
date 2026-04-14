@@ -11,9 +11,9 @@ final class NotificationRouter {
 
     enum AppTab: Hashable {
         case home
-        case tasks
         case money
-        case calendar
+        case shopping
+        case chores
         case more
     }
 
@@ -31,6 +31,8 @@ final class NotificationRouter {
         case profile
         case account
         case money
+        case calendar
+        case settings
         case security
     }
 
@@ -54,7 +56,7 @@ final class NotificationRouter {
 
         if normalizedType.contains("shopping") || normalizedType.contains("cart") {
             selectedTasksSection = .shopping
-            selectedTab = .tasks
+            selectedTab = .shopping
             return
         }
 
@@ -65,12 +67,13 @@ final class NotificationRouter {
 
         if normalizedType.contains("chore") {
             selectedTasksSection = .chores
-            selectedTab = .tasks
+            selectedTab = .chores
             return
         }
 
         if normalizedType.contains("calendar") {
-            selectedTab = .calendar
+            selectedTab = .more
+            morePath = [.calendar]
             return
         }
 
