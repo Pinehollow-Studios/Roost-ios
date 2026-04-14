@@ -81,13 +81,28 @@ struct ChoresView: View {
     }
 
     var body: some View {
-        Group {
-            if embeddedInParentScroll {
-                content
-            } else {
-                ScrollView(showsIndicators: false) {
+        ZStack(alignment: .top) {
+            Group {
+                if embeddedInParentScroll {
                     content
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        content
+                    }
                 }
+            }
+
+            if !embeddedInParentScroll {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.roostChoreTint.opacity(0.42), Color.roostChoreTint.opacity(0.14)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 2)
+                    .ignoresSafeArea(edges: .top)
             }
         }
         .background(Color.roostBackground.ignoresSafeArea())
@@ -258,7 +273,7 @@ struct ChoresView: View {
                         .foregroundStyle(nextDueAccent)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 6)
-                        .background(nextDueAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(nextDueAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
 
                 GeometryReader { geo in
@@ -282,7 +297,7 @@ struct ChoresView: View {
                     .fill(Color.roostCard)
 
                 Circle()
-                    .fill(choresAccent.opacity(0.18))
+                    .fill(choresAccent.opacity(0.11))
                     .frame(width: 124, height: 124)
                     .blur(radius: 32)
                     .offset(x: 40, y: -52)
@@ -373,7 +388,7 @@ struct ChoresView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(tint)
                     .frame(width: 38, height: 38)
-                    .background(tint.opacity(isProminent ? 0.16 : 0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(tint.opacity(isProminent ? 0.13 : 0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
@@ -393,7 +408,7 @@ struct ChoresView: View {
             .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
-                    .stroke(isProminent ? tint.opacity(0.24) : Color.roostHairline, lineWidth: 1)
+                    .stroke(isProminent ? tint.opacity(0.20) : Color.roostHairline, lineWidth: 1)
             )
             .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
         }
@@ -449,7 +464,7 @@ struct ChoresView: View {
                 HStack(alignment: .center, spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(group.tint.opacity(0.14))
+                            .fill(group.tint.opacity(0.11))
                         Image(systemName: group.icon)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(group.tint)
@@ -473,7 +488,7 @@ struct ChoresView: View {
                             .font(.roostLabel)
                             .foregroundStyle(group.tint)
                             .frame(width: 30, height: 30)
-                            .background(group.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(group.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                         Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
                             .font(.system(size: 11, weight: .bold))
@@ -531,7 +546,7 @@ struct ChoresView: View {
                             .foregroundStyle(tint)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5)
-                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
 
                         Text(choreMetaLine(for: chore))
                             .font(.roostCaption)
@@ -600,7 +615,7 @@ struct ChoresView: View {
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.roostSuccess)
                     .frame(width: 30, height: 30)
-                    .background(Color.roostSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Color.roostSuccess.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(activeChores.isEmpty ? "Chores complete" : "\(completedChores.count) done")
@@ -623,7 +638,7 @@ struct ChoresView: View {
                     .foregroundStyle(Color.roostSuccess)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
-                    .background(Color.roostSuccess.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Color.roostSuccess.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(ChoresPressStyle(reduceMotion: reduceMotion))
             .disabled(isClearingCompleted)
@@ -654,7 +669,7 @@ struct ChoresView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Color.roostSuccess)
                 .frame(width: 40, height: 40)
-                .background(Color.roostSuccess.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.roostSuccess.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
@@ -693,7 +708,7 @@ struct ChoresView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(choreAddAccent)
                 .frame(width: 40, height: 40)
-                .background(choreAddAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(choreAddAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
@@ -908,7 +923,7 @@ private struct ChoreSuggestionsSheet: View {
                         HStack {
                             Spacer()
                             ProgressView()
-                                .tint(Color.roostPrimary)
+                                .tint(choresAccent)
                             Spacer()
                         }
                         .padding(.top, Spacing.xl)
@@ -930,7 +945,7 @@ private struct ChoreSuggestionsSheet: View {
                                     HStack(spacing: Spacing.md) {
                                         Image(systemName: added ? "checkmark.circle.fill" : "plus.circle")
                                             .font(.system(size: 20, weight: .medium))
-                                            .foregroundStyle(added ? Color.roostSuccess : Color.roostPrimary)
+                                            .foregroundStyle(added ? Color.roostSuccess : choresAccent)
 
                                         Text(title)
                                             .font(.roostBody)

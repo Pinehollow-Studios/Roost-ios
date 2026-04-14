@@ -11,6 +11,7 @@ struct MoneySettingsView: View {
     @State private var myIncomeText = ""
     @State private var myIncomeVisible = false
     @State private var partnerIncome: Decimal? = nil
+    @State private var householdIncomeTotal: Decimal? = nil
     @State private var incomeSetAt: Date? = nil
     @State private var showSavedConfirmation = false
     @State private var isSavingIncome = false
@@ -33,6 +34,7 @@ struct MoneySettingsView: View {
 
     private var myIncome: Decimal { Decimal(string: myIncomeText.replacingOccurrences(of: ",", with: "")) ?? 0 }
     private var combinedIncome: Decimal {
+        if let householdIncomeTotal { return householdIncomeTotal }
         if let partner = partnerIncome { return myIncome + partner }
         return myIncome
     }
@@ -427,8 +429,12 @@ struct MoneySettingsView: View {
             myIncomeVisible = member.incomeVisibleToPartner ?? false
         }
 
-        // Partner income (only if both have consented)
-        partnerIncome = try? await incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
+        // Total household income is used across Money screens. Individual partner
+        // income still respects visibility rules in this settings panel.
+        async let total = incomeService.fetchCombinedMemberIncome(homeId: homeId)
+        async let partner = incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
+        householdIncomeTotal = try? await total
+        partnerIncome = try? await partner
 
         // Sync settings
         defaultSplit = settingsVM.settings.defaultExpenseSplit
@@ -453,6 +459,8 @@ struct MoneySettingsView: View {
             // Refresh member to get updated incomeSetAt
             await homeManager.refreshCurrentHome()
             incomeSetAt = homeManager.currentMember?.incomeSetAt
+            householdIncomeTotal = try? await incomeService.fetchCombinedMemberIncome(homeId: homeId)
+            partnerIncome = try? await incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
             withAnimation { showSavedConfirmation = true }
         } catch {
             // Silently fail — UI stays as-is
@@ -461,7 +469,9 @@ struct MoneySettingsView: View {
     }
 
     private func saveIncomeVisibility(visible: Bool) async {
-        guard let userId = homeManager.currentUserId else { return }
+        guard let homeId = homeManager.homeId,
+              let userId = homeManager.currentUserId else { return }
         try? await incomeService.setIncomeVisibility(userId: userId, visible: visible)
+        partnerIncome = try? await incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
     }
 }

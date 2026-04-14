@@ -111,10 +111,6 @@ struct DashboardView: View {
                 Text("\(greeting), \(currentUserName)")
                     .font(.roostLargeGreeting)
                     .foregroundStyle(Color.roostForeground)
-
-                Text(todayDateLabel)
-                    .font(.roostBody)
-                    .foregroundStyle(Color.roostMutedForeground)
             }
 
             Spacer(minLength: 0)
@@ -163,11 +159,6 @@ struct DashboardView: View {
                             .foregroundStyle(Color.roostForeground)
                             .lineLimit(2)
                             .minimumScaleFactor(0.78)
-
-                        Text(moneyStatusCopy)
-                            .font(.roostCaption)
-                            .foregroundStyle(Color.roostMutedForeground)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer(minLength: 0)
@@ -203,11 +194,6 @@ struct DashboardView: View {
                         Text(balanceLabel)
                             .font(.roostLabel)
                             .foregroundStyle(Color.roostForeground)
-
-                        Text(balanceSupportingText)
-                            .font(.roostCaption)
-                            .foregroundStyle(Color.roostMutedForeground)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer(minLength: 0)
@@ -324,12 +310,11 @@ struct DashboardView: View {
         HStack(spacing: 10) {
             Button {
                 notificationRouter.selectedTasksSection = .shopping
-                notificationRouter.selectedTab = .tasks
+                notificationRouter.selectedTab = .shopping
             } label: {
                 householdTile(
                     eyebrow: "Shop",
                     title: "\(uncheckedShoppingItems.count) open",
-                    detail: nextShopDetail,
                     icon: "cart",
                     tint: Color.roostShoppingTint
                 )
@@ -338,12 +323,11 @@ struct DashboardView: View {
 
             Button {
                 notificationRouter.selectedTasksSection = .chores
-                notificationRouter.selectedTab = .tasks
+                notificationRouter.selectedTab = .chores
             } label: {
                 householdTile(
                     eyebrow: "Home",
                     title: "\(openChoreCount) chores",
-                    detail: choresDetail,
                     icon: "checkmark.circle",
                     tint: choresDetailColor
                 )
@@ -355,7 +339,6 @@ struct DashboardView: View {
     private func householdTile(
         eyebrow: String,
         title: String,
-        detail: String,
         icon: String,
         tint: Color
     ) -> some View {
@@ -373,22 +356,15 @@ struct DashboardView: View {
                     .foregroundStyle(tint)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.roostCardTitle)
-                    .foregroundStyle(Color.roostForeground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-
-                Text(detail)
-                    .font(.roostCaption)
-                    .foregroundStyle(tint)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
+            Text(title)
+                .font(.roostCardTitle)
+                .foregroundStyle(Color.roostForeground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
         .padding(.horizontal, 13)
-        .padding(.vertical, 12)
+        .padding(.vertical, 13)
+        .frame(minHeight: 86, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.roostCard.opacity(0.82), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
         .overlay(
@@ -411,11 +387,6 @@ struct DashboardView: View {
                     Text(householdRhythmHeadline)
                         .font(.roostTitle)
                         .foregroundStyle(Color.roostForeground)
-
-                    Text(householdRhythmCopy)
-                        .font(.roostCaption)
-                        .foregroundStyle(Color.roostMutedForeground)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
@@ -500,12 +471,6 @@ struct DashboardView: View {
                         .foregroundStyle(Color.roostForeground)
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
-
-                    Text(nextMove.detail)
-                        .font(.roostCaption)
-                        .foregroundStyle(Color.roostMutedForeground)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
@@ -543,7 +508,6 @@ struct DashboardView: View {
             digestHeader(
                 eyebrow: "SPEND SIGNALS",
                 title: spendingDigestTitle,
-                detail: spendingDigestDetail,
                 tint: Color.roostPrimary
             )
 
@@ -553,7 +517,7 @@ struct DashboardView: View {
                     skeletonRow(fraction: 0.72)
                 }
             } else if topSpendingCategories.isEmpty {
-                emptyDigestLine("No spending logged this month yet.")
+                EmptyView()
             } else {
                 VStack(spacing: 8) {
                     ForEach(topSpendingCategories) { category in
@@ -575,7 +539,6 @@ struct DashboardView: View {
             digestHeader(
                 eyebrow: "RECENT RHYTHM",
                 title: activityDigestTitle,
-                detail: activityDigestDetail,
                 tint: Color.roostSecondary
             )
 
@@ -585,7 +548,7 @@ struct DashboardView: View {
                     skeletonRow(fraction: 0.62)
                 }
             } else if viewModel.recentActivity.isEmpty {
-                emptyDigestLine("New shared actions will collect here.")
+                EmptyView()
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(viewModel.recentActivity.prefix(3))) { item in
@@ -602,7 +565,7 @@ struct DashboardView: View {
         )
     }
 
-    private func digestHeader(eyebrow: String, title: String, detail: String, tint: Color) -> some View {
+    private func digestHeader(eyebrow: String, title: String, tint: Color) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(eyebrow)
@@ -613,11 +576,6 @@ struct DashboardView: View {
                 Text(title)
                     .font(.roostCardTitle)
                     .foregroundStyle(Color.roostForeground)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(detail)
-                    .font(.roostCaption)
-                    .foregroundStyle(Color.roostMutedForeground)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -675,23 +633,11 @@ struct DashboardView: View {
                     .foregroundStyle(Color.roostForeground)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-
-                Text(relativeTimestamp(item.createdAt))
-                    .font(.roostCaption)
-                    .foregroundStyle(Color.roostMutedForeground)
             }
 
             Spacer(minLength: 0)
         }
         .padding(.vertical, 3)
-    }
-
-    private func emptyDigestLine(_ text: String) -> some View {
-        Text(text)
-            .font(.roostBody)
-            .foregroundStyle(Color.roostMutedForeground)
-            .padding(.vertical, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Skeleton
@@ -878,7 +824,7 @@ struct DashboardView: View {
                 action: "Open",
                 icon: "exclamationmark",
                 tint: .roostDestructive,
-                destination: .tasks,
+                destination: .chores,
                 tasksSection: .chores
             )
         }
@@ -902,7 +848,7 @@ struct DashboardView: View {
                 action: "Open",
                 icon: "checkmark",
                 tint: .roostSecondary,
-                destination: .tasks,
+                destination: .chores,
                 tasksSection: .chores
             )
         }
@@ -914,7 +860,7 @@ struct DashboardView: View {
                 action: "Shop",
                 icon: "cart",
                 tint: .roostShoppingTint,
-                destination: .tasks,
+                destination: .shopping,
                 tasksSection: .shopping
             )
         }

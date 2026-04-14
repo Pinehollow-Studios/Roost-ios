@@ -25,6 +25,37 @@ struct MonthlySummary: Codable {
     }
 
     var hasIncome: Bool { income > 0 }
+
+    func replacingIncome(_ liveIncome: Decimal) -> MonthlySummary {
+        let pctOfIncomeBudgeted = liveIncome > 0 ? (totalBudgeted / liveIncome) * 100 : 0
+        let pctSpent = liveIncome > 0 ? (actualSpend / liveIncome) * 100 : 0
+
+        return MonthlySummary(
+            income: liveIncome,
+            fixedCosts: fixedCosts,
+            envelopesTotal: envelopesTotal,
+            totalBudgeted: totalBudgeted,
+            actualSpend: actualSpend,
+            surplus: liveIncome - totalBudgeted,
+            projectedTotal: projectedTotal,
+            pctOfIncomeBudgeted: pctOfIncomeBudgeted,
+            pctSpent: pctSpent
+        )
+    }
+
+    static func empty(income: Decimal) -> MonthlySummary {
+        MonthlySummary(
+            income: income,
+            fixedCosts: 0,
+            envelopesTotal: 0,
+            totalBudgeted: 0,
+            actualSpend: 0,
+            surplus: income,
+            projectedTotal: 0,
+            pctOfIncomeBudgeted: 0,
+            pctSpent: 0
+        )
+    }
 }
 
 /// Derived from the homes table. Not Codable — constructed from a Home object.

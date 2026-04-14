@@ -66,11 +66,20 @@ private struct TasksSectionPicker: View {
             .frame(height: 34)
             .background(
                 RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
-                    .fill(selected == section ? Color.roostPrimary : .clear)
+                    .fill(selected == section ? accent(for: section) : .clear)
             )
             .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+
+    private func accent(for section: NotificationRouter.TasksSection) -> Color {
+        switch section {
+        case .shopping:
+            return .roostShoppingTint
+        case .chores:
+            return .roostChoreTint
+        }
     }
 }
 

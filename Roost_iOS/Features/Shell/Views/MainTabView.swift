@@ -23,7 +23,7 @@ struct MainTabView: View {
     @Environment(AppBootManager.self) private var appBootManager
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var loadedTabs: Set<NotificationRouter.AppTab> = [.home, .tasks, .money, .calendar, .more]
+    @State private var loadedTabs: Set<NotificationRouter.AppTab> = [.home, .money, .shopping, .chores, .more]
     @State private var warmedHomeId: UUID?
     @State private var tabBarHidden = false
     @State private var showIncomeSetup = false
@@ -128,14 +128,6 @@ struct MainTabView: View {
                 }
             }
 
-            if loadedTabs.contains(.tasks) {
-                tabContainer(for: .tasks) {
-                    NavigationStack {
-                        TasksHomeView()
-                    }
-                }
-            }
-
             if loadedTabs.contains(.money) {
                 tabContainer(for: .money) {
                     NavigationStack {
@@ -144,10 +136,18 @@ struct MainTabView: View {
                 }
             }
 
-            if loadedTabs.contains(.calendar) {
-                tabContainer(for: .calendar) {
+            if loadedTabs.contains(.shopping) {
+                tabContainer(for: .shopping) {
                     NavigationStack {
-                        CalendarView()
+                        ShoppingListView()
+                    }
+                }
+            }
+
+            if loadedTabs.contains(.chores) {
+                tabContainer(for: .chores) {
+                    NavigationStack {
+                        ChoresView()
                     }
                 }
             }
@@ -187,6 +187,10 @@ struct MainTabView: View {
                                     AccountSettingsView()
                                 case .money:
                                     MoneySettingsView()
+                                case .calendar:
+                                    CalendarView()
+                                case .settings:
+                                    MoreSettingsView()
                                 case .security:
                                     SecuritySettingsView()
                                 }
@@ -210,10 +214,7 @@ struct MainTabView: View {
     private func shouldShowIncomeSetup() -> Bool {
         let dismissed = UserDefaults.standard.bool(forKey: "roost-income-setup-dismissed")
         if dismissed { return false }
-        // Show if current member hasn't set personal income yet
-        guard let userId = homeManager.currentUserId else { return false }
-        let member = homeManager.members.first(where: { $0.userID == userId })
-        return member?.personalIncome == nil
+        return !homeManager.members.contains { ($0.personalIncome ?? 0) > 0 }
     }
 
     private func warmPageData(homeId: UUID, userId: UUID) async {

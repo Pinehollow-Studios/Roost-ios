@@ -43,6 +43,7 @@ struct CalendarView: View {
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
+        .swipeBackEnabled()
         .task(id: settingsViewModel.userPreferences.weekStarts) {
             viewModel.updateWeekStart(settingsViewModel.userPreferences.weekStarts)
             ensureDefaultSelection()
@@ -83,13 +84,9 @@ struct CalendarView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.section) {
             if !embeddedInParentScroll {
-                // Page header
-                FigmaPageHeader(
-                    title: "Calendar",
-                    subtitle: pageSubtitle
-                )
-                .padding(.horizontal, DesignSystem.Spacing.page)
-                .modifier(CalendarEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                pageHeader
+                    .padding(.horizontal, DesignSystem.Spacing.page)
+                    .modifier(CalendarEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
             }
 
@@ -112,10 +109,21 @@ struct CalendarView: View {
             eventsSection
                 .modifier(CalendarEntranceModifier(index: embeddedInParentScroll ? 3 : 4, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
         }
-        .padding(.top, embeddedInParentScroll ? 0 : DesignSystem.Spacing.screenTop)
+        .padding(.top, 0)
         .padding(.bottom, embeddedInParentScroll ? 0 : DesignSystem.Spacing.screenBottom)
         .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
         .frame(maxWidth: .infinity, alignment: .top)
+    }
+
+    private var pageHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            FigmaBackHeader(title: "Calendar")
+
+            Text(pageSubtitle)
+                .font(.roostBody)
+                .foregroundStyle(Color.roostMutedForeground)
+                .padding(.leading, 56)
+        }
     }
 
     // MARK: - Calendar Hero Card
