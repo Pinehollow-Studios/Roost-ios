@@ -104,15 +104,18 @@ enum DesignSystem {
     }
 
     enum Typography {
-        static let pageTitle = Font.custom("DMSans-Medium", size: 26, relativeTo: .title2)
-        static let sectionHeading = Font.custom("DMSans-Medium", size: 20, relativeTo: .title3)
-        static let cardTitle = Font.custom("DMSans-Medium", size: 17, relativeTo: .headline)
+        // Structural headings — bold weight for clear visual hierarchy
+        static let pageTitle = Font.custom("DMSans-Medium", size: 26, relativeTo: .title2).bold()
+        static let sectionHeading = Font.custom("DMSans-Medium", size: 20, relativeTo: .title3).bold()
+        static let cardTitle = Font.custom("DMSans-Medium", size: 17, relativeTo: .headline).bold()
+        // Body and utility — regular/medium for comfortable reading
         static let body = Font.custom("DMSans-Regular", size: 15, relativeTo: .body)
         static let label = Font.custom("DMSans-Medium", size: 13, relativeTo: .subheadline)
         static let caption = Font.custom("DMSans-Regular", size: 12, relativeTo: .caption)
         static let micro = Font.custom("DMSans-Medium", size: 11, relativeTo: .caption2)
-        static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle)
-        static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle)
+        // Hero display — bold for large panel headlines and greetings
+        static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle).bold()
+        static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle).bold()
         static let tabLabel = Font.custom("DMSans-Medium", size: 10, relativeTo: .caption2)
         // Financial hero — Apple New York serif for premium monetary display
         static let financialHeroNumber = Font.system(size: 34, weight: .semibold, design: .serif)
