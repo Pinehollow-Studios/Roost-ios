@@ -114,8 +114,6 @@ enum DesignSystem {
         static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle)
         static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle)
         static let tabLabel = Font.custom("DMSans-Medium", size: 10, relativeTo: .caption2)
-        // Financial hero — Apple New York serif for premium monetary display
-        static let financialHeroNumber = Font.system(size: 34, weight: .semibold, design: .serif)
     }
 
     enum Motion {

@@ -14,6 +14,4 @@ extension Font {
     static let roostCaption = DesignSystem.Typography.caption
     static let roostMeta = DesignSystem.Typography.micro
     static let roostTabLabel = DesignSystem.Typography.tabLabel
-    /// Apple New York serif — used for premium monetary display (balance, hero amounts).
-    static let roostFinancialHero = DesignSystem.Typography.financialHeroNumber
 }

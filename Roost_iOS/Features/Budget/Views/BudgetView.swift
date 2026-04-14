@@ -291,7 +291,7 @@ struct BudgetView: View {
 
                 (
                     Text(formatted(viewModel.totalSpent))
-                        .font(.roostFinancialHero)
+                        .font(.roostHero)
                         .foregroundStyle(Color.roostForeground)
                     +
                     Text(" of \(formatted(viewModel.totalBudget)) budget")

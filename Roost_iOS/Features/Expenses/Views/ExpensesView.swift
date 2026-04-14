@@ -323,7 +323,7 @@ struct ExpensesView: View {
                             .foregroundStyle(Color.roostMutedForeground)
 
                         Text(balanceHeadline)
-                            .font(.roostFinancialHero)
+                            .font(.roostHero)
                             .foregroundStyle(balanceAccent)
                             .lineLimit(1)
                             .minimumScaleFactor(0.68)

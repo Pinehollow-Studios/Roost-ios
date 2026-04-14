@@ -24,7 +24,7 @@ struct BalanceCardView: View {
                         .foregroundStyle(Color.roostForeground)
                 } else {
                     Text(formattedAmount)
-                        .font(.roostFinancialHero)
+                        .font(.roostHero)
                         .foregroundStyle(Color.roostForeground)
                     Text(balanceText)
                         .font(.roostSection)

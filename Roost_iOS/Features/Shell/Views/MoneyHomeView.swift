@@ -211,7 +211,7 @@ struct MoneyHomeView: View {
                             .tracking(1.0)
 
                         Text(moneyHeroTitle)
-                            .font(.roostFinancialHero)
+                            .font(.system(size: 30, weight: .medium))
                             .foregroundStyle(Color.roostForeground)
                             .lineLimit(2)
                             .minimumScaleFactor(0.72)
