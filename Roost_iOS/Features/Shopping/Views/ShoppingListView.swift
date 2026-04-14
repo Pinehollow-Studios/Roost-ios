@@ -31,12 +31,12 @@ struct ShoppingListView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostShoppingTint.opacity(0.42), Color.roostShoppingTint.opacity(0.14)],
+                        colors: [Color.roostShoppingTint.opacity(0.72), Color.roostShoppingTint.opacity(0.28)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())

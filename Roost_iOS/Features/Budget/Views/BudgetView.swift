@@ -113,7 +113,7 @@ struct BudgetView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.section) {
             if !embeddedInParentScroll {
-                FigmaPageHeader(title: "Budget")
+                FigmaPageHeader(title: "Budget", accent: .roostMoneyTint)
                     .padding(.horizontal, DesignSystem.Spacing.page)
             }
 
@@ -291,7 +291,7 @@ struct BudgetView: View {
 
                 (
                     Text(formatted(viewModel.totalSpent))
-                        .font(.roostHero)
+                        .font(.roostFinancialHero)
                         .foregroundStyle(Color.roostForeground)
                     +
                     Text(" of \(formatted(viewModel.totalBudget)) budget")

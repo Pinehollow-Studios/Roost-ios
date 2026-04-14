@@ -3,7 +3,7 @@ import SwiftUI
 enum RoostTheme {
     static let cornerRadius: CGFloat = DesignSystem.Radius.md
     static let cardCornerRadius: CGFloat = DesignSystem.Radius.md
-    static let controlCornerRadius: CGFloat = DesignSystem.Radius.sm
+    static let controlCornerRadius: CGFloat = DesignSystem.Radius.md
     static let largeCornerRadius: CGFloat = DesignSystem.Radius.lg
     static let borderOpacity: Double = 0.15
     static let focusRingOpacity: Double = 0.30

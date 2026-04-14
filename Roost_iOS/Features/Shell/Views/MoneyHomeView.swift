@@ -37,12 +37,12 @@ struct MoneyHomeView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostMoneyTint.opacity(0.42), Color.roostMoneyTint.opacity(0.14)],
+                        colors: [Color.roostMoneyTint.opacity(0.72), Color.roostMoneyTint.opacity(0.28)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())

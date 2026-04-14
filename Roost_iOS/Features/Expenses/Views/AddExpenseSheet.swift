@@ -127,12 +127,12 @@ struct AddExpenseSheet: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostPrimary.opacity(0.55), Color.roostPrimary.opacity(0.2)],
+                        colors: [Color.roostPrimary.opacity(0.72), Color.roostPrimary.opacity(0.30)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .toolbar(.hidden, for: .navigationBar)

@@ -65,16 +65,16 @@ struct DashboardView: View {
                 .frame(maxWidth: .infinity, alignment: .top)
             }
 
-            // Thin terracotta accent line — the page's signature
+            // Tab accent line — terracotta signature stripe
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.roostPrimary.opacity(0.55), Color.roostPrimary.opacity(0.2)],
+                        colors: [Color.roostPrimary.opacity(0.75), Color.roostPrimary.opacity(0.30)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
-                .frame(height: 2)
+                .frame(height: 3)
                 .ignoresSafeArea(edges: .top)
         }
         .background(Color.roostBackground.ignoresSafeArea())

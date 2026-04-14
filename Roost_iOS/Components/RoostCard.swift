@@ -51,11 +51,24 @@ struct RoostCard<Content: View>: View {
     }
 
     private var borderColor: Color {
-        prominence == .quiet ? Color.clear : DesignSystem.Palette.border
+        switch prominence {
+        case .quiet:
+            return .clear
+        case .standard:
+            return DesignSystem.Palette.border
+        case .elevated:
+            return Color.roostPrimary.opacity(0.12)
+        }
     }
 
     private var background: some View {
-        RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
-            .fill(prominence == .elevated ? DesignSystem.Palette.card : DesignSystem.Palette.card)
+        ZStack {
+            RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
+                .fill(DesignSystem.Palette.card)
+            if prominence == .elevated {
+                RoundedRectangle(cornerRadius: RoostTheme.cornerRadius, style: .continuous)
+                    .fill(Color.roostPrimary.opacity(0.04))
+            }
+        }
     }
 }

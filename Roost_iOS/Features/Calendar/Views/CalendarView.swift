@@ -32,11 +32,11 @@ struct CalendarView: View {
 
                     // Top accent line
                     LinearGradient(
-                        colors: [Color.roostPrimary, Color.roostPrimary.opacity(0)],
+                        colors: [Color.roostPrimary.opacity(0.72), Color.roostPrimary.opacity(0.28)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .frame(height: 2)
+                    .frame(height: 3)
                     .ignoresSafeArea(edges: .top)
                 }
             }

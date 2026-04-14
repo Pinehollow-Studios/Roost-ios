@@ -29,6 +29,7 @@ struct FigmaChip: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(backgroundColor, in: Capsule())
+        .overlay(Capsule().stroke(foregroundColor.opacity(0.2), lineWidth: 1))
     }
 
     private var foregroundColor: Color {
