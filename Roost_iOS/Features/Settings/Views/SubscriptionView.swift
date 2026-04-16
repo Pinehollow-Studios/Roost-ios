@@ -16,6 +16,7 @@ struct SubscriptionView: View {
     @State private var crownAppeared = false
     @State private var shimmerPhase: CGFloat = -1.0
     @State private var featuresVisible = false
+    @State private var contentAppeared = false
 
     private var subscriptionSyncKey: String {
         guard let home = homeManager.home else { return "nil" }
@@ -51,6 +52,7 @@ struct SubscriptionView: View {
                     .padding(.horizontal, -DesignSystem.Spacing.page)
 
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                    socialProofStrip
                     currentPlanCard
 
                     if showTrialBanner {
@@ -58,6 +60,7 @@ struct SubscriptionView: View {
                     }
 
                     featuresSection
+                    comparisonSection
 
                     if showsPlanSelector {
                         planSelectorSection
@@ -97,6 +100,9 @@ struct SubscriptionView: View {
             }
             withAnimation(.easeOut(duration: 0.5).delay(0.35)) {
                 featuresVisible = true
+            }
+            withAnimation(.roostSmooth.delay(0.15)) {
+                contentAppeared = true
             }
         }
     }
@@ -186,7 +192,7 @@ struct SubscriptionView: View {
 
                     Spacer().frame(height: 10)
 
-                    Text("The complete household experience.")
+                    Text("Run your home. Together.")
                         .font(.roostBody)
                         .foregroundStyle(.white.opacity(0.82))
                         .multilineTextAlignment(.center)
@@ -307,7 +313,7 @@ struct SubscriptionView: View {
                     .foregroundStyle(Color.roostPrimary)
             }
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.state == .trial ? "Trial active" : "14-day free trial")
                     .font(.roostBody.weight(.semibold))
                     .foregroundStyle(Color.roostForeground)
@@ -316,6 +322,26 @@ struct SubscriptionView: View {
                     .font(.roostCaption)
                     .foregroundStyle(Color.roostMutedForeground)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if viewModel.state == .trial {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: DesignSystem.Radius.full, style: .continuous)
+                                .fill(Color.roostMuted)
+                                .frame(height: 4)
+                            RoundedRectangle(cornerRadius: DesignSystem.Radius.full, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.roostPrimary, Color.roostSecondary],
+                                        startPoint: .leading, endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: geo.size.width * min(viewModel.trialProgress, 1.0), height: 4)
+                        }
+                    }
+                    .frame(height: 4)
+                    .animation(.roostEaseOut, value: viewModel.trialProgress)
+                }
             }
         }
         .padding(DesignSystem.Spacing.cardLarge)
@@ -410,7 +436,128 @@ struct SubscriptionView: View {
         )
         .opacity(featuresVisible ? 1 : 0)
         .offset(y: featuresVisible ? 0 : 14)
-        .animation(.easeOut(duration: 0.45).delay(Double(index) * 0.06), value: featuresVisible)
+        .animation(.roostSmooth.delay(Double(index) * 0.06), value: featuresVisible)
+    }
+
+    // MARK: - Social Proof
+
+    private var socialProofStrip: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 3) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.roostWarning)
+                }
+            }
+
+            Text(" 4.8")
+                .font(.roostLabel)
+                .foregroundStyle(Color.roostForeground)
+
+            Rectangle()
+                .fill(Color.roostHairline)
+                .frame(width: 1, height: 14)
+                .padding(.horizontal, 10)
+
+            Text("2,000+ households")
+                .font(.roostLabel)
+                .foregroundStyle(Color.roostMutedForeground)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, DesignSystem.Spacing.card)
+        .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .strokeBorder(Color.roostHairline, lineWidth: 1)
+        )
+        .opacity(contentAppeared ? 1 : 0)
+        .offset(y: contentAppeared ? 0 : 8)
+    }
+
+    // MARK: - Comparison Table
+
+    private struct ComparisonRow {
+        let feature: String
+        let freeLabel: String
+        let proOnly: Bool
+    }
+
+    private let comparisonRows: [ComparisonRow] = [
+        ComparisonRow(feature: "Budget & expenses",     freeLabel: "✓",        proOnly: false),
+        ComparisonRow(feature: "Shopping lists",        freeLabel: "✓",        proOnly: false),
+        ComparisonRow(feature: "Chores & calendar",     freeLabel: "✓",        proOnly: false),
+        ComparisonRow(feature: "Budget history",        freeLabel: "1 month",  proOnly: true),
+        ComparisonRow(feature: "Advanced budgeting",    freeLabel: "—",        proOnly: true),
+        ComparisonRow(feature: "Hazel AI",              freeLabel: "—",        proOnly: true),
+        ComparisonRow(feature: "Smart notifications",   freeLabel: "—",        proOnly: true),
+        ComparisonRow(feature: "Room groups",           freeLabel: "—",        proOnly: true),
+        ComparisonRow(feature: "Unlimited members",     freeLabel: "2 max",    proOnly: true),
+    ]
+
+    private var comparisonSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Free vs Pro")
+                .font(.roostSection)
+                .foregroundStyle(Color.roostForeground)
+
+            RoostCard(padding: 0) {
+                VStack(spacing: 0) {
+                    // Header row
+                    HStack {
+                        Text("Feature")
+                            .font(.roostMeta)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text("Free")
+                            .font(.roostMeta)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .frame(width: 52, alignment: .center)
+
+                        Text("Pro")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.roostPrimary)
+                            .frame(width: 52, alignment: .center)
+                    }
+                    .padding(.horizontal, DesignSystem.Spacing.card)
+                    .padding(.vertical, 10)
+                    .background(Color.roostMuted.opacity(0.5))
+
+                    ForEach(Array(comparisonRows.enumerated()), id: \.offset) { index, row in
+                        HStack {
+                            Text(row.feature)
+                                .font(.roostCaption)
+                                .foregroundStyle(Color.roostForeground)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Text(row.freeLabel)
+                                .font(.system(size: 12, weight: row.freeLabel == "✓" ? .semibold : .regular))
+                                .foregroundStyle(row.freeLabel == "✓" ? Color.roostSuccess : Color.roostMutedForeground)
+                                .frame(width: 52, alignment: .center)
+
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.roostPrimary)
+                                .frame(width: 52, alignment: .center)
+                        }
+                        .padding(.horizontal, DesignSystem.Spacing.card)
+                        .padding(.vertical, 10)
+                        .background(row.proOnly ? Color.roostPrimary.opacity(0.03) : Color.clear)
+
+                        if index < comparisonRows.count - 1 {
+                            Divider()
+                                .background(Color.roostHairline)
+                                .padding(.horizontal, DesignSystem.Spacing.card)
+                        }
+                    }
+                }
+            }
+        }
+        .opacity(contentAppeared ? 1 : 0)
+        .offset(y: contentAppeared ? 0 : 12)
     }
 
     // MARK: - Plan Selector
