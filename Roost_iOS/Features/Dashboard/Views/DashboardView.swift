@@ -146,8 +146,8 @@ struct DashboardView: View {
         Button {
             notificationRouter.selectedTab = .money
         } label: {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 14) {
                     VStack(alignment: .leading, spacing: 7) {
                         Text("MONEY STATUS")
                             .font(.roostMeta)
@@ -164,7 +164,7 @@ struct DashboardView: View {
                     Spacer(minLength: 0)
 
                     budgetDial
-                        .frame(width: 78, height: 78)
+                        .frame(width: 72, height: 72)
                 }
 
                 moneyStatusBar
@@ -183,22 +183,19 @@ struct DashboardView: View {
                     )
                 }
 
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .center, spacing: 10) {
                     Image(systemName: balanceStatusIcon)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(balanceStatusColor)
                         .frame(width: 28, height: 28)
                         .background(balanceStatusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(balanceLabel)
-                            .font(.roostLabel)
-                            .foregroundStyle(Color.roostForeground)
-                    }
+                    Text(balanceLabel)
+                        .font(.roostLabel)
+                        .foregroundStyle(Color.roostForeground)
 
                     Spacer(minLength: 0)
                 }
-                .padding(.top, 2)
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -295,7 +292,7 @@ struct DashboardView: View {
                 .minimumScaleFactor(0.72)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
         .overlay(
@@ -363,8 +360,8 @@ struct DashboardView: View {
                 .minimumScaleFactor(0.78)
         }
         .padding(.horizontal, 13)
-        .padding(.vertical, 13)
-        .frame(minHeight: 86, alignment: .leading)
+        .padding(.vertical, 11)
+        .frame(minHeight: 68, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.roostCard.opacity(0.82), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
         .overlay(

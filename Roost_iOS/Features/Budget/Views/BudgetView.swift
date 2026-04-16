@@ -1055,7 +1055,7 @@ struct BudgetView: View {
 
     private func openBudgetSetup() {
         notificationRouter.selectedTab = .more
-        notificationRouter.morePath = [.budgetCategories]
+        notificationRouter.morePath = [.money]
     }
 
     @MainActor
