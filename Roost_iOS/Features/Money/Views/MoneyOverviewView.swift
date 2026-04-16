@@ -278,7 +278,7 @@ struct MoneyOverviewView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: 8) {
 
                 FigmaBackHeader(title: "Overview", accent: .roostMoneyTint)
                     .padding(.horizontal, DesignSystem.Spacing.page)
@@ -286,7 +286,7 @@ struct MoneyOverviewView: View {
                 monthNavigator
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
 
                     // Zone 1 — Ring + stats + Hazel insight
                     zone1RingCard
@@ -367,11 +367,11 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone1RingCard: some View {
-        RoostCard(padding: 12, prominence: .quiet) {
+        RoostCard(padding: 10, prominence: .quiet) {
             if let error = summaryVM.error, summaryVM.summary == nil {
                 errorState(error: error)
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .center, spacing: 14) {
                         ringArc104
                         zone1Stats
@@ -381,7 +381,6 @@ private extension MoneyOverviewView {
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 2)
                     } else if isLoading {
                         Text("Loading spending pace.")
                             .font(.system(size: 11))

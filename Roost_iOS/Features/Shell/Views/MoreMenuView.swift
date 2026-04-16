@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MoreMenuView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(NotificationsViewModel.self) private var notificationsViewModel
 
     @State private var appeared = false
 
@@ -17,9 +18,13 @@ struct MoreMenuView: View {
                         .padding(.top, 24)
                         .moreEntrance(at: 1, appeared: appeared, reduceMotion: reduceMotion)
 
-                    settingsShortcut
-                        .padding(.top, 18)
+                    quickAccessSection
+                        .padding(.top, 22)
                         .moreEntrance(at: 2, appeared: appeared, reduceMotion: reduceMotion)
+
+                    settingsShortcut
+                        .padding(.top, 22)
+                        .moreEntrance(at: 3, appeared: appeared, reduceMotion: reduceMotion)
                 }
                 .padding(.horizontal, morePageInset)
                 .padding(.bottom, DesignSystem.Spacing.screenBottom + DesignSystem.Spacing.tabContentBottomInset + 24)
@@ -51,54 +56,99 @@ struct MoreMenuView: View {
         }
     }
 
+    // MARK: - Sections
+
     private var pageHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("More")
-                    .font(.roostLargeGreeting)
-                    .foregroundStyle(Color.roostForeground)
+        VStack(alignment: .leading, spacing: 3) {
+            Text("More")
+                .font(.roostLargeGreeting)
+                .foregroundStyle(Color.roostForeground)
 
-                Text("Plans and notes for the home")
-                    .font(.roostBody)
-                    .foregroundStyle(Color.roostMutedForeground)
-            }
-
-            Spacer(minLength: 0)
+            Text("Features, quick settings, and more")
+                .font(.roostBody)
+                .foregroundStyle(Color.roostMutedForeground)
         }
     }
 
     private var primaryDestinations: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            MoreFeatureButton(
-                title: "Calendar",
-                subtitle: "Shared dates, chores, bills, and what needs attention next.",
-                icon: "calendar",
-                tint: Color.roostPrimary,
-                destination: .calendar,
-                reduceMotion: reduceMotion
-            )
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Features")
 
-            MoreFeatureButton(
-                title: "Pinboard",
-                subtitle: "Live notes, reminders, and messages pinned for the household.",
-                icon: "pin.fill",
-                tint: Color.roostShoppingTint,
-                destination: .pinboard,
-                reduceMotion: reduceMotion
-            )
+            VStack(spacing: 12) {
+                MoreFeatureButton(
+                    title: "Calendar",
+                    subtitle: "Shared dates, chores, bills, and what needs attention next.",
+                    icon: "calendar",
+                    tint: Color.roostPrimary,
+                    destination: .calendar,
+                    reduceMotion: reduceMotion
+                )
+
+                MoreFeatureButton(
+                    title: "Pinboard",
+                    subtitle: "Live notes, reminders, and messages pinned for the household.",
+                    icon: "pin.fill",
+                    tint: Color.roostShoppingTint,
+                    destination: .pinboard,
+                    reduceMotion: reduceMotion
+                )
+            }
+        }
+    }
+
+    private var quickAccessSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Quick Access")
+
+            let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+
+            LazyVGrid(columns: columns, spacing: 12) {
+                QuickAccessTile(
+                    title: "Notifications",
+                    icon: "bell.fill",
+                    tint: Color.roostWarning,
+                    badge: notificationsViewModel.unreadCount > 0 ? "\(notificationsViewModel.unreadCount)" : nil,
+                    destination: .notificationSettings,
+                    reduceMotion: reduceMotion
+                )
+
+                QuickAccessTile(
+                    title: "Appearance",
+                    icon: "circle.lefthalf.filled",
+                    tint: Color.roostPrimary,
+                    badge: nil,
+                    destination: .appearance,
+                    reduceMotion: reduceMotion
+                )
+
+                QuickAccessTile(
+                    title: "Hazel",
+                    icon: "sparkles",
+                    tint: Color.roostChoreTint,
+                    badge: nil,
+                    destination: .hazel,
+                    reduceMotion: reduceMotion
+                )
+
+                QuickAccessTile(
+                    title: "Roost Pro",
+                    icon: "crown.fill",
+                    tint: Color.roostPrimary,
+                    badge: nil,
+                    destination: .subscription,
+                    reduceMotion: reduceMotion
+                )
+            }
         }
     }
 
     private var settingsShortcut: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text("SETTINGS")
-                .font(.roostMeta)
-                .foregroundStyle(Color.roostMutedForeground)
-                .tracking(1.0)
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Settings")
 
             MoreCompactButton(
-                title: "Settings",
-                subtitle: "Household, app, security",
+                title: "All Settings",
+                subtitle: "Household, account, app, security",
                 icon: "slider.horizontal.3",
                 tint: Color.roostMoneyTint,
                 destination: .settings,
@@ -106,7 +156,16 @@ struct MoreMenuView: View {
             )
         }
     }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.roostMeta)
+            .foregroundStyle(Color.roostMutedForeground)
+            .tracking(1.0)
+    }
 }
+
+// MARK: - Feature Button (large card)
 
 private struct MoreFeatureButton: View {
     let title: String
@@ -175,6 +234,65 @@ private struct MoreFeatureButton: View {
     }
 }
 
+// MARK: - Quick Access Tile (2-column grid)
+
+private struct QuickAccessTile: View {
+    let title: String
+    let icon: String
+    let tint: Color
+    let badge: String?
+    let destination: NotificationRouter.MoreDestination
+    let reduceMotion: Bool
+
+    var body: some View {
+        NavigationLink(value: destination) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: icon)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(tint)
+                            .frame(width: 40, height: 40)
+                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                        if let badge {
+                            Text(badge)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(Color.roostDestructive, in: Capsule())
+                                .offset(x: 8, y: -6)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.roostMutedForeground.opacity(0.5))
+                        .padding(.top, 4)
+                }
+
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.roostForeground)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                    .stroke(tint.opacity(0.15), lineWidth: 1)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(MorePressStyle(reduceMotion: reduceMotion))
+    }
+}
+
+// MARK: - Compact Button (single row)
+
 private struct MoreCompactButton: View {
     let title: String
     let subtitle: String
@@ -221,6 +339,8 @@ private struct MoreCompactButton: View {
         .buttonStyle(MorePressStyle(reduceMotion: reduceMotion))
     }
 }
+
+// MARK: - MoreSettingsView (unchanged)
 
 struct MoreSettingsView: View {
     @Environment(SettingsViewModel.self) private var settingsViewModel
@@ -463,6 +583,8 @@ struct MoreSettingsView: View {
         isSigningOut = false
     }
 }
+
+// MARK: - Supporting types
 
 private struct SettingsRowModel {
     let title: String
