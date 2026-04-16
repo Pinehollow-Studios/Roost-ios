@@ -167,8 +167,6 @@ struct MainTabView: View {
                                     RoomsView()
                                 case .pinboard:
                                     PinboardView()
-                                case .budgetCategories:
-                                    BudgetCategoriesSettingsView()
                                 case .appearance:
                                     AppearanceSettingsView()
                                 case .activity:

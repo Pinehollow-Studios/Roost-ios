@@ -28,6 +28,7 @@ struct MoneySettingsView: View {
 
     // Currency section
     @State private var currency = "£"
+    @State private var showCurrencyPicker = false
 
     private let incomeService = HouseholdIncomeService()
     private var sym: String { currency }
@@ -39,17 +40,27 @@ struct MoneySettingsView: View {
         return myIncome
     }
 
+    private let currencyOptions: [(String, String)] = [
+        ("£", "£ GBP"),
+        ("$", "$ USD"),
+        ("€", "€ EUR"),
+        ("A$", "A$ AUD"),
+        ("CA$", "CA$ CAD")
+    ]
+
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.xl) {
-                FigmaBackHeader(title: "Money")
-                incomeSection
-                privacySection
-                budgetSection
-                currencySection
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                FigmaBackHeader(title: "Money", accent: .roostPrimary)
+                incomeCard
+                privacyCard
+                budgetCard
+                currencyCard
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.xxl)
+            .padding(.horizontal, DesignSystem.Spacing.page)
+            .padding(.bottom, 108)
+            .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -57,175 +68,200 @@ struct MoneySettingsView: View {
         .task {
             await loadData()
         }
-    }
-
-    // MARK: - Section 1: YOUR INCOME
-
-    private var incomeSection: some View {
-        RoostSectionSurface(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("YOUR INCOME")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.5)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // My income card
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text("Your monthly take-home pay")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.roostForeground)
-                    Text("Only you can see your individual amount. Your combined household income is used across the app.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-
-                    HStack {
-                        Text(sym)
-                            .foregroundStyle(.secondary)
-                        TextField("e.g. 2500", text: $myIncomeText)
-                            .keyboardType(.decimalPad)
-                            .font(.system(size: 20, weight: .medium))
-                    }
-                    .padding()
-                    .background(Color(.systemFill))
-                    .cornerRadius(12)
-
-                    if let setAt = incomeSetAt {
-                        Text("Last updated \(setAt.formatted(.dateTime.day().month(.wide).year()))")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button {
-                        Task { await saveMyIncome() }
-                    } label: {
-                        HStack {
-                            if isSavingIncome { ProgressView().tint(.white) }
-                            Text("Save income")
-                        }
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(14)
-                        .background(myIncomeText.isEmpty ? Color(hex: 0xD4795E).opacity(0.4) : Color(hex: 0xD4795E))
-                        .cornerRadius(12)
-                    }
-                    .disabled(myIncomeText.isEmpty || isSavingIncome)
-
-                    if showSavedConfirmation {
-                        Text("Saved ✓")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(hex: 0x3B6D11))
-                            .transition(.opacity)
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    withAnimation { showSavedConfirmation = false }
-                                }
-                            }
+        .confirmationDialog("Currency", isPresented: $showCurrencyPicker) {
+            ForEach(currencyOptions, id: \.0) { sym, label in
+                Button(label) {
+                    currency = sym
+                    Task {
+                        guard let homeId = homeManager.homeId else { return }
+                        try? await settingsVM.updateSetting(\.currencySymbol, value: sym, homeId: homeId)
                     }
                 }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
 
-                Divider()
+    // MARK: - Income Card
 
-                // Share with partner toggle
-                HStack(alignment: .top, spacing: Spacing.md) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Share with \(memberNames.names.partner)")
-                            .font(.system(size: 14))
-                        Text("\(memberNames.names.partner) will be able to see your individual amount in their Settings. You can turn this off at any time.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+    private var incomeCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostMoneyTint.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "sterlingsign.circle.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostMoneyTint)
                     }
+                    Text("Your income")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.row)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Monthly take-home pay")
+                        .font(.roostBody.weight(.medium))
+                        .foregroundStyle(Color.roostForeground)
+                    Text("Only you can see your individual amount. Your combined household income is used across the app.")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 12)
+                .padding(.bottom, DesignSystem.Spacing.inline)
+
+                HStack(spacing: 8) {
+                    Text(sym)
+                        .font(.roostBody.weight(.medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .frame(width: 20)
+                    TextField("e.g. 2500", text: $myIncomeText)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(Color.roostForeground)
+                        .tint(Color.roostPrimary)
+                }
+                .padding(.horizontal, DesignSystem.Spacing.card)
+                .frame(height: 52)
+                .background(Color.roostInput, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                        .strokeBorder(Color.roostHairline, lineWidth: 1)
+                )
+
+                if let setAt = incomeSetAt {
+                    Text("Last updated \(setAt.formatted(.dateTime.day().month(.wide).year()))")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .padding(.top, 6)
+                }
+
+                RoostButton(
+                    title: showSavedConfirmation ? "Saved" : "Save income",
+                    systemImage: showSavedConfirmation ? "checkmark" : nil,
+                    isLoading: isSavingIncome
+                ) {
+                    Task { await saveMyIncome() }
+                }
+                .disabled(myIncomeText.isEmpty || isSavingIncome)
+                .padding(.top, DesignSystem.Spacing.inline)
+                .padding(.bottom, 12)
+
+                Divider().overlay(Color.roostHairline)
+
+                HStack(spacing: DesignSystem.Spacing.row) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Share with \(memberNames.names.partner)")
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("\(memberNames.names.partner) can see your individual amount in their Settings. You can turn this off any time.")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
                     Toggle("", isOn: $myIncomeVisible)
                         .labelsHidden()
+                        .toggleStyle(FigmaSwitchToggleStyle())
                         .onChange(of: myIncomeVisible) { _, newVal in
                             Task { await saveIncomeVisibility(visible: newVal) }
                         }
                 }
+                .padding(.vertical, 12)
 
-                // Partner income (only if I'm sharing)
                 if myIncomeVisible {
-                    Divider()
-                    if let partnerInc = partnerIncome {
-                        HStack {
+                    Divider().overlay(Color.roostHairline)
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text("\(memberNames.names.partner)'s income")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                                .font(.roostBody.weight(.medium))
+                                .foregroundStyle(Color.roostForeground)
+                            if partnerIncome == nil {
+                                Text("\(memberNames.names.partner) hasn't shared their income yet")
+                                    .font(.roostCaption)
+                                    .foregroundStyle(Color.roostMutedForeground)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        if let partnerInc = partnerIncome {
                             Text(scramble.format(partnerInc, symbol: sym))
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.roostBody.weight(.semibold))
                                 .foregroundStyle(Color.roostForeground)
                         }
-                    } else {
-                        Text("\(memberNames.names.partner) hasn't shared their income yet")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
                     }
+                    .padding(.vertical, 12)
                 }
 
-                Divider()
+                Divider().overlay(Color.roostHairline)
 
-                // Combined income
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("COMBINED HOUSEHOLD")
-                        .font(.system(size: 9, weight: .medium))
-                        .tracking(1.2)
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Combined household")
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Used across all Money screens")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    Spacer(minLength: 0)
                     Text(scramble.format(combinedIncome, symbol: sym))
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(Color.roostForeground)
-                    Text("Used across all Money screens")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 12)
             }
         }
     }
 
-    // MARK: - Section 2: PRIVACY & DISPLAY
+    // MARK: - Privacy Card
 
-    private var privacySection: some View {
-        RoostSectionSurface(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("PRIVACY & DISPLAY")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.5)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Scramble mode
-                HStack(alignment: .top, spacing: 0) {
-                    HStack(alignment: .top, spacing: 12) {
+    private var privacyCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostWarning.opacity(0.10))
+                            .frame(width: 32, height: 32)
                         Image(systemName: "eye.slash.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(hex: 0x854F0B))
-                            .frame(width: 28)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack {
-                                Text("Scramble mode")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Color.roostForeground)
-                                if scrambleMode {
-                                    Text("ON")
-                                        .font(.system(size: 10, weight: .medium))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color(hex: 0xFAEEDA))
-                                        .foregroundColor(Color(hex: 0x854F0B))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                            Text("Replace all amounts with ••• when showing Roost to someone. Syncs to both your devices.")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                        }
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostWarning)
                     }
+                    Text("Privacy & display")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.row)
 
-                    Spacer()
-
+                HStack(spacing: DesignSystem.Spacing.row) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text("Scramble mode")
+                                .font(.roostBody.weight(.medium))
+                                .foregroundStyle(Color.roostForeground)
+                            if scrambleMode {
+                                Text("On")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(Color.roostWarning)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(Color.roostWarning.opacity(0.12), in: Capsule())
+                            }
+                        }
+                        Text("Replace all amounts with ••• when showing Roost to someone. Syncs to both your devices.")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
                     Toggle("", isOn: $scrambleMode)
                         .labelsHidden()
+                        .toggleStyle(FigmaSwitchToggleStyle())
                         .onChange(of: scrambleMode) { _, _ in
                             Task {
                                 guard let homeId = homeManager.homeId else { return }
@@ -233,178 +269,241 @@ struct MoneySettingsView: View {
                             }
                         }
                 }
+                .padding(.vertical, 12)
+                .animation(.roostSnappy, value: scrambleMode)
 
-                Divider()
+                Divider().overlay(Color.roostHairline)
 
-                // Hide balances
-                HStack(alignment: .top, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: DesignSystem.Spacing.row) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("Hide balances on Money home")
-                            .font(.system(size: 14))
+                            .font(.roostBody.weight(.medium))
                             .foregroundStyle(Color.roostForeground)
                         Text("Tap the ring to reveal amounts. Device-only setting.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                     Toggle("", isOn: $hideBalances)
                         .labelsHidden()
+                        .toggleStyle(FigmaSwitchToggleStyle())
                         .onChange(of: hideBalances) { _, newVal in
                             UserDefaults.standard.set(newVal, forKey: "roost-hide-balances")
                         }
                 }
+                .padding(.vertical, 12)
             }
         }
     }
 
-    // MARK: - Section 3: BUDGET PREFERENCES
+    // MARK: - Budget Card
 
-    private var budgetSection: some View {
-        RoostSectionSurface(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("BUDGET PREFERENCES")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.5)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Default split slider
-                VStack(alignment: .leading, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Default expense split")
+    private var budgetCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostPrimary.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "chart.bar.fill")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.roostForeground)
-                        Text("When you log a shared expense, this is the default split.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostPrimary)
                     }
+                    Text("Budget preferences")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.row)
 
-                    HStack(spacing: 8) {
-                        MemberAvatar(label: memberNames.names.meInitials, color: memberNames.names.meColour, size: .xs)
-                        Text("\(Int(defaultSplit))%")
-                            .font(.system(size: 13, weight: .medium))
-                            .frame(width: 36)
-                        Slider(value: $defaultSplit, in: 0...100, step: 5)
-                            .tint(Color(hex: 0xD4795E))
-                            .onChange(of: defaultSplit) { _, _ in
-                                debounceTask?.cancel()
-                                debounceTask = Task {
-                                    try? await Task.sleep(for: .milliseconds(500))
-                                    guard !Task.isCancelled else { return }
-                                    guard let homeId = homeManager.homeId else { return }
-                                    try? await settingsVM.updateSetting(
-                                        \.defaultExpenseSplit,
-                                        value: defaultSplit,
-                                        homeId: homeId
-                                    )
-                                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Default expense split")
+                        .font(.roostBody.weight(.medium))
+                        .foregroundStyle(Color.roostForeground)
+                    Text("When you log a shared expense, this is the default split.")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+                .padding(.top, 12)
+                .padding(.bottom, DesignSystem.Spacing.inline)
+
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    MemberAvatar(label: memberNames.names.meInitials, color: memberNames.names.meColour, size: .xs)
+                    Text("\(Int(defaultSplit))%")
+                        .font(.roostBody.weight(.semibold))
+                        .foregroundStyle(Color.roostForeground)
+                        .frame(width: 36)
+                    Slider(value: $defaultSplit, in: 0...100, step: 5)
+                        .tint(Color.roostPrimary)
+                        .onChange(of: defaultSplit) { _, _ in
+                            debounceTask?.cancel()
+                            debounceTask = Task {
+                                try? await Task.sleep(for: .milliseconds(500))
+                                guard !Task.isCancelled else { return }
+                                guard let homeId = homeManager.homeId else { return }
+                                try? await settingsVM.updateSetting(
+                                    \.defaultExpenseSplit,
+                                    value: defaultSplit,
+                                    homeId: homeId
+                                )
                             }
-                        Text("\(Int(100 - defaultSplit))%")
-                            .font(.system(size: 13, weight: .medium))
-                            .frame(width: 36)
-                        MemberAvatar(label: memberNames.names.partnerInitials, color: memberNames.names.partnerColour, size: .xs)
-                    }
-
-                    if Int(defaultSplit) == 50 {
-                        Text("Equal split")
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(hex: 0x9DB19F))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
+                        }
+                    Text("\(Int(100 - defaultSplit))%")
+                        .font(.roostBody.weight(.semibold))
+                        .foregroundStyle(Color.roostForeground)
+                        .frame(width: 36)
+                    MemberAvatar(label: memberNames.names.partnerInitials, color: memberNames.names.partnerColour, size: .xs)
                 }
 
-                Divider()
+                if Int(defaultSplit) == 50 {
+                    Text("Equal split")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostSuccess)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .transition(.opacity)
+                }
 
-                // Carry-forward
-                VStack(alignment: .leading, spacing: 8) {
+                Divider().overlay(Color.roostHairline)
+                    .padding(.vertical, 12)
+                    .animation(.roostSnappy, value: Int(defaultSplit) == 50)
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Budget carry-forward")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.roostBody.weight(.medium))
                         .foregroundStyle(Color.roostForeground)
                     Text("When a new month starts, your budget automatically carries forward.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Picker("", selection: $carryForward) {
-                        Text("Automatic").tag("auto")
-                        Text("Manual").tag("manual")
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: carryForward) { _, newVal in
-                        Task {
-                            guard let homeId = homeManager.homeId else { return }
-                            try? await settingsVM.updateSetting(\.budgetCarryForward, value: newVal, homeId: homeId)
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.bottom, DesignSystem.Spacing.inline)
+
+                HStack(spacing: 6) {
+                    ForEach([("auto", "Automatic"), ("manual", "Manual")], id: \.0) { value, label in
+                        Button {
+                            carryForward = value
+                            Task {
+                                guard let homeId = homeManager.homeId else { return }
+                                try? await settingsVM.updateSetting(\.budgetCarryForward, value: value, homeId: homeId)
+                            }
+                        } label: {
+                            Text(label)
+                                .font(.roostLabel)
+                                .foregroundStyle(carryForward == value ? Color.roostCard : Color.roostMutedForeground)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(
+                                    carryForward == value ? Color.roostPrimary : Color.roostInput,
+                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                                )
                         }
-                    }
-                    if carryForward == "manual" {
-                        Text("You'll need to set up your budget each month manually.")
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(hex: 0x854F0B))
+                        .buttonStyle(.plain)
+                        .animation(.roostSnappy, value: carryForward)
                     }
                 }
 
-                Divider()
+                if carryForward == "manual" {
+                    HStack(spacing: 5) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 11, weight: .medium))
+                        Text("You'll set up your budget each month manually.")
+                            .font(.roostCaption)
+                    }
+                    .foregroundStyle(Color.roostWarning)
+                    .padding(.top, 6)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
-                // Overspend alerts
-                VStack(alignment: .leading, spacing: 8) {
+                Divider().overlay(Color.roostHairline)
+                    .padding(.vertical, 12)
+                    .animation(.roostEaseOut, value: carryForward)
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text("Spending alerts")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.roostBody.weight(.medium))
                         .foregroundStyle(Color.roostForeground)
                     Text("Alert when an envelope reaches this percentage of its budget.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 8) {
-                        ForEach([50, 60, 70, 80, 90], id: \.self) { pct in
-                            Button {
-                                overspendThreshold = pct
-                                Task {
-                                    guard let homeId = homeManager.homeId else { return }
-                                    try? await settingsVM.updateSetting(
-                                        \.overspendAlertThreshold,
-                                        value: pct,
-                                        homeId: homeId
-                                    )
-                                }
-                            } label: {
-                                Text("\(pct)%")
-                                    .font(.system(size: 13, weight: overspendThreshold == pct ? .medium : .regular))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(overspendThreshold == pct ? Color(hex: 0xD4795E) : Color(.systemFill))
-                                    .foregroundColor(overspendThreshold == pct ? .white : .primary)
-                                    .clipShape(Capsule())
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.inline)
+
+                HStack(spacing: 6) {
+                    ForEach([50, 60, 70, 80, 90], id: \.self) { pct in
+                        Button {
+                            overspendThreshold = pct
+                            Task {
+                                guard let homeId = homeManager.homeId else { return }
+                                try? await settingsVM.updateSetting(
+                                    \.overspendAlertThreshold,
+                                    value: pct,
+                                    homeId: homeId
+                                )
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            Text("\(pct)%")
+                                .font(.roostLabel)
+                                .foregroundStyle(overspendThreshold == pct ? Color.roostCard : Color.roostMutedForeground)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(
+                                    overspendThreshold == pct ? Color.roostPrimary : Color.roostInput,
+                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                                )
                         }
+                        .buttonStyle(.plain)
+                        .animation(.roostSnappy, value: overspendThreshold == pct)
                     }
                 }
+                .padding(.bottom, 12)
             }
         }
     }
 
-    // MARK: - Section 4: CURRENCY
+    // MARK: - Currency Card
 
-    private var currencySection: some View {
-        RoostSectionSurface(emphasis: .subtle) {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                Text("CURRENCY")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.5)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Picker("Currency", selection: $currency) {
-                    Text("£ GBP").tag("£")
-                    Text("$ USD").tag("$")
-                    Text("€ EUR").tag("€")
-                    Text("A$ AUD").tag("A$")
-                    Text("CA$ CAD").tag("CA$")
-                }
-                .pickerStyle(.menu)
-                .onChange(of: currency) { _, newVal in
-                    Task {
-                        guard let homeId = homeManager.homeId else { return }
-                        try? await settingsVM.updateSetting(\.currencySymbol, value: newVal, homeId: homeId)
+    private var currencyCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostSecondary.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "globe")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostSecondary)
                     }
+                    Text("Currency")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
                 }
+                .padding(.bottom, DesignSystem.Spacing.row)
+
+                Button {
+                    showCurrencyPicker = true
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Display currency")
+                                .font(.roostBody.weight(.medium))
+                                .foregroundStyle(Color.roostForeground)
+                            Text("Used across all Money and Budget screens")
+                                .font(.roostCaption)
+                                .foregroundStyle(Color.roostMutedForeground)
+                        }
+                        Spacer(minLength: 0)
+                        Text(currencyOptions.first(where: { $0.0 == currency })?.1 ?? currency)
+                            .font(.roostLabel)
+                            .foregroundStyle(Color.roostPrimary)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -415,7 +514,6 @@ struct MoneySettingsView: View {
         guard let homeId = homeManager.homeId,
               let userId = homeManager.currentUserId else { return }
 
-        // Sync from current member
         if let member = homeManager.currentMember {
             if let income = member.personalIncome {
                 let formatter = NumberFormatter()
@@ -429,14 +527,11 @@ struct MoneySettingsView: View {
             myIncomeVisible = member.incomeVisibleToPartner ?? false
         }
 
-        // Total household income is used across Money screens. Individual partner
-        // income still respects visibility rules in this settings panel.
         async let total = incomeService.fetchCombinedMemberIncome(homeId: homeId)
         async let partner = incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
         householdIncomeTotal = try? await total
         partnerIncome = try? await partner
 
-        // Sync settings
         defaultSplit = settingsVM.settings.defaultExpenseSplit
         carryForward = settingsVM.settings.budgetCarryForward
         overspendThreshold = settingsVM.settings.overspendAlertThreshold
@@ -456,12 +551,13 @@ struct MoneySettingsView: View {
             try await incomeService.setMyIncome(userId: userId, amount: amount)
             let startOfMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
             try await incomeService.syncCombinedIncome(homeId: homeId, month: startOfMonth)
-            // Refresh member to get updated incomeSetAt
             await homeManager.refreshCurrentHome()
             incomeSetAt = homeManager.currentMember?.incomeSetAt
             householdIncomeTotal = try? await incomeService.fetchCombinedMemberIncome(homeId: homeId)
             partnerIncome = try? await incomeService.fetchPartnerIncome(homeId: homeId, currentUserId: userId)
             withAnimation { showSavedConfirmation = true }
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation { showSavedConfirmation = false }
         } catch {
             // Silently fail — UI stays as-is
         }

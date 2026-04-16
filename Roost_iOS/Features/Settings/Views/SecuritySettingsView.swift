@@ -13,12 +13,16 @@ struct SecuritySettingsView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.xl) {
-                FigmaBackHeader(title: "Security")
-                securitySection
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                FigmaBackHeader(title: "Security", accent: .roostPrimary)
+
+                lockStatusCard
+                appLockCard
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.xxl)
+            .padding(.horizontal, DesignSystem.Spacing.page)
+            .padding(.bottom, 108)
+            .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -55,18 +59,91 @@ struct SecuritySettingsView: View {
         }
     }
 
-    private var securitySection: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-            Text("App Lock")
-                .font(.roostLabel)
-                .foregroundStyle(Color.roostMutedForeground)
-                .textCase(.uppercase)
-                .tracking(0.6)
+    // MARK: - Status Card
 
-            RoostCard {
-                VStack(spacing: 0) {
-                    // App Lock toggle
-                    Toggle(isOn: Binding(
+    private var lockStatusCard: some View {
+        RoostCard {
+            HStack(spacing: DesignSystem.Spacing.row) {
+                ZStack {
+                    Circle()
+                        .fill(appLockEnabled ? Color.roostSuccess.opacity(0.12) : Color.roostMuted)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: appLockEnabled ? "lock.fill" : "lock.open.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(appLockEnabled ? Color.roostSuccess : Color.roostMutedForeground)
+                }
+                .animation(.roostSnappy, value: appLockEnabled)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(appLockEnabled ? "App is protected" : "No lock set")
+                        .font(.roostBody.weight(.semibold))
+                        .foregroundStyle(Color.roostForeground)
+
+                    Text(lockStatusSubtitle)
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .animation(.roostSnappy, value: appLockEnabled)
+
+                Spacer(minLength: 0)
+
+                Text(appLockEnabled ? "On" : "Off")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(appLockEnabled ? Color.roostSuccess : Color.roostMutedForeground)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        (appLockEnabled ? Color.roostSuccess : Color.roostMuted).opacity(appLockEnabled ? 0.12 : 0.7),
+                        in: Capsule()
+                    )
+                    .animation(.roostSnappy, value: appLockEnabled)
+            }
+        }
+    }
+
+    private var lockStatusSubtitle: String {
+        if appLockEnabled {
+            if biometricsAvailable && useBiometrics {
+                return "Locks on exit · Unlocks with \(biometricsLabel) or PIN"
+            }
+            return "Requires your PIN every time you open Roost"
+        }
+        return "Anyone with your phone can open Roost"
+    }
+
+    // MARK: - App Lock Card
+
+    private var appLockCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostPrimary.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostPrimary)
+                    }
+                    Text("App Lock")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.row)
+
+                // Enable toggle
+                HStack(spacing: DesignSystem.Spacing.row) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Require PIN to open Roost")
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Roost locks automatically every time you leave the app")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    Spacer(minLength: 0)
+                    Toggle("", isOn: Binding(
                         get: { appLockEnabled },
                         set: { newValue in
                             if newValue {
@@ -82,84 +159,78 @@ struct SecuritySettingsView: View {
                                 showDisableConfirm = true
                             }
                         }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("App lock")
-                                .font(.roostBody)
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(FigmaSwitchToggleStyle())
+                }
+                .padding(.vertical, 12)
+
+                if lockManager.hasPIN {
+                    Divider().overlay(Color.roostHairline)
+
+                    Button {
+                        showPINSetup = true
+                    } label: {
+                        HStack(spacing: DesignSystem.Spacing.row) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.roostMuted)
+                                    .frame(width: 30, height: 30)
+                                Image(systemName: "key.fill")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(Color.roostMutedForeground)
+                            }
+                            Text("Change PIN")
+                                .font(.roostBody.weight(.medium))
                                 .foregroundStyle(Color.roostForeground)
-                            Text("Require PIN to open Roost")
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.roostMutedForeground)
+                        }
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if biometricsAvailable && appLockEnabled {
+                    Divider().overlay(Color.roostHairline)
+
+                    HStack(spacing: DesignSystem.Spacing.row) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.roostPrimary.opacity(0.08))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: biometricsLabel == "Face ID" ? "faceid" : "touchid")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.roostPrimary)
+                        }
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Use \(biometricsLabel)")
+                                .font(.roostBody.weight(.medium))
+                                .foregroundStyle(Color.roostForeground)
+                            Text("Unlock Roost with \(biometricsLabel) instead of your PIN")
                                 .font(.roostCaption)
                                 .foregroundStyle(Color.roostMutedForeground)
                         }
-                    }
-                    .padding(.vertical, DesignSystem.Spacing.inline)
-                    .tint(Color.roostPrimary)
 
-                    if lockManager.hasPIN {
-                        Divider()
-                            .overlay(Color.roostHairline)
+                        Spacer(minLength: 0)
 
-                        // Change PIN row
-                        Button {
-                            showPINSetup = true
-                        } label: {
-                            HStack {
-                                Text("Change PIN")
-                                    .font(.roostBody)
-                                    .foregroundStyle(Color.roostForeground)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(Color.roostMutedForeground)
-                            }
-                            .padding(.vertical, DesignSystem.Spacing.inline)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if biometricsAvailable && appLockEnabled {
-                        Divider()
-                            .overlay(Color.roostHairline)
-
-                        Toggle(isOn: Binding(
+                        Toggle("", isOn: Binding(
                             get: { useBiometrics },
                             set: { newValue in
                                 useBiometrics = newValue
                                 lockManager.useBiometrics = newValue
                             }
-                        )) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Use \(biometricsLabel)")
-                                    .font(.roostBody)
-                                    .foregroundStyle(Color.roostForeground)
-                                Text("Unlock Roost with \(biometricsLabel)")
-                                    .font(.roostCaption)
-                                    .foregroundStyle(Color.roostMutedForeground)
-                            }
-                        }
-                        .padding(.vertical, DesignSystem.Spacing.inline)
-                        .tint(Color.roostPrimary)
-                        .disabled(!appLockEnabled)
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(FigmaSwitchToggleStyle())
                     }
-
-                    if appLockEnabled {
-                        Divider()
-                            .overlay(Color.roostHairline)
-
-                        HStack {
-                            Text("Locks when you leave the app")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color.roostMutedForeground)
-                            Spacer()
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Color.roostSecondary)
-                        }
-                        .padding(.vertical, DesignSystem.Spacing.inline)
-                    }
+                    .padding(.vertical, 12)
+                    .disabled(!appLockEnabled)
                 }
-                .padding(.horizontal, Spacing.md)
             }
         }
     }
@@ -170,6 +241,8 @@ struct SecuritySettingsView: View {
         biometricsLabel = btype == .touchID ? "Touch ID" : "Face ID"
     }
 }
+
+// MARK: - Disable Lock Sheet
 
 private struct DisableLockPINSheet: View {
     @Environment(AppLockManager.self) private var lockManager
@@ -257,11 +330,9 @@ private struct DisableLockPINSheet: View {
         if lockManager.requiresReauth {
             return "Too many failed attempts. Sign in with your email to continue."
         }
-
         if lockManager.isInCooldown {
             return "Too many attempts — try again in \(countdown) seconds"
         }
-
         return message
     }
 
@@ -293,7 +364,6 @@ private struct DisableLockPINSheet: View {
         guard pin.count < 6, !keypadDisabled else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         pin.append(digit)
-
         if pin.count == 6 {
             verify()
         }

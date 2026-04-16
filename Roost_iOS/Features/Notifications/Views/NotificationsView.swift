@@ -9,8 +9,10 @@ struct NotificationsView: View {
     @State private var hasAnimatedIn = false
 
     var body: some View {
-        RoostPageContainer(title: "Notifications", subtitle: nil) {
-            VStack(alignment: .leading, spacing: Spacing.xl) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                FigmaBackHeader(title: "Notifications", accent: .roostPrimary)
+
                 if viewModel.isLoading && viewModel.notifications.isEmpty {
                     loadingCard
                         .modifier(NotificationEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
@@ -21,37 +23,54 @@ struct NotificationsView: View {
                     actionBar
                         .modifier(NotificationEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
-                    RoostSectionSurface(emphasis: .subtle) {
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                        SectionHeader(
-                            title: "All notifications"
-                        )
-
-                        ForEach(Array(viewModel.notifications.enumerated()), id: \.element.id) { index, notification in
-                            Button {
-                                Task {
-                                    await viewModel.markAsRead(notification)
-                                    router.route(notification: notification)
+                    RoostCard {
+                        VStack(alignment: .leading, spacing: 0) {
+                            HStack(spacing: DesignSystem.Spacing.inline) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.roostPrimary.opacity(0.10))
+                                        .frame(width: 32, height: 32)
+                                    Image(systemName: "bell.fill")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(Color.roostPrimary)
                                 }
-                            } label: {
-                                NotificationRow(notification: notification)
+                                Text("All notifications")
+                                    .font(.roostCardTitle)
+                                    .foregroundStyle(Color.roostForeground)
                             }
-                            .buttonStyle(.plain)
-                            .modifier(NotificationEntranceModifier(index: index + 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                            .padding(.bottom, DesignSystem.Spacing.row)
 
-                            if notification.id != viewModel.notifications.last?.id {
-                                Divider()
-                                    .overlay(Color.roostHairline)
-                                    .padding(.leading, 48)
+                            ForEach(Array(viewModel.notifications.enumerated()), id: \.element.id) { index, notification in
+                                Button {
+                                    Task {
+                                        await viewModel.markAsRead(notification)
+                                        router.route(notification: notification)
+                                    }
+                                } label: {
+                                    NotificationRow(notification: notification)
+                                }
+                                .buttonStyle(.plain)
+                                .modifier(NotificationEntranceModifier(index: index + 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+
+                                if notification.id != viewModel.notifications.last?.id {
+                                    Divider()
+                                        .overlay(Color.roostHairline)
+                                        .padding(.leading, 48)
+                                }
                             }
                         }
                     }
-                    }
+                    .modifier(NotificationEntranceModifier(index: 1, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
                 }
             }
+            .padding(.horizontal, DesignSystem.Spacing.page)
+            .padding(.bottom, 108)
+            .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.large)
+        .background(Color.roostBackground.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
+        .swipeBackEnabled()
         .task(id: authManager.currentUser?.id) {
             guard let userId = authManager.currentUser?.id else { return }
             await viewModel.load(userId: userId)
@@ -79,9 +98,12 @@ struct NotificationsView: View {
                 Text(error)
                     .font(.roostCaption)
                     .foregroundStyle(Color.roostCard)
-                    .padding(Spacing.md)
-                    .background(Color.roostDestructive.cornerRadius(RoostTheme.controlCornerRadius))
-                    .padding(.horizontal, Spacing.lg)
+                    .padding(DesignSystem.Spacing.row)
+                    .background(
+                        Color.roostDestructive,
+                        in: RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous)
+                    )
+                    .padding(.horizontal, DesignSystem.Spacing.page)
                     .padding(.bottom, DesignSystem.Size.toastBottomOffset)
                     .onTapGesture { viewModel.errorMessage = nil }
             }
@@ -89,8 +111,8 @@ struct NotificationsView: View {
     }
 
     private var actionBar: some View {
-        HStack(spacing: Spacing.md) {
-            Text("\(viewModel.unreadCount) unread")
+        HStack(spacing: DesignSystem.Spacing.row) {
+            Text(viewModel.unreadCount == 1 ? "1 unread" : "\(viewModel.unreadCount) unread")
                 .font(.roostLabel)
                 .foregroundStyle(Color.roostForeground)
 
@@ -103,8 +125,8 @@ struct NotificationsView: View {
                     Text("Mark all read")
                         .font(.roostLabel)
                         .foregroundStyle(Color.roostPrimary)
-                        .padding(.horizontal, Spacing.md)
-                        .frame(minHeight: 44)
+                        .padding(.horizontal, DesignSystem.Spacing.row)
+                        .frame(minHeight: 36)
                         .background(Color.roostPrimary.opacity(0.10), in: Capsule())
                         .contentShape(Rectangle())
                 }
@@ -114,7 +136,7 @@ struct NotificationsView: View {
     }
 
     private var loadingCard: some View {
-        VStack(spacing: Spacing.md) {
+        VStack(spacing: DesignSystem.Spacing.inline) {
             ForEach(0..<4, id: \.self) { _ in
                 LoadingSkeletonView()
                     .frame(height: 92)

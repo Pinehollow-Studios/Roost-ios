@@ -314,7 +314,6 @@ struct MoreSettingsView: View {
                 rows: [
                     settingsRow("Rooms", icon: "door.left.hand.open", destination: .rooms, tint: Color.roostChoreTint),
                     settingsRow("Money", icon: "sterlingsign.circle.fill", destination: .money, tint: Color.roostMoneyTint),
-                    settingsRow("Budget Categories", icon: "tag", destination: .budgetCategories, tint: Color.roostMoneyTint),
                     settingsRow("Activity", icon: "clock.arrow.circlepath", destination: .activity, tint: Color.roostShoppingTint),
                     settingsRow("Notifications Inbox", icon: "tray", destination: .notifications, tint: Color.roostWarning)
                 ]

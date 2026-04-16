@@ -101,7 +101,7 @@ struct RoomsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
-                FigmaBackHeader(title: "Rooms")
+                FigmaBackHeader(title: "Rooms", accent: .roostPrimary)
 
                 Text("Manage the rooms in your home to organise chores and groups.")
                     .font(.roostCaption)
@@ -133,7 +133,7 @@ struct RoomsView: View {
                     .padding(.horizontal, DesignSystem.Spacing.card)
                     .padding(.vertical, 10)
                     .background(Color.roostDestructive, in: Capsule())
-                    .padding(.horizontal, Spacing.lg)
+                    .padding(.horizontal, DesignSystem.Spacing.page)
                     .padding(.bottom, DesignSystem.Size.toastBottomOffset)
                     .onTapGesture { viewModel.errorMessage = nil }
             }
@@ -158,12 +158,12 @@ struct RoomsView: View {
                             .tint(Color.roostPrimary)
                         Spacer()
                     }
-                    .padding(.vertical, Spacing.lg)
+                    .padding(.vertical, DesignSystem.Spacing.section)
                 } else if viewModel.rooms.isEmpty {
                     Text("No rooms added yet — use the suggestions below.")
                         .font(.roostBody)
                         .foregroundStyle(Color.roostMutedForeground)
-                        .padding(.vertical, Spacing.md)
+                        .padding(.vertical, DesignSystem.Spacing.row)
                 } else {
                     VStack(spacing: 2) {
                         ForEach(viewModel.rooms) { room in

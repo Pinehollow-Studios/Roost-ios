@@ -15,8 +15,10 @@ struct ActivityFeedView: View {
     private var viewModel: ActivityViewModel { previewViewModel ?? sharedViewModel }
 
     var body: some View {
-        RoostPageContainer(title: "Activity", subtitle: nil) {
-            VStack(alignment: .leading, spacing: Spacing.xl) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                FigmaBackHeader(title: "Activity", accent: .roostPrimary)
+
                 if viewModel.isLoading && viewModel.items.isEmpty {
                     loadingCard
                         .modifier(ActivityEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
@@ -24,33 +26,50 @@ struct ActivityFeedView: View {
                     emptyCard
                         .modifier(ActivityEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
                 } else {
-                    RoostSectionSurface(emphasis: .subtle) {
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                        SectionHeader(
-                            title: "Latest updates"
-                        )
+                    RoostCard {
+                        VStack(alignment: .leading, spacing: 0) {
+                            HStack(spacing: DesignSystem.Spacing.inline) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.roostPrimary.opacity(0.10))
+                                        .frame(width: 32, height: 32)
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(Color.roostPrimary)
+                                }
+                                Text("Latest updates")
+                                    .font(.roostCardTitle)
+                                    .foregroundStyle(Color.roostForeground)
+                            }
+                            .padding(.bottom, DesignSystem.Spacing.row)
 
-                        ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
-                            ActivityRow(
-                                item: item,
-                                member: member(for: item.userID),
-                                memberName: memberName(for: item.userID)
-                            )
-                            .modifier(ActivityEntranceModifier(index: index, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
+                            ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
+                                ActivityRow(
+                                    item: item,
+                                    member: member(for: item.userID),
+                                    memberName: memberName(for: item.userID)
+                                )
+                                .modifier(ActivityEntranceModifier(index: index, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
 
-                            if item.id != viewModel.items.last?.id {
-                                Divider()
-                                    .overlay(Color.roostHairline)
-                                    .padding(.leading, 44)
+                                if item.id != viewModel.items.last?.id {
+                                    Divider()
+                                        .overlay(Color.roostHairline)
+                                        .padding(.leading, 44)
+                                }
                             }
                         }
                     }
-                    }
+                    .modifier(ActivityEntranceModifier(index: 0, hasAnimatedIn: hasAnimatedIn, reduceMotion: reduceMotion))
                 }
             }
+            .padding(.horizontal, DesignSystem.Spacing.page)
+            .padding(.bottom, 108)
+            .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .navigationTitle("Activity")
-        .navigationBarTitleDisplayMode(.large)
+        .background(Color.roostBackground.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
+        .swipeBackEnabled()
         .refreshable {
             guard let homeId = homeManager.homeId else { return }
             await viewModel.loadActivity(homeId: homeId)
@@ -70,9 +89,12 @@ struct ActivityFeedView: View {
                 Text(error)
                     .font(.roostCaption)
                     .foregroundStyle(Color.roostCard)
-                    .padding(Spacing.md)
-                    .background(Color.roostDestructive.cornerRadius(RoostTheme.controlCornerRadius))
-                    .padding(.horizontal, Spacing.lg)
+                    .padding(DesignSystem.Spacing.row)
+                    .background(
+                        Color.roostDestructive,
+                        in: RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous)
+                    )
+                    .padding(.horizontal, DesignSystem.Spacing.page)
                     .padding(.bottom, DesignSystem.Size.toastBottomOffset)
                     .onTapGesture { viewModel.errorMessage = nil }
             }
@@ -80,7 +102,7 @@ struct ActivityFeedView: View {
     }
 
     private var loadingCard: some View {
-        VStack(spacing: Spacing.md) {
+        VStack(spacing: DesignSystem.Spacing.inline) {
             ForEach(0..<4, id: \.self) { _ in
                 LoadingSkeletonView()
                     .frame(height: 100)
