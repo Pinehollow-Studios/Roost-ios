@@ -189,9 +189,9 @@ struct MoneyOverviewView: View {
             .sorted { ($0.dayOfMonth ?? 0) < ($1.dayOfMonth ?? 0) }
     }
 
-    // MARK: - Hazel insight
+    // MARK: - Budget insight
 
-    private var hazelInsight: String? {
+    private var budgetInsight: String? {
         guard let summary = summaryVM.summary, !isLoading else { return nil }
         let expenses = thisMonthExpensesAsExpense
 
@@ -238,13 +238,7 @@ struct MoneyOverviewView: View {
     }
 
     private func categoryColour(for name: String) -> Color {
-        let palette: [Color] = [
-            Color.roostMoneyTint, Color(hex: 0x9DB19F), Color(hex: 0xE6A563),
-            Color(hex: 0xC17A6F), Color(hex: 0x7A9199), Color(hex: 0xA08AB8),
-            Color(hex: 0xC4789A), Color(hex: 0x8B9E7D)
-        ]
-        let hash = abs(name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) })
-        return palette[hash % palette.count]
+        moneyColour(for: name)
     }
 
     private func billDateLabel(day: Int) -> String {
@@ -288,7 +282,7 @@ struct MoneyOverviewView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
 
-                    // Zone 1 — Ring + stats + Hazel insight
+                    // Zone 1 — Ring + stats + budget insight
                     zone1RingCard
 
                     // Zone 2 — Money flow
@@ -376,7 +370,7 @@ private extension MoneyOverviewView {
                         ringArc104
                         zone1Stats
                     }
-                    if let insight = hazelInsight {
+                    if let insight = budgetInsight {
                         Text(insight)
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)

@@ -72,7 +72,7 @@ struct MoneyGoalsView: View {
                             activeGoalsSection
 
                             if hiddenCount > 0 {
-                                proGateFooter
+                                ghostGoalsSection
                             }
                         }
 
@@ -233,6 +233,62 @@ struct MoneyGoalsView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    // Ghost cards for locked goals — blurred placeholder rows that hint at hidden content
+    private var ghostGoalsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: 0) {
+                ForEach(0..<min(hiddenCount, 2), id: \.self) { index in
+                    ghostGoalRow(index: index)
+                    if index < min(hiddenCount, 2) - 1 {
+                        Divider().padding(.leading, 14)
+                    }
+                }
+            }
+            .background(Color.roostCard.opacity(0.74), in: RoundedRectangle(cornerRadius: goalCorner, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: goalCorner, style: .continuous)
+                    .stroke(Color.roostHairline, lineWidth: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: goalCorner, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+
+            proGateFooter
+        }
+    }
+
+    private func ghostGoalRow(index: Int) -> some View {
+        let tints: [Color] = [goalColour("blue"), goalColour("purple"), goalColour("sage")]
+        let tint = tints[index % tints.count]
+        return HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(tint.opacity(0.5))
+                .frame(width: 5, height: 42)
+
+            VStack(alignment: .leading, spacing: 4) {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.roostMuted)
+                    .frame(width: 100, height: 13)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.roostMuted)
+                    .frame(width: 70, height: 10)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 4) {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.roostMuted)
+                    .frame(width: 48, height: 13)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.roostMuted)
+                    .frame(width: 30, height: 10)
+            }
+        }
+        .padding(13)
     }
 
     private var proGateFooter: some View {

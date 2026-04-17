@@ -67,7 +67,7 @@ struct MoneySettingsView: View {
                 Text("YOUR INCOME")
                     .font(.system(size: 10, weight: .medium))
                     .tracking(1.5)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.roostMutedForeground)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // My income card
@@ -77,23 +77,24 @@ struct MoneySettingsView: View {
                         .foregroundStyle(Color.roostForeground)
                     Text("Only you can see your individual amount. Your combined household income is used across the app.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
 
                     HStack {
                         Text(sym)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                         TextField("e.g. 2500", text: $myIncomeText)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
                     }
                     .padding()
-                    .background(Color(.systemFill))
+                    .background(Color.roostMuted)
                     .cornerRadius(12)
 
                     if let setAt = incomeSetAt {
                         Text("Last updated \(setAt.formatted(.dateTime.day().month(.wide).year()))")
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
 
                     Button {
@@ -107,7 +108,7 @@ struct MoneySettingsView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(14)
-                        .background(myIncomeText.isEmpty ? Color(hex: 0xD4795E).opacity(0.4) : Color(hex: 0xD4795E))
+                        .background(myIncomeText.isEmpty ? Color.roostPrimary.opacity(0.4) : Color.roostPrimary)
                         .cornerRadius(12)
                     }
                     .disabled(myIncomeText.isEmpty || isSavingIncome)
@@ -115,7 +116,7 @@ struct MoneySettingsView: View {
                     if showSavedConfirmation {
                         Text("Saved ✓")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(hex: 0x3B6D11))
+                            .foregroundStyle(Color.roostSuccess)
                             .transition(.opacity)
                             .onAppear {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -134,7 +135,7 @@ struct MoneySettingsView: View {
                             .font(.system(size: 14))
                         Text("\(memberNames.names.partner) will be able to see your individual amount in their Settings. You can turn this off at any time.")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
                     Toggle("", isOn: $myIncomeVisible)
                         .labelsHidden()
@@ -150,7 +151,7 @@ struct MoneySettingsView: View {
                         HStack {
                             Text("\(memberNames.names.partner)'s income")
                                 .font(.system(size: 14))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.roostMutedForeground)
                             Spacer()
                             Text(scramble.format(partnerInc, symbol: sym))
                                 .font(.system(size: 14, weight: .medium))
@@ -159,7 +160,7 @@ struct MoneySettingsView: View {
                     } else {
                         Text("\(memberNames.names.partner) hasn't shared their income yet")
                             .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
                 }
 
@@ -170,13 +171,13 @@ struct MoneySettingsView: View {
                     Text("COMBINED HOUSEHOLD")
                         .font(.system(size: 9, weight: .medium))
                         .tracking(1.2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                     Text(scramble.format(combinedIncome, symbol: sym))
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(Color.roostForeground)
                     Text("Used across all Money screens")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                 }
             }
         }
@@ -190,7 +191,7 @@ struct MoneySettingsView: View {
                 Text("PRIVACY & DISPLAY")
                     .font(.system(size: 10, weight: .medium))
                     .tracking(1.5)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.roostMutedForeground)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Scramble mode
@@ -198,7 +199,7 @@ struct MoneySettingsView: View {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "eye.slash.fill")
                             .font(.system(size: 18))
-                            .foregroundColor(Color(hex: 0x854F0B))
+                            .foregroundStyle(Color.roostWarning)
                             .frame(width: 28)
 
                         VStack(alignment: .leading, spacing: 3) {
@@ -211,14 +212,14 @@ struct MoneySettingsView: View {
                                         .font(.system(size: 10, weight: .medium))
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(Color(hex: 0xFAEEDA))
-                                        .foregroundColor(Color(hex: 0x854F0B))
+                                        .background(Color.roostWarning.opacity(0.12))
+                                        .foregroundStyle(Color.roostWarning)
                                         .clipShape(Capsule())
                                 }
                             }
                             Text("Replace all amounts with ••• when showing Roost to someone. Syncs to both your devices.")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.roostMutedForeground)
                         }
                     }
 
@@ -244,7 +245,7 @@ struct MoneySettingsView: View {
                             .foregroundStyle(Color.roostForeground)
                         Text("Tap the ring to reveal amounts. Device-only setting.")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
                     Spacer()
                     Toggle("", isOn: $hideBalances)
@@ -265,7 +266,7 @@ struct MoneySettingsView: View {
                 Text("BUDGET PREFERENCES")
                     .font(.system(size: 10, weight: .medium))
                     .tracking(1.5)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.roostMutedForeground)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Default split slider
@@ -276,7 +277,7 @@ struct MoneySettingsView: View {
                             .foregroundStyle(Color.roostForeground)
                         Text("When you log a shared expense, this is the default split.")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                     }
 
                     HStack(spacing: 8) {
@@ -285,7 +286,7 @@ struct MoneySettingsView: View {
                             .font(.system(size: 13, weight: .medium))
                             .frame(width: 36)
                         Slider(value: $defaultSplit, in: 0...100, step: 5)
-                            .tint(Color(hex: 0xD4795E))
+                            .tint(Color.roostPrimary)
                             .onChange(of: defaultSplit) { _, _ in
                                 debounceTask?.cancel()
                                 debounceTask = Task {
@@ -308,7 +309,7 @@ struct MoneySettingsView: View {
                     if Int(defaultSplit) == 50 {
                         Text("Equal split")
                             .font(.system(size: 11))
-                            .foregroundColor(Color(hex: 0x9DB19F))
+                            .foregroundStyle(Color.roostSecondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
@@ -322,22 +323,39 @@ struct MoneySettingsView: View {
                         .foregroundStyle(Color.roostForeground)
                     Text("When a new month starts, your budget automatically carries forward.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Picker("", selection: $carryForward) {
-                        Text("Automatic").tag("auto")
-                        Text("Manual").tag("manual")
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: carryForward) { _, newVal in
-                        Task {
-                            guard let homeId = homeManager.homeId else { return }
-                            try? await settingsVM.updateSetting(\.budgetCarryForward, value: newVal, homeId: homeId)
+                        .foregroundStyle(Color.roostMutedForeground)
+
+                    HStack(spacing: 0) {
+                        ForEach([("Automatic", "auto"), ("Manual", "manual")], id: \.1) { label, value in
+                            let selected = carryForward == value
+                            Button {
+                                guard carryForward != value else { return }
+                                withAnimation(.easeInOut(duration: 0.18)) { carryForward = value }
+                                Task {
+                                    guard let homeId = homeManager.homeId else { return }
+                                    try? await settingsVM.updateSetting(\.budgetCarryForward, value: value, homeId: homeId)
+                                }
+                            } label: {
+                                Text(label)
+                                    .font(.system(size: 13, weight: selected ? .medium : .regular))
+                                    .foregroundStyle(selected ? Color.white : Color.roostForeground)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(selected ? Color.roostPrimary : Color.roostMuted)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.roostHairline, lineWidth: 1)
+                    )
+
                     if carryForward == "manual" {
                         Text("You'll need to set up your budget each month manually.")
                             .font(.system(size: 11))
-                            .foregroundColor(Color(hex: 0x854F0B))
+                            .foregroundStyle(Color.roostWarning)
                     }
                 }
 
@@ -350,7 +368,7 @@ struct MoneySettingsView: View {
                         .foregroundStyle(Color.roostForeground)
                     Text("Alert when an envelope reaches this percentage of its budget.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                     HStack(spacing: 8) {
                         ForEach([50, 60, 70, 80, 90], id: \.self) { pct in
                             Button {
@@ -368,8 +386,8 @@ struct MoneySettingsView: View {
                                     .font(.system(size: 13, weight: overspendThreshold == pct ? .medium : .regular))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
-                                    .background(overspendThreshold == pct ? Color(hex: 0xD4795E) : Color(.systemFill))
-                                    .foregroundColor(overspendThreshold == pct ? .white : .primary)
+                                    .background(overspendThreshold == pct ? Color.roostPrimary : Color.roostMuted)
+                                    .foregroundStyle(overspendThreshold == pct ? Color.white : Color.roostForeground)
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
