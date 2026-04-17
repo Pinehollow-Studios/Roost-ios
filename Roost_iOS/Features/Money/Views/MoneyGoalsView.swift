@@ -29,15 +29,15 @@ struct MoneyGoalsView: View {
 
     @State private var showAddGoal = false
     @State private var selectedGoalId: UUID?
-    @State private var showNestUpsell = false
+    @State private var showProUpsell = false
     @State private var completedExpanded = false
     @State private var summaryProgress: Double = 0
 
-    private var isNest: Bool { homeManager.home?.hasProAccess ?? false }
+    private var isPro: Bool { homeManager.home?.hasProAccess ?? false }
     private var sym: String { settingsVM.settings.currencySymbol }
     private var activeGoals: [SavingsGoal] { goalsVM.activeGoals }
     private var completedGoals: [SavingsGoal] { goalsVM.completedGoals }
-    private var visibleGoals: [SavingsGoal] { isNest ? activeGoals : Array(activeGoals.prefix(1)) }
+    private var visibleGoals: [SavingsGoal] { isPro ? activeGoals : Array(activeGoals.prefix(1)) }
     private var hiddenCount: Int { max(0, activeGoals.count - visibleGoals.count) }
 
     private var totalSaved: Decimal { activeGoals.reduce(0) { $0 + $1.savedAmount } }
@@ -102,7 +102,7 @@ struct MoneyGoalsView: View {
                 GoalDetailPage(goalId: selectedGoalId)
             }
         }
-        .nestUpsell(isPresented: $showNestUpsell, feature: .advancedBudgeting)
+        .nestUpsell(isPresented: $showProUpsell, feature: .advancedBudgeting)
         .onAppear { animateSummaryProgress() }
         .onChange(of: totalProgress) { _, _ in animateSummaryProgress() }
     }
@@ -110,8 +110,8 @@ struct MoneyGoalsView: View {
     private var addGoalButton: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            if !isNest && activeGoals.count >= 1 {
-                showNestUpsell = true
+            if !isPro && activeGoals.count >= 1 {
+                showProUpsell = true
             } else {
                 showAddGoal = true
             }
@@ -293,7 +293,7 @@ struct MoneyGoalsView: View {
 
     private var proGateFooter: some View {
         Button {
-            showNestUpsell = true
+            showProUpsell = true
         } label: {
             HStack(spacing: 10) {
                 RoostIconBadge(systemImage: "lock.fill", tint: goalColour("amber"), size: 30)

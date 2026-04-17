@@ -132,8 +132,8 @@ struct MoreMenuView: View {
 
                 QuickAccessTile(
                     title: "Roost Pro",
-                    icon: "crown.fill",
-                    tint: Color.roostPrimary,
+                    icon: "sparkles",
+                    tint: Color.proAmber,
                     badge: nil,
                     destination: .subscription,
                     reduceMotion: reduceMotion
@@ -415,7 +415,7 @@ struct MoreSettingsView: View {
                 rows: [
                     settingsRow("Household", icon: "house", destination: .household, tint: Color.roostChoreTint),
                     settingsRow("Account", icon: "gearshape", destination: .account, tint: Color.roostMutedForeground),
-                    settingsRow("Roost Pro", icon: "crown.fill", destination: .subscription, tint: Color.roostPrimary)
+                    settingsRow("Roost Pro", icon: "sparkles", destination: .subscription, tint: Color.proAmber)
                 ]
             )
 

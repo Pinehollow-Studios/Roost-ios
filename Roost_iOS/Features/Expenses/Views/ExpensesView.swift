@@ -23,7 +23,7 @@ struct ExpensesView: View {
     @State private var isHazelProcessing = false
     @State private var selectedCategoryFilter = "All categories"
     @State private var selectedPayerFilter = "All payers"
-    @State private var showingNestUpsell = false
+    @State private var showingProUpsell = false
     private let embeddedInParentScroll: Bool
     private let previewViewModel: ExpensesViewModel?
 
@@ -62,7 +62,7 @@ struct ExpensesView: View {
         }
         .background(Color.roostBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
-        .nestUpsell(isPresented: $showingNestUpsell, feature: .advancedBudgeting)
+        .nestUpsell(isPresented: $showingProUpsell, feature: .advancedBudgeting)
         .sheet(isPresented: $showingAddSheet) {
             if let myId = myUserId {
                 AddExpenseSheet(
@@ -88,7 +88,7 @@ struct ExpensesView: View {
                         partnerUserId: partnerUserId ?? myId,
                         isRecurring: recurring,
                         hazelEnabled: hazelViewModel.expensesEnabled,
-                        isNest: homeManager.home?.hasProAccess ?? false,
+                        isPro: homeManager.home?.hasProAccess ?? false,
                         budgetCategoryNames: budgetTemplateViewModel.categories.map(\.name)
                     )
                     isHazelProcessing = false
@@ -463,8 +463,8 @@ struct ExpensesView: View {
                     .foregroundStyle(Color.roostMutedForeground)
                     .multilineTextAlignment(.center)
 
-                RoostButton(title: "Upgrade to Pro", systemImage: "crown.fill") {
-                    showingNestUpsell = true
+                RoostButton(title: "Upgrade to Pro", systemImage: "sparkles") {
+                    showingProUpsell = true
                 }
             }
             .frame(maxWidth: .infinity)

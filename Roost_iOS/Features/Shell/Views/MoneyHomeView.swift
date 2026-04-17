@@ -23,6 +23,22 @@ struct MoneyHomeView: View {
     @State private var temporarilyRevealed = false
     @State private var countdown = 5
     @State private var countdownTask: Task<Void, Never>?
+    @State private var showLockedHistoryUpsell = false
+
+    private var isFreeTier: Bool { !(homeManager.home?.hasProAccess ?? false) }
+
+    private var lockedMonthCount: Int {
+        guard isFreeTier else { return 0 }
+        let cal = Calendar.current
+        let startOfCurrentMonth = cal.date(from: cal.dateComponents([.year, .month], from: Date())) ?? Date()
+        let cutoff = cal.date(byAdding: .month, value: -1, to: startOfCurrentMonth) ?? Date()
+        let months = Set(expensesVM.expenses.compactMap { ews -> String? in
+            guard let date = ews.incurredOnDate, date < cutoff else { return nil }
+            let comps = cal.dateComponents([.year, .month], from: date)
+            return "\(comps.year ?? 0)-\(comps.month ?? 0)"
+        })
+        return months.count
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -85,12 +101,13 @@ struct MoneyHomeView: View {
                         partnerUserId: homeManager.partner?.userID ?? myUserId,
                         isRecurring: recurring,
                         hazelEnabled: hazelVM.expensesEnabled,
-                        isNest: homeManager.home?.hasProAccess ?? false,
+                        isPro: homeManager.home?.hasProAccess ?? false,
                         budgetCategoryNames: budgetVM.categories.map(\.name)
                     )
                 }
             }
         }
+        .nestUpsell(isPresented: $showLockedHistoryUpsell, feature: .budgetHistory)
         .sheet(isPresented: $showSettleUp) {
             if let myUserId = homeManager.currentUserId,
                let partnerUserId = homeManager.partner?.userID,
@@ -152,6 +169,11 @@ struct MoneyHomeView: View {
                     // Section 5 — Upcoming bills (conditional)
                     if !budgetVM.fixedLines.isEmpty {
                         upcomingBillsSection
+                    }
+
+                    // Section 6 — Locked history nudge (free tier, once data exists)
+                    if lockedMonthCount > 0 {
+                        lockedHistoryNudge
                     }
                 }
                 .padding(.horizontal, moneyPageInset)
@@ -668,6 +690,38 @@ struct MoneyHomeView: View {
                 .padding(.vertical, 2)
             }
         }
+    }
+
+    // MARK: - Locked history nudge
+
+    private var lockedHistoryNudge: some View {
+        Button { showLockedHistoryUpsell = true } label: {
+            RoostCard(padding: 12) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostMoneyTint.opacity(0.12))
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Color.roostMoneyTint)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(lockedMonthCount) month\(lockedMonthCount == 1 ? "" : "s") of data locked")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Upgrade to access your full spending history")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Empty state

@@ -72,7 +72,7 @@ struct HazelView: View {
                         .animation(.roostSnappy, value: viewModel.isActive)
                     }
 
-                    Text("Your AI household assistant — normalises inputs, auto-categorises, and keeps things tidy across the app.")
+                    Text("Your AI household assistant — normalises inputs, auto-categorises expenses, narrates your spending month, and keeps things tidy across the app.")
                         .font(.roostCaption)
                         .foregroundStyle(Color.roostMutedForeground)
                         .fixedSize(horizontal: false, vertical: true)
@@ -151,15 +151,9 @@ struct HazelView: View {
                     .opacity(hasProAccess ? 1 : 0.55)
 
                     if !hasProAccess {
-                        HStack(spacing: 5) {
-                            Image(systemName: "crown.fill")
-                                .font(.system(size: 10, weight: .medium))
-                            Text("Roost Pro only")
-                                .font(.roostMeta)
-                        }
-                        .foregroundStyle(Color.roostPrimary)
-                        .padding(.horizontal, DesignSystem.Spacing.card)
-                        .padding(.bottom, DesignSystem.Spacing.inline)
+                        ProBadge()
+                            .padding(.horizontal, DesignSystem.Spacing.card)
+                            .padding(.bottom, DesignSystem.Spacing.inline)
                     }
                 }
 
@@ -175,6 +169,29 @@ struct HazelView: View {
                         set: { viewModel.budgetEnabled = $0 }
                     )
                 )
+
+                Divider().overlay(Color.roostHairline)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    hazelToggleRow(
+                        icon: "sparkles",
+                        color: .roostPrimary,
+                        title: "Budget Insights",
+                        description: "Monthly spending summaries written by Hazel",
+                        isOn: Binding(
+                            get: { viewModel.insightsEnabled },
+                            set: { viewModel.insightsEnabled = $0 }
+                        )
+                    )
+                    .disabled(!hasProAccess)
+                    .opacity(hasProAccess ? 1 : 0.55)
+
+                    if !hasProAccess {
+                        ProBadge()
+                            .padding(.horizontal, DesignSystem.Spacing.card)
+                            .padding(.bottom, DesignSystem.Spacing.inline)
+                    }
+                }
             }
         }
     }

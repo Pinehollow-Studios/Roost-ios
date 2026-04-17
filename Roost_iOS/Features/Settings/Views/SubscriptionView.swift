@@ -12,8 +12,7 @@ struct SubscriptionView: View {
     @State private var browserSession = SubscriptionBrowserSession()
 
     // Animation states
-    @State private var glowPulsing = false
-    @State private var crownAppeared = false
+    @State private var sparklesAppeared = false
     @State private var shimmerPhase: CGFloat = -1.0
     @State private var featuresVisible = false
     @State private var contentAppeared = false
@@ -89,14 +88,11 @@ struct SubscriptionView: View {
         }
         .settingsMessageOverlay()
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                glowPulsing = true
-            }
             withAnimation(.interpolatingSpring(stiffness: 60, damping: 10).delay(0.1)) {
-                crownAppeared = true
+                sparklesAppeared = true
             }
-            withAnimation(.linear(duration: 3.0).repeatForever(autoreverses: false).delay(0.8)) {
-                shimmerPhase = 1.0
+            withAnimation(.linear(duration: 2.2).repeatForever(autoreverses: false).delay(0.8)) {
+                shimmerPhase = 2.0
             }
             withAnimation(.easeOut(duration: 0.5).delay(0.35)) {
                 featuresVisible = true
@@ -111,43 +107,25 @@ struct SubscriptionView: View {
 
     private var heroSection: some View {
         ZStack(alignment: .topLeading) {
-            // Base gradient
-            LinearGradient(
-                colors: [Color.roostPrimary, Color.roostSecondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Aurora drift background
+            ProAuroraBackground()
 
-            // Animated radial glow
-            RadialGradient(
-                colors: [Color.white.opacity(0.18), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 140
-            )
-            .scaleEffect(glowPulsing ? 1.4 : 0.8)
-            .offset(y: -20)
-
-            // Decorative circle top right
-            Circle()
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 180, height: 180)
-                .offset(x: 120, y: -60)
-
-            // Decorative circle bottom left
-            Circle()
-                .fill(Color.white.opacity(0.05))
-                .frame(width: 120, height: 120)
-                .offset(x: -40, y: 160)
+            // Thin amber hairline at bottom
+            VStack {
+                Spacer()
+                Rectangle()
+                    .fill(Color.proAmber.opacity(0.25))
+                    .frame(height: 1)
+            }
 
             VStack(alignment: .leading, spacing: 0) {
                 // Back button
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.proWarmWhite)
                         .frame(width: 38, height: 38)
-                        .background(.white.opacity(0.18), in: Circle())
+                        .background(Color.proWarmWhite.opacity(0.10), in: Circle())
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -157,53 +135,54 @@ struct SubscriptionView: View {
 
                 Spacer()
 
-                // Crown + wordmark
+                // Sparkles + wordmark
                 VStack(spacing: 0) {
-                    // Pulsing aura rings
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 90, height: 90)
-                            .scaleEffect(glowPulsing ? 1.4 : 1.0)
-
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                            .frame(width: 68, height: 68)
-                            .scaleEffect(glowPulsing ? 1.25 : 1.0)
-
-                        Circle()
-                            .fill(Color.white.opacity(0.18))
-                            .frame(width: 52, height: 52)
-
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundStyle(.white)
-                            .scaleEffect(crownAppeared ? 1.0 : 0.4)
-                            .opacity(crownAppeared ? 1 : 0)
-                    }
-
-                    Spacer().frame(height: 18)
-
-                    Text("Roost Pro")
+                    Image(systemName: "sparkles")
                         .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(.white)
-                        .scaleEffect(crownAppeared ? 1.0 : 0.88)
-                        .opacity(crownAppeared ? 1 : 0)
+                        .foregroundStyle(DesignSystem.ProPalette.gradientH)
+                        .scaleEffect(sparklesAppeared ? 1.0 : 0.4)
+                        .opacity(sparklesAppeared ? 1 : 0)
+                        .proGlow()
+
+                    Spacer().frame(height: 20)
+
+                    HStack(spacing: 0) {
+                        Text("Roost ")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(Color.proWarmWhite)
+                        Text("Pro")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(DesignSystem.ProPalette.gradientH)
+                    }
+                    .scaleEffect(sparklesAppeared ? 1.0 : 0.88)
+                    .opacity(sparklesAppeared ? 1 : 0)
 
                     Spacer().frame(height: 10)
 
-                    Text("Run your home. Together.")
-                        .font(.roostBody)
-                        .foregroundStyle(.white.opacity(0.82))
+                    Text("Your home, elevated.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.proBodyText)
+                        .tracking(0.3)
                         .multilineTextAlignment(.center)
-                        .opacity(crownAppeared ? 1 : 0)
+                        .opacity(sparklesAppeared ? 1 : 0)
+
+                    Spacer().frame(height: 6)
+
+                    Text("The full household dashboard — with history, intelligence, and everything that matters.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.proBodyText.opacity(0.75))
+                        .tracking(0.1)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 28)
+                        .opacity(sparklesAppeared ? 1 : 0)
                 }
                 .frame(maxWidth: .infinity)
 
                 Spacer()
             }
         }
-        .frame(height: 300)
+        .frame(height: 320)
+        .colorScheme(.dark)
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: 0,
@@ -286,7 +265,7 @@ struct SubscriptionView: View {
 
     private var currentPlanIcon: String {
         switch viewModel.state {
-        case .active, .lifetime: return "crown.fill"
+        case .active, .lifetime: return "sparkles"
         case .trial: return "star.fill"
         case .pastDue, .incomplete: return "exclamationmark.triangle.fill"
         case .cancelled: return "xmark.circle.fill"
@@ -365,19 +344,26 @@ struct SubscriptionView: View {
     // MARK: - Feature Showcase
 
     private let showcaseFeatures: [(icon: String, title: String, body: String)] = [
-        ("sparkles",             "Hazel AI",            "Auto-categorizes expenses, normalizes shopping, and tidies your budget — automatically."),
-        ("calendar.badge.clock", "Full Budget History",  "Navigate every past month and see exactly where your money went."),
-        ("chart.pie.fill",       "Advanced Budgeting",   "Set category limits, track recurring costs, and carry budgets forward."),
-        ("bell.badge.fill",      "Smart Notifications",  "Get nudged when chores are overdue, bills are due, or budgets are tight."),
-        ("square.grid.2x2.fill", "Room Groups",          "Organise chores and shopping by room — kitchen, bathroom, living room and more."),
-        ("person.2.fill",        "Unlimited Members",    "Add everyone in the home — no limits, no extra cost."),
+        ("sparkles",             "Hazel AI",
+         "Always working. Never in the way. Auto-categorizes as you log, narrates your spending month in plain English, bulk-sorts uncategorized items, and suggests your monthly chore list — all silently in the background."),
+        ("calendar.badge.clock", "Budget History",
+         "Every month, forever. Navigate every past month and see exactly where your money went and why. Your financial story, never locked away."),
+        ("chart.pie.fill",       "Advanced Budgeting",
+         "Set goals. Watch them happen. Unlock multiple savings goals, full month-by-month spending trends, and a detailed month comparison — so you always see the bigger picture."),
+        ("bell.badge.fill",      "Smart Notifications",
+         "Never miss what matters. Get nudged when chores are overdue, bills are coming, or spending is running hot. The right alert, at the right moment."),
+        ("square.grid.2x2.fill", "Room Groups",
+         "Tidy the house with one tap. Group rooms and assign chores to all of them at once. Clean all bathrooms. Tidy the whole house. One action."),
+        ("person.2.fill",        "Unlimited Members",
+         "Everyone in, no limits. Add every person in your home — no caps, no tiers, no extra cost."),
     ]
 
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Everything you unlock")
-                .font(.roostSection)
-                .foregroundStyle(Color.roostForeground)
+            Text("WHAT YOU UNLOCK")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.roostMutedForeground)
+                .tracking(1.2)
 
             VStack(spacing: 10) {
                 ForEach(Array(showcaseFeatures.enumerated()), id: \.offset) { index, feature in
@@ -394,23 +380,17 @@ struct SubscriptionView: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.roostPrimary.opacity(0.18), Color.roostSecondary.opacity(0.12)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 46, height: 46)
+                    .fill(Color.proCopper.opacity(0.15))
+                    .frame(width: 44, height: 44)
 
                 Image(systemName: feature.icon)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.roostPrimary)
+                    .foregroundStyle(Color.proAmber)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(feature.title)
-                    .font(.roostBody.weight(.semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.roostForeground)
 
                 Text(feature.body)
@@ -425,18 +405,20 @@ struct SubscriptionView: View {
         .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [Color.roostPrimary.opacity(0.22), Color.roostSecondary.opacity(0.12)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                .strokeBorder(Color.proAmber.opacity(0.15), lineWidth: 1)
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(DesignSystem.ProPalette.gradient)
+                .frame(width: 3)
+                .padding(.vertical, 10)
+        }
         .opacity(featuresVisible ? 1 : 0)
-        .offset(y: featuresVisible ? 0 : 14)
-        .animation(.roostSmooth.delay(Double(index) * 0.06), value: featuresVisible)
+        .offset(y: featuresVisible ? 0 : 18)
+        .animation(
+            .spring(response: 0.38, dampingFraction: 0.76).delay(0.28 + Double(index) * 0.065),
+            value: featuresVisible
+        )
     }
 
     // MARK: - Social Proof
@@ -489,7 +471,7 @@ struct SubscriptionView: View {
         ComparisonRow(feature: "Budget & expenses",     freeLabel: "✓",        proOnly: false),
         ComparisonRow(feature: "Shopping lists",        freeLabel: "✓",        proOnly: false),
         ComparisonRow(feature: "Chores & calendar",     freeLabel: "✓",        proOnly: false),
-        ComparisonRow(feature: "Budget history",        freeLabel: "1 month",  proOnly: true),
+        ComparisonRow(feature: "Budget history",        freeLabel: "2 months", proOnly: true),
         ComparisonRow(feature: "Advanced budgeting",    freeLabel: "—",        proOnly: true),
         ComparisonRow(feature: "Hazel AI",              freeLabel: "—",        proOnly: true),
         ComparisonRow(feature: "Smart notifications",   freeLabel: "—",        proOnly: true),
@@ -517,10 +499,16 @@ struct SubscriptionView: View {
                             .foregroundStyle(Color.roostMutedForeground)
                             .frame(width: 52, alignment: .center)
 
-                        Text("Pro")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color.roostPrimary)
-                            .frame(width: 52, alignment: .center)
+                        // Pro column header — gradient fill capsule
+                        ZStack {
+                            DesignSystem.ProPalette.gradientH
+                            Text("Pro")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.proDeepBurn)
+                        }
+                        .frame(width: 44, height: 22)
+                        .clipShape(Capsule())
+                        .frame(width: 52, alignment: .center)
                     }
                     .padding(.horizontal, DesignSystem.Spacing.card)
                     .padding(.vertical, 10)
@@ -540,16 +528,16 @@ struct SubscriptionView: View {
 
                             Image(systemName: "checkmark")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.roostPrimary)
+                                .foregroundStyle(Color.proAmber)
                                 .frame(width: 52, alignment: .center)
                         }
                         .padding(.horizontal, DesignSystem.Spacing.card)
                         .padding(.vertical, 10)
-                        .background(row.proOnly ? Color.roostPrimary.opacity(0.03) : Color.clear)
+                        .background(row.proOnly ? Color.proAmber.opacity(0.03) : Color.clear)
 
                         if index < comparisonRows.count - 1 {
                             Divider()
-                                .background(Color.roostHairline)
+                                .background(Color.proAmber.opacity(0.12))
                                 .padding(.horizontal, DesignSystem.Spacing.card)
                         }
                     }
@@ -743,38 +731,38 @@ struct SubscriptionView: View {
             Task { await openPrimaryAction() }
         } label: {
             ZStack {
+                DesignSystem.ProPalette.gradientH
+
                 // Shimmer sweep
                 LinearGradient(
-                    colors: [.clear, .white.opacity(0.2), .clear],
-                    startPoint: UnitPoint(x: shimmerPhase - 0.5, y: 0.5),
-                    endPoint: UnitPoint(x: shimmerPhase + 0.5, y: 0.5)
+                    stops: [
+                        .init(color: .clear, location: shimmerPhase - 0.3),
+                        .init(color: Color.proWarmWhite.opacity(0.35), location: shimmerPhase),
+                        .init(color: .clear, location: shimmerPhase + 0.3)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
                 )
 
                 HStack(spacing: 8) {
                     if viewModel.isPerformingAction {
                         ProgressView()
-                            .tint(.white)
+                            .tint(Color.proDeepBurn)
                             .controlSize(.small)
                     } else {
-                        Image(systemName: "crown.fill")
+                        Image(systemName: "sparkles")
                             .font(.system(size: 14, weight: .bold))
                     }
                     Text(primaryActionTitle)
-                        .font(.roostLabel)
+                        .font(.system(size: 15, weight: .bold))
+                        .tracking(-0.2)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.proDeepBurn)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: DesignSystem.Size.buttonHeight)
-            .background(
-                LinearGradient(
-                    colors: [Color.roostPrimary, Color.roostSecondary],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous))
-            .shadow(color: Color.roostPrimary.opacity(0.35), radius: 12, y: 4)
+            .frame(height: 52)
+            .clipShape(Capsule())
+            .shadow(color: Color.proAmber.opacity(0.28), radius: 12, y: 4)
         }
         .buttonStyle(ProCTAButtonStyle())
         .disabled(viewModel.isPerformingAction)
@@ -1024,10 +1012,10 @@ struct SubscriptionView: View {
         if viewModel.state == .trial, let trialEndDate = viewModel.trialEndDate {
             return "You have \(viewModel.trialDaysRemaining) days left. Trial ends \(trialEndDate.formatted(date: .abbreviated, time: .omitted))."
         }
-        return "Try all Roost Pro features free for 14 days before \(nestPriceLabel.lowercased()) billing begins."
+        return "Try all Roost Pro features free for 14 days before \(proPriceLabel.lowercased()) billing begins."
     }
 
-    private var nestPriceLabel: String {
+    private var proPriceLabel: String {
         subscriptionPricingStore.prices.monthly.formattedAmount + "/mo"
     }
 
@@ -1100,7 +1088,7 @@ struct SubscriptionView: View {
 
     private var primaryActionSymbol: String? {
         switch viewModel.state {
-        case .free, .cancelled: return "crown.fill"
+        case .free, .cancelled: return "sparkles"
         case .trial, .active: return "arrow.up.right.square"
         case .pastDue, .incomplete: return "creditcard"
         case .lifetime: return "checkmark.seal.fill"

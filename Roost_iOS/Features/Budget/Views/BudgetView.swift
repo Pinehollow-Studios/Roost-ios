@@ -24,7 +24,7 @@ struct BudgetView: View {
     @State private var hazelLoading = false
     @State private var hazelRequestKey = ""
     @State private var expandedCategoryId: String?
-    @State private var showingNestUpsell = false
+    @State private var showingProUpsell = false
     private let embeddedInParentScroll: Bool
     private let previewViewModel: BudgetViewModel?
     private let budgetInsightsService = BudgetInsightsService()
@@ -107,7 +107,7 @@ struct BudgetView: View {
                     .onTapGesture { viewModel.errorMessage = nil }
             }
         }
-        .nestUpsell(isPresented: $showingNestUpsell, feature: .budgetHistory)
+        .nestUpsell(isPresented: $showingProUpsell, feature: .budgetHistory)
     }
 
     private var content: some View {
@@ -141,7 +141,7 @@ struct BudgetView: View {
         HStack {
             Button {
                 if isFreeTier {
-                    showingNestUpsell = true
+                    showingProUpsell = true
                 } else {
                     viewModel.changeMonth(by: -1)
                 }
@@ -663,8 +663,8 @@ struct BudgetView: View {
                 .foregroundStyle(Color.roostMutedForeground)
                 .fixedSize(horizontal: false, vertical: true)
 
-            RoostButton(title: "Upgrade to Pro", systemImage: "crown.fill") {
-                showingNestUpsell = true
+            RoostButton(title: "Upgrade to Pro", systemImage: "sparkles") {
+                showingProUpsell = true
             }
         }
     }

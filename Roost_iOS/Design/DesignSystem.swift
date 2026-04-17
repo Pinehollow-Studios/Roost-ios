@@ -146,6 +146,57 @@ enum DesignSystem {
         static let tabBarRadius: CGFloat = 16
         static let tabBarYOffset: CGFloat = -4
     }
+
+    // MARK: - Pro Palette
+    // Roost Pro colour system — terracotta-copper-amber-champagne family.
+    // These colours sit entirely within the Roost hue family. Always used on dark surfaces.
+
+    enum ProPalette {
+        /// Gradient start — deep burnt copper, darkest Pro tone
+        static let deepBurn     = Color(hex: 0x8B3A1E)
+        /// Gradient mid-low — rich copper, Roost primary's deeper sibling
+        static let copper       = Color(hex: 0xC4622A)
+        /// Gradient mid-high — warm amber, between roostWarning and roostShoppingTint
+        static let amber        = Color(hex: 0xE8924A)
+        /// Gradient end — warm champagne highlight
+        static let champagne    = Color(hex: 0xF5C472)
+        /// Headline / badge text on dark Pro surfaces
+        static let warmWhite    = Color(hex: 0xFFF8F2)
+        /// Body copy on dark Pro surfaces
+        static let bodyText     = Color(hex: 0xF0D9C0)
+        /// Muted / secondary text on dark Pro surfaces
+        static let mutedText    = Color(hex: 0xA07855)
+        /// Pro surface background — richer than roostBackground dark
+        static let bg           = Color(hex: 0x0C0A08)
+        /// Pro card background
+        static let card         = Color(hex: 0x1E1A16)
+        /// Pro muted surface
+        static let mutedSurface = Color(hex: 0x2C2520)
+
+        /// Full 4-stop Pro signature gradient (topLeading → bottomTrailing)
+        static let gradient = LinearGradient(
+            colors: [
+                Color(hex: 0x8B3A1E),
+                Color(hex: 0xC4622A),
+                Color(hex: 0xE8924A),
+                Color(hex: 0xF5C472)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+
+        /// Horizontal gradient for CTA buttons and text
+        static let gradientH = LinearGradient(
+            colors: [
+                Color(hex: 0x8B3A1E),
+                Color(hex: 0xC4622A),
+                Color(hex: 0xE8924A),
+                Color(hex: 0xF5C472)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
 }
 
 extension Color {

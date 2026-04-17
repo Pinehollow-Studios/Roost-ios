@@ -717,56 +717,56 @@ Roost Pro is the paid tier of Roost. It should feel like a natural, elevated exp
 ### Identity
 
 - **Name:** Roost Pro (never "Nest" in user-facing copy — "nest" is only the DB wire value)
-- **Symbol:** `crown.fill` (SF Symbols)
-- **Tagline:** "Everything your household needs, together."
-- **Visual anchor:** The terracotta-to-sage gradient
+- **Symbol:** `sparkles` (SF Symbols) — ties to Hazel AI identity, reads as magical not hierarchical
+- **Tagline:** "Your home, elevated."
+- **Visual anchor:** The Pro copper-amber-champagne gradient (see ProPalette in DesignSystem.swift)
 
 ### The Pro Gradient
 
-The defining visual motif of Roost Pro is a diagonal linear gradient from `roostPrimary` to `roostSecondary`:
+The defining visual motif of Roost Pro is a four-stop diagonal gradient within the Roost terracotta-amber family:
 
 ```swift
-LinearGradient(
-    colors: [Color.roostPrimary, Color.roostSecondary],
-    startPoint: .topLeading,
-    endPoint: .bottomTrailing
-)
+DesignSystem.ProPalette.gradient        // topLeading → bottomTrailing
+DesignSystem.ProPalette.gradientH       // leading → trailing (for CTAs and text)
 ```
 
 Use this gradient on:
-- The Pro upsell sheet header strip
-- The Pro hero card on the subscription page
-- Any Pro feature header or badge that requires emphasis
+- The Pro upsell sheet hero and feature cards
+- The Pro hero section on the subscription page
+- CTA buttons ("Start Your Free Trial", "Upgrade to Roost Pro")
+- The `ProBadge` capsule component
+- The `ProLockPill` for locked data
 
-Never use this gradient on ordinary app surfaces, action buttons, or decorative purposes. It is the Pro signature — it should feel earned and distinctive.
+Never mix the Pro gradient with the standard Roost terracotta→sage gradient. Never use it on free-tier surfaces.
 
-### Crown Motif
+### Sparkles Motif
 
-The `crown.fill` SF Symbol is the Roost Pro icon. Use it:
-- In the Pro upsell sheet header alongside "Roost Pro"
-- As the primary action button icon when upgrading (`systemImage: "crown.fill"`)
+The `sparkles` SF Symbol is the Roost Pro icon. Use it:
+- In the Pro upsell sheet hero alongside "Roost Pro"
+- As the primary action button icon when upgrading
 - In the More menu row for the Pro/Subscription destination
-- Alongside locked Pro features (`lock.fill`) when showing free-tier gating
+- In any Pro-branded surface where a symbol is needed
 
-Do not use `crown` everywhere. Reserve it for moments of genuine Pro identity.
+**Never use `crown.fill` for Pro** — it is removed from the design system.
 
 ### Pro Surface Treatment
 
-When a card or surface is specifically a Pro feature highlight:
+Pro surfaces are always dark (`.colorScheme(.dark)` applied at the surface level). Key tokens:
+- Background: `Color.proBg` (#0C0A08)
+- Card: `Color.proCard` (#1E1A16)
+- Feature icon containers: `Color.proCopper.opacity(0.15)` fill
+- Feature icons: `Color.proAmber`
+- Headlines: `Color.proWarmWhite`
+- Body text: `Color.proBodyText`
+- Muted: `Color.proMutedText`
+- Borders: `Color.proAmber.opacity(0.12–0.18)`
 
-- Use `Color.roostPrimary.opacity(0.08–0.15)` fill over the standard card background
-- Apply a `Color.roostPrimary.opacity(0.18–0.25)` border stroke
-- This gives the card a subtle warm glow without becoming garish
-
-Example: the locked feature card in the Pro upsell sheet.
-
-### Lock State
+### Lock State / Pro Badge
 
 Free users encountering Pro-gated features should see:
-1. The feature icon in a `roostPrimary.opacity(0.12)` circle
-2. A `lock.fill` icon beside the feature title (small, muted)
-3. The feature description in `roostMutedForeground`
-4. A chip reading "Pro only" with a `lock.fill` icon
+1. The feature icon in a `proCopper.opacity(0.15)` circle
+2. A `ProBadge()` component inline with the feature title
+3. The feature description in `proMutedText`
 
 The gate should feel informative, not punishing. Free users should understand what they are missing without feeling blocked or scolded.
 
