@@ -32,9 +32,9 @@ struct IncomeSetupView: View {
                 Spacer(minLength: 20)
 
                 // Top icon + headline
-                Image(systemName: "house.fill")
-                    .font(.system(size: 56))
-                    .foregroundColor(Color(hex: 0xD4795E).opacity(0.8))
+                Image(systemName: "banknote.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(Color.roostPrimary.opacity(0.8))
                     .padding(.bottom, 8)
 
                 Text("Your financial picture,\ntogether.")
@@ -51,17 +51,18 @@ struct IncomeSetupView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Your monthly take-home pay")
                         .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                     HStack {
                         Text(sym)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                             .font(.system(size: 20))
                         TextField("e.g. 2,500", text: $myIncomeText)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
                     }
                     .padding(16)
-                    .background(Color(.systemFill))
+                    .background(Color.roostMuted)
                     .cornerRadius(14)
                 }
 
@@ -69,17 +70,18 @@ struct IncomeSetupView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("\(memberNames.names.partner)'s monthly take-home pay")
                         .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                     HStack {
                         Text(sym)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                             .font(.system(size: 20))
                         TextField("e.g. 2,000", text: $partnerIncomeText)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(Color.roostForeground)
                     }
                     .padding(16)
-                    .background(Color(.systemFill))
+                    .background(Color.roostMuted)
                     .cornerRadius(14)
                 }
 
@@ -88,11 +90,11 @@ struct IncomeSetupView: View {
                     HStack {
                         Text("Combined")
                             .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.roostMutedForeground)
                         Spacer()
                         Text(scramble.format(combinedTotal, symbol: sym))
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(Color(hex: 0x3B6D11))
+                            .foregroundStyle(Color.roostSuccess)
                     }
                     .transition(.opacity)
                     .animation(.easeIn(duration: 0.2), value: combinedTotal)
@@ -102,10 +104,10 @@ struct IncomeSetupView: View {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                     Text("Your income data stays private in your home. We never share it.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.roostMutedForeground)
                 }
                 .padding(.top, 4)
 
@@ -121,23 +123,24 @@ struct IncomeSetupView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(16)
-                    .background(myIncomeText.isEmpty ? Color(hex: 0xD4795E).opacity(0.4) : Color(hex: 0xD4795E))
+                    .background(myIncomeText.isEmpty ? Color.roostPrimary.opacity(0.4) : Color.roostPrimary)
                     .cornerRadius(14)
                 }
                 .disabled(myIncomeText.isEmpty || isSaving)
 
                 // Skip button
                 Button("I'll do this later") {
-                    UserDefaults.standard.set(true, forKey: "roost-income-setup-dismissed")
+                    // Store a timestamp so we can re-prompt after 7 days
+                    UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "roost-income-setup-dismissed-at")
                     onComplete()
                 }
                 .font(.system(size: 14))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.roostMutedForeground)
                 .padding(.top, 4)
 
                 Text("Your partner can add their own income from Settings when they're ready.")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.roostMutedForeground)
                     .multilineTextAlignment(.center)
 
                 Spacer(minLength: 20)
@@ -160,7 +163,8 @@ struct IncomeSetupView: View {
         } catch {
             // Non-fatal — still complete setup
         }
-        UserDefaults.standard.set(true, forKey: "roost-income-setup-dismissed")
+        // Mark as permanently completed (not just snoozed) by storing a far-future timestamp
+        UserDefaults.standard.set(Date.distantFuture.timeIntervalSince1970, forKey: "roost-income-setup-dismissed-at")
         isSaving = false
         onComplete()
     }

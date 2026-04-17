@@ -54,9 +54,13 @@ final class AuthManager {
         // Handle join deep links (roost-ios://join?code=<code>)
         if url.host == "join",
            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let code = components.queryItems?.first(where: { $0.name == "code" })?.value,
-           !code.isEmpty {
-            pendingJoinCode = code.lowercased()
+           let raw = components.queryItems?.first(where: { $0.name == "code" })?.value {
+            let code = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let validChars = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
+            guard !code.isEmpty,
+                  (4...32).contains(code.count),
+                  code.unicodeScalars.allSatisfy({ validChars.contains($0) }) else { return }
+            pendingJoinCode = code
         }
     }
 
@@ -101,6 +105,7 @@ final class AuthManager {
         hasHome = nil
         isRestoringSession = false
         pendingJoinCode = nil
+        try? SyncEngine().clearAllCachedData()
     }
 
     func refreshHomeStatus() async {

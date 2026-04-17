@@ -164,4 +164,15 @@ struct SyncEngine {
         }
         try context.save()
     }
+
+    // MARK: - Cache Wipe
+
+    func clearAllCachedData() throws {
+        let context = container.mainContext
+        try context.delete(model: CachedShoppingItem.self)
+        try context.delete(model: CachedExpense.self)
+        try context.delete(model: CachedChore.self)
+        try context.delete(model: CachedActivityFeedItem.self)
+        try context.save()
+    }
 }

@@ -10,6 +10,7 @@ enum SubscriptionServiceError: LocalizedError {
     case invalidResponse
     case invalidSession
     case server(String)
+    case invalidEmail
 
     var errorDescription: String? {
         switch self {
@@ -27,6 +28,8 @@ enum SubscriptionServiceError: LocalizedError {
             return "You need to be signed in before managing a subscription."
         case .server(let message):
             return message
+        case .invalidEmail:
+            return "A valid email address is required to set up a subscription."
         }
     }
 }
@@ -173,6 +176,9 @@ struct SubscriptionService {
         customerEmail: String,
         accessToken: String
     ) async throws -> URL {
+        guard isValidEmail(customerEmail) else {
+            throw SubscriptionServiceError.invalidEmail
+        }
         let payload = CheckoutPayload(
             plan: plan.rawValue,
             homeId: homeId.uuidString,
@@ -276,6 +282,12 @@ struct SubscriptionService {
         } catch {
             throw error
         }
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let predicate = NSPredicate(format: "SELF MATCHES %@",
+            "[A-Z0-9a-z._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")
+        return predicate.evaluate(with: email)
     }
 
     private func merge(remote: RemoteSubscriptionPrice, fallback: SubscriptionPrice, defaultID: String) -> SubscriptionPrice {

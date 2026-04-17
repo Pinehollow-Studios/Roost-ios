@@ -58,7 +58,9 @@ struct MoneySpendingView: View {
         settingsVM.settings.defaultExpenseSplit == 50.0 ? "equal" : "solo"
     }
     private var historyCutoff: Date {
-        Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        // Free tier: current month + 1 previous month visible; gate anything older
+        let startOfCurrentMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+        return Calendar.current.date(byAdding: .month, value: -1, to: startOfCurrentMonth) ?? Date()
     }
 
     private var thisMonthExpenses: [ExpenseWithSplits] {
@@ -169,20 +171,7 @@ struct MoneySpendingView: View {
     }
 
     private func spendingColour(for name: String) -> Color {
-        let palette: [Color] = [
-            Color(hex: 0xF06F48),
-            Color(hex: 0x36A873),
-            Color(hex: 0xF2A33A),
-            Color(hex: 0x35AFA6),
-            Color(hex: 0x4D8ECF),
-            Color(hex: 0xD75B83),
-            Color(hex: 0x8F73D9),
-            Color(hex: 0xB8832F),
-            Color(hex: 0x5BAA50),
-            Color(hex: 0xD65F45)
-        ]
-        let hash = name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
-        return palette[abs(hash) % palette.count]
+        moneyColour(for: name)
     }
 
     // MARK: - Body
@@ -308,7 +297,7 @@ private extension MoneySpendingView {
                         spendingSummaryMetrics
                     }
 
-                    if let insight = hazelInsight {
+                    if let insight = budgetInsight {
                         Text(insight)
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
@@ -444,11 +433,11 @@ private extension MoneySpendingView {
     }
 }
 
-// MARK: - Hazel insight
+// MARK: - Budget insight
 
 private extension MoneySpendingView {
 
-    var hazelInsight: String? {
+    var budgetInsight: String? {
         let groups = categoryGroups
         guard !groups.isEmpty else { return nil }
 
@@ -761,7 +750,7 @@ private extension MoneySpendingView {
         if isLocked {
             // Locked placeholder for free tier
             HStack {
-                Text("Older expense")
+                Text("Hidden — 2+ months ago")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground.opacity(0.35))
                 Spacer()
@@ -775,7 +764,7 @@ private extension MoneySpendingView {
                 ? memberNames.names.me
                 : memberNames.names.partner
 
-            HStack(spacing: 0) {
+            HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(expense.title)
                         .font(.system(size: 12, weight: .medium))
@@ -803,6 +792,26 @@ private extension MoneySpendingView {
                         .font(.system(size: 10))
                         .foregroundStyle(Color.roostMutedForeground)
                 }
+
+                Menu {
+                    Button {
+                        editingExpense = expense
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        deleteCandidate = expense
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.vertical, 9)
             .contentShape(Rectangle())

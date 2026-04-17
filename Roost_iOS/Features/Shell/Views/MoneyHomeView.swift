@@ -267,13 +267,7 @@ struct MoneyHomeView: View {
                     .frame(height: 7)
                 }
 
-                if temporarilyRevealed {
-                    Text("Hiding in \(countdown)s")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.roostMutedForeground)
-                }
-
-                if let insight = hazelInsight, !hideBalances || temporarilyRevealed {
+                if let insight = budgetInsight, !hideBalances || temporarilyRevealed {
                     Text(insight)
                         .font(.system(size: 11))
                         .foregroundStyle(Color.roostMutedForeground)
@@ -342,7 +336,17 @@ struct MoneyHomeView: View {
                 .frame(width: 76, height: 76)
                 .animation(.easeOut(duration: 0.8), value: arcProgress)
 
-            if hideBalances && !temporarilyRevealed {
+            if temporarilyRevealed {
+                // Countdown shown inside ring so it's visually tied to the tap target
+                VStack(spacing: 1) {
+                    Text("\(countdown)s")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text("hiding")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+            } else if hideBalances {
                 VStack(spacing: 4) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 16))
@@ -975,9 +979,9 @@ struct MoneyHomeView: View {
         return upcomingBills.first?.id
     }
 
-    // MARK: - Hazel insight (static fallback)
+    // MARK: - Budget insight
 
-    private var hazelInsight: String? {
+    private var budgetInsight: String? {
         let expenses = thisMonthExpensesAsExpense
 
         // 1. Any lifestyle category over budget

@@ -210,8 +210,12 @@ struct MainTabView: View {
     }
 
     private func shouldShowIncomeSetup() -> Bool {
-        let dismissed = UserDefaults.standard.bool(forKey: "roost-income-setup-dismissed")
-        if dismissed { return false }
+        // Re-prompt after 7 days if user only snoozed; permanently dismissed stores a far-future timestamp
+        let snoozedAt = UserDefaults.standard.double(forKey: "roost-income-setup-dismissed-at")
+        if snoozedAt > 0 {
+            let elapsed = Date().timeIntervalSince1970 - snoozedAt
+            if elapsed < 7 * 24 * 3600 { return false } // still within snooze window
+        }
         return !homeManager.members.contains { ($0.personalIncome ?? 0) > 0 }
     }
 
