@@ -250,7 +250,7 @@ struct MoneyBudgetsView: View {
 
                     // Budget table
                     if isCurrentMonth {
-                        if budgetVM.activeLines.isEmpty && !budgetVM.isLoading {
+                        if budgetVM.activeLines.isEmpty && !budgetVM.isLoading && !editMode {
                             emptyState
                                 .padding(.horizontal, DesignSystem.Spacing.page)
                                 .padding(.top, Spacing.xxl)

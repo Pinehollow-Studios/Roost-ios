@@ -17,7 +17,16 @@ final class LocalDataManager {
         do {
             container = try ModelContainer(for: schema)
         } catch {
-            fatalError("Failed to create SwiftData container: \(error)")
+            // Schema migration failure — wipe the store and start fresh rather than crashing.
+            let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            try? FileManager.default.removeItem(at: config.url)
+            do {
+                container = try ModelContainer(for: schema)
+            } catch {
+                // Fall back to in-memory store so the app remains usable.
+                let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                container = try! ModelContainer(for: schema, configurations: memoryConfig)
+            }
         }
     }
 }
