@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
 
 @main
 struct RoostApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var lockManager = AppLockManager()
     @State private var authManager = AuthManager()
     @State private var homeManager = HomeManager()
@@ -35,6 +37,10 @@ struct RoostApp: App {
     @State private var lastBackgroundedAt: Date?
 
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        RevenueCatService.configure(apiKey: Config.revenueCatAPIKey)
+    }
 
     /// True when there is live sensitive content on screen that must be hidden
     /// from the app switcher: authenticated, app lock not showing, boot complete.
@@ -75,17 +81,21 @@ struct RoostApp: App {
                 .onOpenURL { url in
                     authManager.handle(url: url)
                     notificationRouter.handle(url: url)
-                    if url.host == "subscription" {
-                        Task {
-                            await homeManager.refreshCurrentHome()
-                        }
-                    }
                 }
                 .task {
                     authManager.startSessionListener()
                     LocalNotificationManager.shared.configure(router: notificationRouter)
                     await subscriptionPricingStore.refresh()
                     AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                }
+                .onChange(of: authManager.currentUser?.id) { _, userId in
+                    Task {
+                        if let userId {
+                            try? await RevenueCatService.shared.logIn(userId: userId.uuidString)
+                        } else {
+                            try? await RevenueCatService.shared.logOut()
+                        }
+                    }
                 }
                 .onChange(of: scenePhase) { _, newValue in
                     switch newValue {

@@ -1,8 +1,11 @@
+import AuthenticationServices
 import SwiftUI
 
 struct WelcomeView: View {
     @State private var viewModel = LoginViewModel()
     @State private var isSigningInWithGoogle = false
+    @State private var isSigningInWithApple = false
+    @State private var appleCoordinator = AppleSignInCoordinator()
     @State private var oauthError: String?
 
     // Entrance
@@ -38,6 +41,8 @@ struct WelcomeView: View {
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .statusBarHidden(true)
         .onAppear {
             withAnimation(.spring(response: 0.75, dampingFraction: 0.72)) {
                 entered = true
@@ -157,7 +162,12 @@ struct WelcomeView: View {
                     Task { await signInWithGoogle() }
                 }
 
-                AppleAuthComingSoonButton()
+                AppleSignInButton(
+                    title: "Continue with Apple",
+                    isLoading: isSigningInWithApple
+                ) {
+                    Task { await signInWithApple() }
+                }
             }
 
             NavigationLink {
@@ -206,5 +216,20 @@ struct WelcomeView: View {
             oauthError = error.localizedDescription
         }
         isSigningInWithGoogle = false
+    }
+
+    @MainActor
+    private func signInWithApple() async {
+        isSigningInWithApple = true
+        oauthError = nil
+        do {
+            let (idToken, nonce) = try await appleCoordinator.signIn()
+            try await authService.signInWithApple(idToken: idToken, nonce: nonce)
+        } catch let error as ASAuthorizationError where error.code == .canceled {
+            // User dismissed the sheet — not an error
+        } catch {
+            oauthError = error.localizedDescription
+        }
+        isSigningInWithApple = false
     }
 }

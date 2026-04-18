@@ -1,29 +1,17 @@
 import Foundation
 import Observation
+import RevenueCat
 import Supabase
 
+// MARK: - Errors
+
 enum SubscriptionServiceError: LocalizedError {
-    case missingCheckoutEndpoint
-    case missingPortalEndpoint
-    case missingPricesEndpoint
-    case invalidEndpoint
-    case invalidResponse
     case invalidSession
     case server(String)
     case invalidEmail
 
     var errorDescription: String? {
         switch self {
-        case .missingCheckoutEndpoint:
-            return "Stripe checkout endpoint is not configured."
-        case .missingPortalEndpoint:
-            return "Stripe billing portal endpoint is not configured."
-        case .missingPricesEndpoint:
-            return "Stripe prices endpoint is not configured."
-        case .invalidEndpoint:
-            return "Stripe endpoint configuration is invalid."
-        case .invalidResponse:
-            return "The server returned an invalid Stripe response."
         case .invalidSession:
             return "You need to be signed in before managing a subscription."
         case .server(let message):
@@ -33,6 +21,8 @@ enum SubscriptionServiceError: LocalizedError {
         }
     }
 }
+
+// MARK: - Display types (used by SubscriptionView and SubscriptionViewModel)
 
 struct SubscriptionPrice: Equatable {
     let id: String
@@ -48,15 +38,16 @@ struct SubscriptionPriceSet: Equatable {
     let annual: SubscriptionPrice
 }
 
+// MARK: - Pricing Store (loads from RevenueCat offerings)
+
 @MainActor
 @Observable
 final class SubscriptionPricingStore {
     var prices: SubscriptionPriceSet = SubscriptionService.fallbackPrices
+    var monthlyPackage: Package?
+    var annualPackage: Package?
     var isLoading = false
     var hasLoaded = false
-
-    @ObservationIgnored
-    private let subscriptionService = SubscriptionService()
 
     func refresh(force: Bool = false) async {
         guard force || !hasLoaded else { return }
@@ -66,7 +57,40 @@ final class SubscriptionPricingStore {
         defer { isLoading = false }
 
         do {
-            prices = try await subscriptionService.fetchAvailablePrices()
+            let offerings = try await RevenueCatService.shared.offerings()
+            guard let current = offerings.current else {
+                if !hasLoaded { prices = SubscriptionService.fallbackPrices; hasLoaded = true }
+                return
+            }
+
+            let monthly = current.availablePackages.first { $0.packageType == .monthly }
+            let annual  = current.availablePackages.first { $0.packageType == .annual }
+
+            monthlyPackage = monthly
+            annualPackage  = annual
+
+            prices = SubscriptionPriceSet(
+                monthly: monthly.map { pkg in
+                    SubscriptionPrice(
+                        id: "monthly",
+                        unitAmount: NSDecimalNumber(decimal: pkg.storeProduct.price).multiplying(by: 100).intValue,
+                        currency: pkg.storeProduct.currencyCode ?? "GBP",
+                        interval: "month",
+                        formattedAmount: pkg.storeProduct.localizedPriceString,
+                        trialDays: 14
+                    )
+                } ?? SubscriptionService.fallbackPrices.monthly,
+                annual: annual.map { pkg in
+                    SubscriptionPrice(
+                        id: "annual",
+                        unitAmount: NSDecimalNumber(decimal: pkg.storeProduct.price).multiplying(by: 100).intValue,
+                        currency: pkg.storeProduct.currencyCode ?? "GBP",
+                        interval: "year",
+                        formattedAmount: pkg.storeProduct.localizedPriceString,
+                        trialDays: 14
+                    )
+                } ?? SubscriptionService.fallbackPrices.annual
+            )
             hasLoaded = true
         } catch {
             if !hasLoaded {
@@ -77,37 +101,7 @@ final class SubscriptionPricingStore {
     }
 }
 
-private struct SubscriptionURLResponse: Decodable {
-    let url: URL
-}
-
-private struct PromoRedeemResponse: Decodable {
-    let success: Bool
-    let error: String?
-}
-
-private struct PricesResponse: Decodable {
-    let monthly: RemoteSubscriptionPrice
-    let annual: RemoteSubscriptionPrice
-}
-
-private struct RemoteSubscriptionPrice: Decodable {
-    let formattedAmount: String?
-    let trialDays: Int?
-    let unitAmount: Int?
-    let currency: String?
-    let interval: String?
-    let id: String?
-
-    enum CodingKeys: String, CodingKey {
-        case formattedAmount
-        case trialDays
-        case unitAmount
-        case currency
-        case interval
-        case id
-    }
-}
+// MARK: - SubscriptionService
 
 struct SubscriptionService {
     static let fallbackPrices = SubscriptionPriceSet(
@@ -134,76 +128,12 @@ struct SubscriptionService {
         case annual
     }
 
-    func availablePrices() -> SubscriptionPriceSet {
-        SubscriptionService.fallbackPrices
-    }
-
-    func fetchAvailablePrices() async throws -> SubscriptionPriceSet {
-        let endpoint = Config.stripePricesEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !endpoint.isEmpty else { throw SubscriptionServiceError.missingPricesEndpoint }
-        guard let url = URL(string: endpoint) else { throw SubscriptionServiceError.invalidEndpoint }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        if !Config.supabaseAnonKey.isEmpty {
-            request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-        }
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw SubscriptionServiceError.invalidResponse
-        }
-
-        guard httpResponse.statusCode < 300 else {
-            let serverMessage = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw SubscriptionServiceError.server(serverMessage?.isEmpty == false ? serverMessage! : "Stripe prices request failed.")
-        }
-
-        do {
-            let remoteResponse = try JSONDecoder().decode(PricesResponse.self, from: data)
-            return SubscriptionPriceSet(
-                monthly: merge(remote: remoteResponse.monthly, fallback: SubscriptionService.fallbackPrices.monthly, defaultID: "monthly"),
-                annual: merge(remote: remoteResponse.annual, fallback: SubscriptionService.fallbackPrices.annual, defaultID: "annual")
-            )
-        } catch {
-            throw SubscriptionServiceError.invalidResponse
-        }
-    }
-
-    func createCheckoutSession(
-        plan: Plan,
-        homeId: UUID,
-        customerEmail: String,
-        accessToken: String
-    ) async throws -> URL {
-        guard isValidEmail(customerEmail) else {
-            throw SubscriptionServiceError.invalidEmail
-        }
-        let payload = CheckoutPayload(
-            plan: plan.rawValue,
-            homeId: homeId.uuidString,
-            customerEmail: customerEmail
-        )
-
-        return try await invokeProtectedFunction(
-            name: "stripe-checkout",
-            accessToken: accessToken,
-            body: payload
-        )
-    }
-
-    func createPortalSession(homeId: UUID, accessToken: String) async throws -> URL {
-        return try await invokeProtectedFunction(
-            name: "stripe-portal",
-            accessToken: accessToken,
-            body: PortalPayload(homeId: homeId.uuidString)
-        )
-    }
-
+    /// Redeems a backend gift code (lifetime or timed access).
+    /// Distinct from Apple Offer Codes — these are admin-granted codes managed in Supabase.
     func redeemPromo(code: String, homeId: UUID, accessToken: String) async throws {
         let trimmedSupabaseURL = Config.supabaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: "\(trimmedSupabaseURL)/functions/v1/redeem-promo") else {
-            throw SubscriptionServiceError.invalidEndpoint
+            throw SubscriptionServiceError.server("Invalid endpoint configuration.")
         }
 
         var request = URLRequest(url: url)
@@ -221,7 +151,7 @@ struct SubscriptionService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw SubscriptionServiceError.invalidResponse
+            throw SubscriptionServiceError.server("Invalid server response.")
         }
 
         let result = try JSONDecoder().decode(PromoRedeemResponse.self, from: data)
@@ -230,82 +160,10 @@ struct SubscriptionService {
         }
     }
 
-    private func performURLRequest<T: Encodable>(url: URL, accessToken: String, body: T) async throws -> URL {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        if !Config.supabaseAnonKey.isEmpty {
-            request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-        }
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw SubscriptionServiceError.invalidResponse
-        }
-
-        guard httpResponse.statusCode < 300 else {
-            let serverMessage = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw SubscriptionServiceError.server(serverMessage?.isEmpty == false ? serverMessage! : "Stripe request failed.")
-        }
-
-        do {
-            return try JSONDecoder().decode(SubscriptionURLResponse.self, from: data).url
-        } catch {
-            throw SubscriptionServiceError.invalidResponse
-        }
-    }
-
-    private func invokeProtectedFunction<T: Encodable>(
-        name: String,
-        accessToken: String,
-        body: T
-    ) async throws -> URL {
-        let client = try SupabaseClientProvider.shared.requireClient()
-        client.functions.setAuth(token: accessToken)
-
-        do {
-            let response: SubscriptionURLResponse = try await client.functions.invoke(
-                name,
-                options: FunctionInvokeOptions(method: .post, body: body)
-            )
-            return response.url
-        } catch let error as FunctionsError {
-            switch error {
-            case .httpError(_, let data):
-                let serverMessage = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-                throw SubscriptionServiceError.server(serverMessage?.isEmpty == false ? serverMessage! : "Stripe request failed.")
-            case .relayError:
-                throw SubscriptionServiceError.server("Stripe request failed.")
-            }
-        } catch {
-            throw error
-        }
-    }
-
-    private func isValidEmail(_ email: String) -> Bool {
-        let predicate = NSPredicate(format: "SELF MATCHES %@",
-            "[A-Z0-9a-z._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")
-        return predicate.evaluate(with: email)
-    }
-
-    private func merge(remote: RemoteSubscriptionPrice, fallback: SubscriptionPrice, defaultID: String) -> SubscriptionPrice {
-        let fallbackID = fallback.id.isEmpty ? defaultID : fallback.id
-        return SubscriptionPrice(
-            id: remote.id ?? fallbackID,
-            unitAmount: remote.unitAmount ?? fallback.unitAmount,
-            currency: remote.currency ?? fallback.currency,
-            interval: remote.interval ?? fallback.interval,
-            formattedAmount: remote.formattedAmount ?? fallback.formattedAmount,
-            trialDays: remote.trialDays ?? fallback.trialDays
-        )
-    }
-
     private func promoErrorCopy(for code: String?) -> String {
         switch code {
         case "not_found":
-            return "That code doesn’t look right. Check it and try again."
+            return "That code doesn't look right. Check it and try again."
         case "already_redeemed":
             return "That code has already been used."
         case "expired":
@@ -313,27 +171,7 @@ struct SubscriptionService {
         case "already_have_lifetime":
             return "This household already has lifetime Roost Pro access."
         default:
-            return "Something went wrong applying that promo code."
-        }
-    }
-
-    private struct CheckoutPayload: Encodable {
-        let plan: String
-        let homeId: String
-        let customerEmail: String
-
-        enum CodingKeys: String, CodingKey {
-            case plan
-            case homeId = "homeId"
-            case customerEmail = "customerEmail"
-        }
-    }
-
-    private struct PortalPayload: Encodable {
-        let homeId: String
-
-        enum CodingKeys: String, CodingKey {
-            case homeId = "homeId"
+            return "Something went wrong applying that code."
         }
     }
 
@@ -347,5 +185,10 @@ struct SubscriptionService {
             case code
             case homeId = "home_id"
         }
+    }
+
+    private struct PromoRedeemResponse: Decodable {
+        let success: Bool
+        let error: String?
     }
 }

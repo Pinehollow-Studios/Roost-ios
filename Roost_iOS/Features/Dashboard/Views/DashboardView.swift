@@ -144,7 +144,7 @@ struct DashboardView: View {
 
     private var moneyStatusPanel: some View {
         Button {
-            notificationRouter.selectedTab = .money
+            heavyNavTap(to: .money, tint: Color.roostPrimary)
         } label: {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center, spacing: 14) {
@@ -218,7 +218,7 @@ struct DashboardView: View {
             .shadow(color: Color.black.opacity(0.045), radius: 12, x: 0, y: 5)
             .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous))
         }
-        .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+        .buttonStyle(DashNavButtonStyle(reduceMotion: reduceMotion, tint: Color.roostPrimary, radius: DesignSystem.Radius.xl))
     }
 
     private var budgetDial: some View {
@@ -306,8 +306,7 @@ struct DashboardView: View {
     private var householdActionRail: some View {
         HStack(spacing: 10) {
             Button {
-                notificationRouter.selectedTasksSection = .shopping
-                notificationRouter.selectedTab = .shopping
+                heavyNavTap(to: .shopping, section: .shopping, tint: Color.roostShoppingTint)
             } label: {
                 householdTile(
                     eyebrow: "Shop",
@@ -316,11 +315,10 @@ struct DashboardView: View {
                     tint: Color.roostShoppingTint
                 )
             }
-            .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+            .buttonStyle(DashNavButtonStyle(reduceMotion: reduceMotion, tint: Color.roostShoppingTint, radius: DesignSystem.Radius.md))
 
             Button {
-                notificationRouter.selectedTasksSection = .chores
-                notificationRouter.selectedTab = .chores
+                heavyNavTap(to: .chores, section: .chores, tint: choresDetailColor)
             } label: {
                 householdTile(
                     eyebrow: "Home",
@@ -329,7 +327,7 @@ struct DashboardView: View {
                     tint: choresDetailColor
                 )
             }
-            .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+            .buttonStyle(DashNavButtonStyle(reduceMotion: reduceMotion, tint: choresDetailColor, radius: DesignSystem.Radius.md))
         }
     }
 
@@ -442,10 +440,7 @@ struct DashboardView: View {
 
     private var nextMovePanel: some View {
         Button {
-            if let tasksSection = nextMove.tasksSection {
-                notificationRouter.selectedTasksSection = tasksSection
-            }
-            notificationRouter.selectedTab = nextMove.destination
+            heavyNavTap(to: nextMove.destination, section: nextMove.tasksSection, tint: nextMove.tint)
         } label: {
             HStack(alignment: .center, spacing: 14) {
                 ZStack {
@@ -488,7 +483,7 @@ struct DashboardView: View {
             )
             .contentShape(RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
         }
-        .buttonStyle(TileButtonStyle(reduceMotion: reduceMotion))
+        .buttonStyle(DashNavButtonStyle(reduceMotion: reduceMotion, tint: nextMove.tint, radius: DesignSystem.Radius.lg))
     }
 
     // MARK: - Digest
@@ -650,6 +645,36 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 3)
         .shimmer()
+    }
+
+    // MARK: - Navigation
+
+    /// Fires a double-thud haptic and navigates after a short delay so the
+    /// press animation has time to register before the tab switches.
+    private func heavyNavTap(
+        to tab: NotificationRouter.AppTab,
+        section: NotificationRouter.TasksSection? = nil,
+        tint: Color
+    ) {
+        guard !reduceMotion else {
+            if let section { notificationRouter.selectedTasksSection = section }
+            notificationRouter.selectedTab = tab
+            return
+        }
+        // Double-thud: heavy impact immediately, softer echo 80ms later
+        let heavy = UIImpactFeedbackGenerator(style: .heavy)
+        let soft  = UIImpactFeedbackGenerator(style: .medium)
+        heavy.prepare()
+        soft.prepare()
+        heavy.impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            soft.impactOccurred(intensity: 0.5)
+        }
+        // Navigate after the press animation settles
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            if let section { notificationRouter.selectedTasksSection = section }
+            notificationRouter.selectedTab = tab
+        }
     }
 
     // MARK: - Helpers
@@ -1002,6 +1027,7 @@ private extension View {
 
 // MARK: - Button styles
 
+/// Standard subtle press style for non-navigation interactive tiles.
 private struct TileButtonStyle: ButtonStyle {
     let reduceMotion: Bool
     func makeBody(configuration: Configuration) -> some View {
@@ -1009,6 +1035,33 @@ private struct TileButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
             .opacity(configuration.isPressed ? 0.86 : 1)
             .animation(reduceMotion ? nil : DesignSystem.Motion.buttonPress, value: configuration.isPressed)
+    }
+}
+
+/// Heavy press style for cards that navigate to another tab.
+/// Scales down further, flashes a tint overlay, and uses a snappier spring
+/// to give the tap a physical, committed feel before navigation fires.
+private struct DashNavButtonStyle: ButtonStyle {
+    let reduceMotion: Bool
+    let tint: Color
+    let radius: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(tint.opacity(configuration.isPressed ? 0.12 : 0))
+                    .allowsHitTesting(false)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.16, dampingFraction: 0.70),
+                        value: configuration.isPressed
+                    )
+            )
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1.0)
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.62),
+                value: configuration.isPressed
+            )
     }
 }
 

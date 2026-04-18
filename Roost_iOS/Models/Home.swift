@@ -13,6 +13,7 @@ struct Home: Codable, Identifiable, Hashable {
     var stripeSubscriptionID: String?
     var stripePriceID: String?
     var hasUsedTrial: Bool?
+    var subscriptionOwnerUserId: UUID?
     var createdAt: Date
     // Money settings
     var defaultExpenseSplit: Double? = nil
@@ -34,6 +35,7 @@ struct Home: Codable, Identifiable, Hashable {
         case stripeSubscriptionID = "stripe_subscription_id"
         case stripePriceID = "stripe_price_id"
         case hasUsedTrial = "has_used_trial"
+        case subscriptionOwnerUserId = "subscription_owner_user_id"
         case createdAt = "created_at"
         case defaultExpenseSplit = "default_expense_split"
         case budgetCarryForward = "budget_carry_forward"

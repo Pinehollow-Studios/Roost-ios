@@ -23,21 +23,21 @@ struct MonthNavigator: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(isPro
-                        ? Color(hex: 0x3D3229)
-                        : Color(hex: 0x9DB19F))
+                        ? Color.roostForeground
+                        : Color.roostMutedForeground)
                     .frame(width: 32, height: 32)
-                    .background(Color(hex: 0xF2EBE0))
+                    .background(Color.roostInput)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color(hex: 0x3D3229).opacity(0.12), lineWidth: 0.5)
+                            .stroke(Color.roostHairline, lineWidth: 0.5)
                     )
             }
             .buttonStyle(.plain)
 
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color(hex: 0x3D3229))
+                .foregroundStyle(Color.roostForeground)
                 .frame(minWidth: 120)
 
             Button {
@@ -46,14 +46,14 @@ struct MonthNavigator: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(canGoNext
-                        ? Color(hex: 0x3D3229)
-                        : Color(hex: 0x9DB19F).opacity(0.4))
+                        ? Color.roostForeground
+                        : Color.roostMutedForeground.opacity(0.4))
                     .frame(width: 32, height: 32)
-                    .background(Color(hex: 0xF2EBE0))
+                    .background(Color.roostInput)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color(hex: 0x3D3229).opacity(0.12), lineWidth: 0.5)
+                            .stroke(Color.roostHairline, lineWidth: 0.5)
                     )
             }
             .buttonStyle(.plain)

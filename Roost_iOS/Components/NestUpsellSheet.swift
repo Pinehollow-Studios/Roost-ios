@@ -52,7 +52,6 @@ struct ProUpsellSheet: View {
 
     @State private var isStartingCheckout = false
     @State private var errorMessage: String?
-    @State private var browserSession = SubscriptionBrowserSession()
 
     // Animation states
     @State private var heroAppeared = false
@@ -346,34 +345,16 @@ struct ProUpsellSheet: View {
         isStartingCheckout = true
         defer { isStartingCheckout = false }
 
-        let accessToken: String
-        do {
-            accessToken = try await authManager.validAccessToken()
-        } catch {
-            errorMessage = error.localizedDescription
+        guard let package = pricingStore.monthlyPackage else {
+            errorMessage = "Plans are still loading. Please try again in a moment."
             return
         }
 
-        guard let home = homeManager.home, let user = authManager.currentUser else {
-            errorMessage = "No household found."
-            return
-        }
-
-        let service = SubscriptionService()
         do {
-            let url = try await service.createCheckoutSession(
-                plan: .monthly,
-                homeId: home.id,
-                customerEmail: user.email,
-                accessToken: accessToken
-            )
-            let callbackURL = try await browserSession.start(url: url)
-            if callbackURL.host == "subscription" {
-                await homeManager.refreshCurrentHome()
-                dismiss()
-            }
-        } catch SubscriptionBrowserError.cancelled {
-            return
+            let result = try await RevenueCatService.shared.purchase(package: package)
+            if result.userCancelled { return }
+            await homeManager.refreshCurrentHome()
+            dismiss()
         } catch {
             errorMessage = error.localizedDescription
         }

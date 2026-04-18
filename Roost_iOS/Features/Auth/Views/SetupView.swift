@@ -86,6 +86,8 @@ struct SetupView: View {
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .statusBarHidden(true)
         .navigationDestination(isPresented: $showsJoinScreen) {
             JoinView(
                 initialInviteCode: viewModel.inviteCode,

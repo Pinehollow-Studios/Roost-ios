@@ -1,5 +1,6 @@
 import Observation
 import Foundation
+import RevenueCat
 
 @MainActor
 @Observable
@@ -27,15 +28,17 @@ final class SubscriptionViewModel {
 
     // Active subscription info
     var planName: String?
-    var planPrice: String?
     var nextBillingDate: Date?
 
-    // Promo code
+    // Gift code (backend-granted codes — lifetime or timed)
     var showingPromoInput = false
     var promoCode = ""
     var isApplyingPromo = false
     var promoSuccess = false
     var promoError: String?
+
+    // Duplicate subscriber notice (Option A: user has active Apple sub but home already has an owner)
+    private(set) var isDuplicateSubscriber = false
 
     var trialProgress: Double {
         guard trialDaysTotal > 0 else { return 0 }
@@ -71,7 +74,7 @@ final class SubscriptionViewModel {
     @ObservationIgnored
     private let subscriptionService = SubscriptionService()
 
-    // MARK: - Actions
+    // MARK: - Sync with Home
 
     func sync(with home: Home?, prices: SubscriptionPriceSet) {
         guard let home else {
@@ -79,7 +82,6 @@ final class SubscriptionViewModel {
             trialDaysUsed = 0
             trialEndDate = nil
             planName = nil
-            planPrice = nil
             nextBillingDate = nil
             selectedPlan = .monthly
             return
@@ -87,30 +89,12 @@ final class SubscriptionViewModel {
 
         trialEndDate = home.trialEndsAt
         nextBillingDate = home.currentPeriodEndsAt
-
-        if let stripePriceID = home.effectiveStripePriceID {
-            if stripePriceID == prices.monthly.id {
-                planName = "Monthly"
-                planPrice = prices.monthly.formattedAmount
-                selectedPlan = .monthly
-            } else if stripePriceID == prices.annual.id {
-                planName = "Annual"
-                planPrice = prices.annual.formattedAmount
-                selectedPlan = .annual
-            } else {
-                planName = "Roost Pro"
-                planPrice = nil
-            }
-        } else {
-            planName = home.normalizedSubscriptionTier == .pro ? "Roost Pro" : nil
-            planPrice = nil
-        }
+        planName = home.normalizedSubscriptionTier == .pro ? "Roost Pro" : nil
 
         if let trialEndDate {
-            let totalDays = prices.monthly.trialDays
             let remaining = max(Calendar.current.dateComponents([.day], from: .now, to: trialEndDate).day ?? 0, 0)
-            trialDaysTotal = totalDays
-            trialDaysUsed = max(totalDays - remaining, 0)
+            trialDaysTotal = prices.monthly.trialDays
+            trialDaysUsed = max(prices.monthly.trialDays - remaining, 0)
         } else {
             trialDaysTotal = prices.monthly.trialDays
             trialDaysUsed = home.hasUsedTrialValue ? prices.monthly.trialDays : 0
@@ -133,6 +117,42 @@ final class SubscriptionViewModel {
             state = .lifetime
         }
     }
+
+    // MARK: - Purchase
+
+    func purchase(package: Package) async {
+        isPerformingAction = true
+        errorMessage = nil
+        defer { isPerformingAction = false }
+
+        do {
+            let result = try await RevenueCatService.shared.purchase(package: package)
+            if result.userCancelled { return }
+            // Home state updates via RevenueCat webhook → Supabase Realtime
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func restorePurchases() async {
+        isPerformingAction = true
+        errorMessage = nil
+        defer { isPerformingAction = false }
+
+        do {
+            _ = try await RevenueCatService.shared.restorePurchases()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Manage Subscriptions
+
+    func openManageSubscriptions() async {
+        await RevenueCatService.shared.openManageSubscriptions()
+    }
+
+    // MARK: - Gift Code (backend-granted access)
 
     func applyPromoCode(homeId: UUID?, accessToken: String?) async {
         let trimmed = promoCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -161,64 +181,21 @@ final class SubscriptionViewModel {
         isApplyingPromo = false
     }
 
-    func actionURL(
-        home: Home?,
-        user: AuthUser?,
-        accessToken: String?,
-        plan: SubscriptionService.Plan
-    ) async -> URL? {
-        guard let accessToken, !accessToken.isEmpty else {
-            errorMessage = SubscriptionServiceError.invalidSession.localizedDescription
-            return nil
+    // MARK: - Duplicate Subscriber Detection
+
+    /// Checks whether the current user has an active Apple subscription but the home already
+    /// has a different subscription owner. Called on view appear and subscription sync.
+    func checkDuplicateSubscriber(home: Home?, currentUserId: UUID?) async {
+        guard
+            let home,
+            let ownerId = home.subscriptionOwnerUserId,
+            let currentUserId,
+            ownerId != currentUserId
+        else {
+            isDuplicateSubscriber = false
+            return
         }
-
-        switch state {
-        case .free, .cancelled:
-            guard let home else {
-                errorMessage = "No household was found."
-                return nil
-            }
-            guard let user else {
-                errorMessage = SubscriptionServiceError.invalidSession.localizedDescription
-                return nil
-            }
-
-            isPerformingAction = true
-            defer { isPerformingAction = false }
-
-            do {
-                return try await subscriptionService.createCheckoutSession(
-                    plan: plan,
-                    homeId: home.id,
-                    customerEmail: user.email,
-                    accessToken: accessToken
-                )
-            } catch {
-                errorMessage = error.localizedDescription
-                return nil
-            }
-
-        case .trial, .active, .pastDue, .incomplete:
-            guard let home else {
-                errorMessage = "No household was found."
-                return nil
-            }
-
-            isPerformingAction = true
-            defer { isPerformingAction = false }
-
-            do {
-                return try await subscriptionService.createPortalSession(
-                    homeId: home.id,
-                    accessToken: accessToken
-                )
-            } catch {
-                errorMessage = error.localizedDescription
-                return nil
-            }
-
-        case .lifetime:
-            return nil
-        }
+        // Current user is not the owner — check if they also have an active Apple subscription
+        isDuplicateSubscriber = await RevenueCatService.shared.isProActive()
     }
 }
