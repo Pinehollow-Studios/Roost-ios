@@ -38,12 +38,14 @@ struct ContentView: View {
             OfflineBanner(isVisible: !networkMonitor.isConnected)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Color.clear
-                .frame(height: DesignSystem.Size.statusBarInset)
-                .background(
-                    Color.roostBackground
-                        .ignoresSafeArea(edges: .top)
-                )
+            if authManager.isAuthenticated {
+                Color.clear
+                    .frame(height: DesignSystem.Size.statusBarInset)
+                    .background(
+                        Color.roostBackground
+                            .ignoresSafeArea(edges: .top)
+                    )
+            }
         }
         .preferredColorScheme(appearanceSettings.preferredColorScheme)
         .onChange(of: authManager.isAuthenticated) { wasAuthenticated, isAuthenticated in

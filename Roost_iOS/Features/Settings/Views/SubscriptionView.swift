@@ -188,7 +188,6 @@ struct SubscriptionView: View {
             }
         }
         .frame(height: 320)
-        .colorScheme(.dark)
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: 0,
@@ -403,8 +402,6 @@ struct SubscriptionView: View {
          "Never miss what matters. Get nudged when chores are overdue, bills are coming, or spending is running hot. The right alert, at the right moment."),
         ("square.grid.2x2.fill", "Room Groups",
          "Tidy the house with one tap. Group rooms and assign chores to all of them at once. Clean all bathrooms. Tidy the whole house. One action."),
-        ("person.2.fill",        "Unlimited Members",
-         "Everyone in, no limits. Add every person in your home — no caps, no tiers, no extra cost."),
     ]
 
     private var featuresSection: some View {

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import UserNotifications
 
 @MainActor
@@ -14,7 +15,12 @@ final class LocalNotificationManager: NSObject, UNUserNotificationCenterDelegate
     }
 
     func requestAuthorization() async {
-        _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+        let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        if granted {
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
     }
 
     func schedule(notification: AppNotification) async {
@@ -35,6 +41,15 @@ final class LocalNotificationManager: NSObject, UNUserNotificationCenterDelegate
         )
 
         try? await center.add(request)
+    }
+
+    // Show banners, play sound and badge even when the app is in the foreground.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 
     nonisolated func userNotificationCenter(

@@ -4,6 +4,7 @@ import RevenueCat
 
 @main
 struct RoostApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var lockManager = AppLockManager()
     @State private var authManager = AuthManager()
     @State private var homeManager = HomeManager()

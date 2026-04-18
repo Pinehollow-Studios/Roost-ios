@@ -1,9 +1,12 @@
+import AuthenticationServices
 import SwiftUI
 
 struct SignupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SignupViewModel()
     @State private var isSigningInWithGoogle = false
+    @State private var isSigningInWithApple = false
+    @State private var appleCoordinator = AppleSignInCoordinator()
 
     // Entrance
     @State private var entered = false
@@ -38,6 +41,8 @@ struct SignupView: View {
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .statusBarHidden(true)
         .onAppear {
             withAnimation(.spring(response: 0.75, dampingFraction: 0.72)) {
                 entered = true
@@ -170,7 +175,12 @@ struct SignupView: View {
                     Task { await signInWithGoogle() }
                 }
 
-                AppleAuthComingSoonButton()
+                AppleSignInButton(
+                    title: "Continue with Apple",
+                    isLoading: isSigningInWithApple
+                ) {
+                    Task { await signInWithApple() }
+                }
             }
 
             Button {
@@ -217,5 +227,20 @@ struct SignupView: View {
             viewModel.errorMessage = error.localizedDescription
         }
         isSigningInWithGoogle = false
+    }
+
+    @MainActor
+    private func signInWithApple() async {
+        isSigningInWithApple = true
+        viewModel.errorMessage = nil
+        do {
+            let (idToken, nonce) = try await appleCoordinator.signIn()
+            try await authService.signInWithApple(idToken: idToken, nonce: nonce)
+        } catch let error as ASAuthorizationError where error.code == .canceled {
+            // User dismissed the sheet — not an error
+        } catch {
+            viewModel.errorMessage = error.localizedDescription
+        }
+        isSigningInWithApple = false
     }
 }

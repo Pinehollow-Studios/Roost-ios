@@ -730,7 +730,13 @@ private struct NextShopDateSheet: View {
     let onPickDate: (Date) async -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftDate: Date
+    @State private var appeared = false
+
+    private let quickPicks: [(label: String, days: Int)] = [
+        ("Today", 0), ("Tomorrow", 1), ("In 3 days", 3), ("Next week", 7)
+    ]
 
     init(selectedDate: Date, isSaving: Bool, onPickDate: @escaping (Date) async -> Void) {
         self.selectedDate = selectedDate
@@ -740,15 +746,89 @@ private struct NextShopDateSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                RoostSheetHeader(
-                    title: "Next Shop",
-                    subtitle: "Pick the next shopping date for your household."
-                ) {
-                    dismiss()
+        VStack(spacing: 0) {
+
+            // Handle
+            RoundedRectangle(cornerRadius: 999, style: .continuous)
+                .fill(Color.roostMuted)
+                .frame(width: 36, height: 4)
+                .padding(.top, Spacing.sm)
+                .padding(.bottom, Spacing.lg)
+                .modifier(SheetSectionEntrance(index: 0, appeared: appeared, reduceMotion: reduceMotion))
+
+            // Header row
+            HStack(spacing: Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(Color.roostShoppingTint.opacity(0.12))
+                        .frame(width: 42, height: 42)
+                    Image(systemName: "cart.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.roostShoppingTint)
                 }
 
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("NEXT SHOP")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostShoppingTint)
+                        .tracking(1.2)
+                    Text(formattedDraftDate)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.roostForeground)
+                        .contentTransition(.numericText())
+                        .animation(DesignSystem.Motion.buttonRelease, value: draftDate)
+                }
+
+                Spacer()
+
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .frame(width: 30, height: 30)
+                        .background(Color.roostMuted.opacity(0.6), in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, Spacing.lg)
+            .modifier(SheetSectionEntrance(index: 1, appeared: appeared, reduceMotion: reduceMotion))
+
+            // Quick-pick chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(quickPicks, id: \.days) { pick in
+                        let target = Calendar.current.date(byAdding: .day, value: pick.days, to: Calendar.current.startOfDay(for: .now)) ?? .now
+                        let isSelected = Calendar.current.isDate(draftDate, inSameDayAs: target)
+
+                        Button {
+                            UISelectionFeedbackGenerator().selectionChanged()
+                            withAnimation(DesignSystem.Motion.buttonRelease) { draftDate = target }
+                        } label: {
+                            Text(pick.label)
+                                .font(.roostLabel)
+                                .foregroundStyle(isSelected ? Color.roostCard : Color.roostMutedForeground)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    isSelected
+                                        ? Color.roostShoppingTint
+                                        : Color.roostMuted.opacity(0.55),
+                                    in: Capsule()
+                                )
+                                .animation(DesignSystem.Motion.buttonRelease, value: isSelected)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+            }
+            .padding(.top, Spacing.lg)
+
+            // Calendar picker inside a card
+            VStack(spacing: 0) {
                 DatePicker(
                     "Next shop date",
                     selection: $draftDate,
@@ -758,34 +838,72 @@ private struct NextShopDateSheet: View {
                 .datePickerStyle(.graphical)
                 .labelsHidden()
                 .tint(.roostShoppingTint)
-                .frame(maxWidth: .infinity)
                 .disabled(isSaving)
-                .onChange(of: draftDate) { _, newValue in
-                    guard !isSaving else { return }
-                    Task { await onPickDate(newValue) }
-                }
+            }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.sm)
+            .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous)
+                    .stroke(Color.roostHairline, lineWidth: 1)
+            )
+            .padding(.horizontal, Spacing.lg)
+            .padding(.top, Spacing.md)
+            .modifier(SheetSectionEntrance(index: 2, appeared: appeared, reduceMotion: reduceMotion))
 
-                if isSaving {
-                    HStack(spacing: Spacing.sm) {
+            Spacer(minLength: Spacing.md)
+
+            // Confirm button
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Task { await onPickDate(draftDate) }
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    if isSaving {
                         ProgressView()
                             .controlSize(.small)
-                            .tint(Color.roostShoppingTint)
-
-                        Text("Saving date…")
-                            .font(.roostCaption)
-                            .foregroundStyle(Color.roostMutedForeground)
+                            .tint(Color.roostCard)
+                    } else {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 13, weight: .semibold))
                     }
+                    Text(isSaving ? "Saving…" : "Set date")
+                        .font(.roostLabel)
                 }
+                .foregroundStyle(Color.roostCard)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(
+                    isSaving
+                        ? Color.roostShoppingTint.opacity(0.6)
+                        : Color.roostShoppingTint,
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.md, style: .continuous)
+                )
             }
+            .buttonStyle(.plain)
+            .disabled(isSaving)
             .padding(.horizontal, Spacing.lg)
-            .padding(.top, Spacing.lg)
-            .padding(.bottom, Spacing.md)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color.roostBackground.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .padding(.bottom, Spacing.xxl)
+            .modifier(SheetSectionEntrance(index: 3, appeared: appeared, reduceMotion: reduceMotion))
         }
-        .presentationDetents([.height(500)])
+        .frame(maxWidth: .infinity)
+        .background(Color.roostBackground.ignoresSafeArea())
+        .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
+        .presentationCornerRadius(DesignSystem.Radius.xl)
+        .onAppear {
+            guard !reduceMotion else { appeared = true; return }
+            withAnimation(DesignSystem.Motion.modalTransition.delay(0.05)) {
+                appeared = true
+            }
+        }
+    }
+
+    private var formattedDraftDate: String {
+        let cal = Calendar.current
+        if cal.isDateInToday(draftDate) { return "Today" }
+        if cal.isDateInTomorrow(draftDate) { return "Tomorrow" }
+        return draftDate.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
     }
 }
 
@@ -820,6 +938,26 @@ private struct ShoppingEntranceModifier: ViewModifier {
 private extension View {
     func shoppingEntrance(at index: Int, hasAppeared: Bool, reduceMotion: Bool) -> some View {
         modifier(ShoppingEntranceModifier(index: index, hasAppeared: hasAppeared, reduceMotion: reduceMotion))
+    }
+}
+
+// MARK: - Sheet Section Entrance
+
+/// Staggered slide-up + fade entrance for NextShopDateSheet content sections.
+private struct SheetSectionEntrance: ViewModifier {
+    let index: Int
+    let appeared: Bool
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(appeared ? 1 : 0)
+            .scaleEffect(appeared || reduceMotion ? 1 : 0.97)
+            .offset(y: appeared || reduceMotion ? 0 : 22)
+            .animation(
+                reduceMotion ? nil : DesignSystem.Motion.modalTransition.delay(Double(index) * 0.07),
+                value: appeared
+            )
     }
 }
 
