@@ -21,7 +21,6 @@ final class NotificationRouter {
         case household
         case rooms
         case pinboard
-        case budgetCategories
         case appearance
         case activity
         case notifications

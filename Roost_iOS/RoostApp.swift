@@ -33,10 +33,18 @@ struct RoostApp: App {
     // Money rebuild — Session 6 savings goals
     @State private var savingsGoalsViewModel = SavingsGoalsViewModel()
 
+    @State private var lastBackgroundedAt: Date?
+
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
         RevenueCatService.configure(apiKey: Config.revenueCatAPIKey)
+    }
+
+    /// True when there is live sensitive content on screen that must be hidden
+    /// from the app switcher: authenticated, app lock not showing, boot complete.
+    private var privacyShieldEnabled: Bool {
+        authManager.isAuthenticated && !lockManager.isLocked && appBootManager.bootedHomeId != nil
     }
 
     var body: some Scene {
@@ -77,6 +85,7 @@ struct RoostApp: App {
                     authManager.startSessionListener()
                     LocalNotificationManager.shared.configure(router: notificationRouter)
                     await subscriptionPricingStore.refresh()
+                    AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
                 }
                 .onChange(of: authManager.currentUser?.id) { _, userId in
                     Task {
@@ -91,10 +100,55 @@ struct RoostApp: App {
                     switch newValue {
                     case .background:
                         lockManager.appDidBackground()
+                        lastBackgroundedAt = Date()
                     case .active:
                         lockManager.appDidForeground()
+                        if let bg = lastBackgroundedAt, Date().timeIntervalSince(bg) >= 180 {
+                            notificationRouter.selectedTab = .home
+                            notificationRouter.morePath = []
+                        }
+                        lastBackgroundedAt = nil
+                        // Confirmed foreground — safe to remove the privacy cover.
+                        // Using scenePhase rather than didBecomeActiveNotification
+                        // because that notification can fire spuriously for background
+                        // apps; scenePhase == .active is the stable, reliable signal.
+                        AppPrivacyShield.shared.deactivate()
                     default:
                         break
+                    }
+                }
+                // Keep UIKit shield state in sync with auth/lock/boot changes.
+                .onChange(of: authManager.isAuthenticated) { _, _ in
+                    AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                }
+                .onChange(of: lockManager.isLocked) { _, _ in
+                    // Only sync when the app is in the foreground. When the app
+                    // backgrounds while a PIN is set, appDidBackground() flips
+                    // isLocked → true, which would make privacyShieldEnabled false
+                    // and tear down the cover that was just added on
+                    // willResignActiveNotification. The cover must persist until
+                    // scenePhase == .active fires deactivate().
+                    guard scenePhase == .active else { return }
+                    AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                }
+                .onChange(of: appBootManager.bootedHomeId) { _, _ in
+                    AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                }
+                // SwiftUI-layer privacy overlay — belt-and-suspenders cover for scene
+                // transitions that happen while the app is active (e.g. returning from
+                // a background task). The UIKit AppPrivacyShield handles the timing-
+                // critical app switcher snapshot; this handles the visual state inside
+                // the SwiftUI hierarchy.
+                //
+                // Conditions mirror privacyShieldEnabled exactly — only covers when
+                // there is live authenticated content, never over the lock screen
+                // (which handles its own privacy) or during initial boot.
+                .overlay {
+                    if scenePhase != .active && privacyShieldEnabled {
+                        Color.roostBackground
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                            .transaction { $0.animation = nil }
                     }
                 }
         }

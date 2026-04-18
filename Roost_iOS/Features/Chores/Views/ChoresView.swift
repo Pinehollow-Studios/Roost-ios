@@ -9,12 +9,15 @@ struct ChoresView: View {
 
     @State private var showingAddChorePage = false
     @State private var showingSuggestSheet = false
+    @State private var showSuggestionsUpsell = false
     @State private var suggestedChores: [String] = []
     @State private var isFetchingSuggestions = false
     @State private var hasAppeared = false
     @State private var selectedFilter: PersonFilter = .everyone
     @State private var collapsedGroups: Set<ChoreGroup.Kind> = []
     @State private var isClearingCompleted = false
+
+    private var hasProAccess: Bool { homeManager.home?.hasProAccess ?? false }
 
     private let embeddedInParentScroll: Bool
     private let previewViewModel: ChoresViewModel?
@@ -176,6 +179,7 @@ struct ChoresView: View {
                     .onTapGesture { viewModel.errorMessage = nil }
             }
         }
+        .nestUpsell(isPresented: $showSuggestionsUpsell, feature: .choreSuggestions)
     }
 
     private var content: some View {
@@ -350,15 +354,16 @@ struct ChoresView: View {
 
             choreActionTile(
                 title: "Suggest",
-                detail: hazelViewModel.choresEnabled ? "Hazel" : "Off",
+                detail: hazelViewModel.choresEnabled && hasProAccess ? "Hazel" : (hasProAccess ? "Off" : "Pro"),
                 icon: "sparkles",
-                tint: hazelViewModel.choresEnabled ? .roostPrimary : .roostMutedForeground
+                tint: hazelViewModel.choresEnabled && hasProAccess ? .roostPrimary : .roostMutedForeground
             ) {
                 guard hazelViewModel.choresEnabled else { return }
+                guard hasProAccess else { showSuggestionsUpsell = true; return }
                 UISelectionFeedbackGenerator().selectionChanged()
                 Task { await fetchSuggestions() }
             }
-            .disabled(!hazelViewModel.choresEnabled || isFetchingSuggestions)
+            .disabled((!hazelViewModel.choresEnabled && hasProAccess) || isFetchingSuggestions)
 
             choreActionTile(
                 title: "Done",

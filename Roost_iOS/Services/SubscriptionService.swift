@@ -8,6 +8,7 @@ import Supabase
 enum SubscriptionServiceError: LocalizedError {
     case invalidSession
     case server(String)
+    case invalidEmail
 
     var errorDescription: String? {
         switch self {
@@ -15,6 +16,8 @@ enum SubscriptionServiceError: LocalizedError {
             return "You need to be signed in before managing a subscription."
         case .server(let message):
             return message
+        case .invalidEmail:
+            return "A valid email address is required to set up a subscription."
         }
     }
 }

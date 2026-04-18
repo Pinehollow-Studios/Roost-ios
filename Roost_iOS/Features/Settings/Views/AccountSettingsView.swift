@@ -14,8 +14,9 @@ struct AccountSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
-                FigmaBackHeader(title: "Account Settings")
+                FigmaBackHeader(title: "Account Settings", accent: .roostPrimary)
 
+                profileCard
                 emailCard
                 passwordCard
                 dangerSection
@@ -52,12 +53,46 @@ struct AccountSettingsView: View {
         .settingsMessageOverlay()
     }
 
+    private var profileCard: some View {
+        RoostCard {
+            HStack(spacing: DesignSystem.Spacing.row) {
+                MemberAvatar(member: currentMember, size: .md)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(currentMember?.displayName ?? "Your account")
+                        .font(.roostBody.weight(.semibold))
+                        .foregroundStyle(Color.roostForeground)
+                    Text(authManager.currentUser?.email ?? "")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var currentMember: HomeMember? {
+        homeManager.members.first { $0.userID == authManager.currentUser?.id }
+    }
+
     private var emailCard: some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-                Text("Email Address")
-                    .font(.roostCardTitle)
-                    .foregroundStyle(Color.roostForeground)
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostPrimary.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.roostPrimary)
+                    }
+                    Text("Email Address")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
 
                 Text(authManager.currentUser?.email ?? "")
                     .font(.roostBody)
@@ -80,7 +115,16 @@ struct AccountSettingsView: View {
     private var passwordCard: some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-                HStack {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostPrimary.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostPrimary)
+                    }
+
                     Text("Password")
                         .font(.roostCardTitle)
                         .foregroundStyle(Color.roostForeground)
@@ -183,7 +227,11 @@ struct AccountSettingsView: View {
     }
 
     private var signOutButton: some View {
-        Button {
+        RoostButton(
+            title: isSigningOut ? "Signing out..." : "Sign out",
+            variant: .ghost,
+            isLoading: isSigningOut
+        ) {
             guard !isSigningOut else { return }
             isSigningOut = true
             Task {
@@ -194,14 +242,7 @@ struct AccountSettingsView: View {
                 }
                 isSigningOut = false
             }
-        } label: {
-            Text(isSigningOut ? "Signing Out..." : "Sign Out")
-                .font(.roostBody)
-                .foregroundStyle(Color.roostMutedForeground)
-                .frame(maxWidth: .infinity)
-                .frame(height: DesignSystem.Size.buttonHeight)
         }
-        .buttonStyle(.plain)
         .disabled(isSigningOut)
     }
 }

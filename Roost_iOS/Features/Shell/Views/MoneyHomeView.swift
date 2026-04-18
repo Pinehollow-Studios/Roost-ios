@@ -23,6 +23,22 @@ struct MoneyHomeView: View {
     @State private var temporarilyRevealed = false
     @State private var countdown = 5
     @State private var countdownTask: Task<Void, Never>?
+    @State private var showLockedHistoryUpsell = false
+
+    private var isFreeTier: Bool { !(homeManager.home?.hasProAccess ?? false) }
+
+    private var lockedMonthCount: Int {
+        guard isFreeTier else { return 0 }
+        let cal = Calendar.current
+        let startOfCurrentMonth = cal.date(from: cal.dateComponents([.year, .month], from: Date())) ?? Date()
+        let cutoff = cal.date(byAdding: .month, value: -1, to: startOfCurrentMonth) ?? Date()
+        let months = Set(expensesVM.expenses.compactMap { ews -> String? in
+            guard let date = ews.incurredOnDate, date < cutoff else { return nil }
+            let comps = cal.dateComponents([.year, .month], from: date)
+            return "\(comps.year ?? 0)-\(comps.month ?? 0)"
+        })
+        return months.count
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -85,12 +101,13 @@ struct MoneyHomeView: View {
                         partnerUserId: homeManager.partner?.userID ?? myUserId,
                         isRecurring: recurring,
                         hazelEnabled: hazelVM.expensesEnabled,
-                        isNest: homeManager.home?.hasProAccess ?? false,
+                        isPro: homeManager.home?.hasProAccess ?? false,
                         budgetCategoryNames: budgetVM.categories.map(\.name)
                     )
                 }
             }
         }
+        .nestUpsell(isPresented: $showLockedHistoryUpsell, feature: .budgetHistory)
         .sheet(isPresented: $showSettleUp) {
             if let myUserId = homeManager.currentUserId,
                let partnerUserId = homeManager.partner?.userID,
@@ -153,6 +170,11 @@ struct MoneyHomeView: View {
                     if !budgetVM.fixedLines.isEmpty {
                         upcomingBillsSection
                     }
+
+                    // Section 6 — Locked history nudge (free tier, once data exists)
+                    if lockedMonthCount > 0 {
+                        lockedHistoryNudge
+                    }
                 }
                 .padding(.horizontal, moneyPageInset)
                 .padding(.top, 22)
@@ -211,7 +233,7 @@ struct MoneyHomeView: View {
                             .tracking(1.0)
 
                         Text(moneyHeroTitle)
-                            .font(.system(size: 30, weight: .medium))
+                            .font(.roostHero)
                             .foregroundStyle(Color.roostForeground)
                             .lineLimit(2)
                             .minimumScaleFactor(0.72)
@@ -267,13 +289,7 @@ struct MoneyHomeView: View {
                     .frame(height: 7)
                 }
 
-                if temporarilyRevealed {
-                    Text("Hiding in \(countdown)s")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.roostMutedForeground)
-                }
-
-                if let insight = hazelInsight, !hideBalances || temporarilyRevealed {
+                if let insight = budgetInsight, !hideBalances || temporarilyRevealed {
                     Text(insight)
                         .font(.system(size: 11))
                         .foregroundStyle(Color.roostMutedForeground)
@@ -342,7 +358,17 @@ struct MoneyHomeView: View {
                 .frame(width: 76, height: 76)
                 .animation(.easeOut(duration: 0.8), value: arcProgress)
 
-            if hideBalances && !temporarilyRevealed {
+            if temporarilyRevealed {
+                // Countdown shown inside ring so it's visually tied to the tap target
+                VStack(spacing: 1) {
+                    Text("\(countdown)s")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text("hiding")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+            } else if hideBalances {
                 VStack(spacing: 4) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 16))
@@ -666,6 +692,38 @@ struct MoneyHomeView: View {
         }
     }
 
+    // MARK: - Locked history nudge
+
+    private var lockedHistoryNudge: some View {
+        Button { showLockedHistoryUpsell = true } label: {
+            RoostCard(padding: 12) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostMoneyTint.opacity(0.12))
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Color.roostMoneyTint)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(lockedMonthCount) month\(lockedMonthCount == 1 ? "" : "s") of data locked")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Upgrade to access your full spending history")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Empty state
 
     private var emptyStateCard: some View {
@@ -975,9 +1033,9 @@ struct MoneyHomeView: View {
         return upcomingBills.first?.id
     }
 
-    // MARK: - Hazel insight (static fallback)
+    // MARK: - Budget insight
 
-    private var hazelInsight: String? {
+    private var budgetInsight: String? {
         let expenses = thisMonthExpensesAsExpense
 
         // 1. Any lifestyle category over budget

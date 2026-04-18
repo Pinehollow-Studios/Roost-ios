@@ -45,6 +45,8 @@ struct MoneySpendingView: View {
     @State private var editingExpense: ExpenseWithSplits? = nil
     @State private var deleteCandidate: ExpenseWithSplits? = nil
     @State private var showHistoryUpsell = false
+    @State private var showBulkCategorizeUpsell = false
+    @State private var showHazelFreeTease = false
 
     // MARK: - Derived helpers
 
@@ -58,7 +60,9 @@ struct MoneySpendingView: View {
         settingsVM.settings.defaultExpenseSplit == 50.0 ? "equal" : "solo"
     }
     private var historyCutoff: Date {
-        Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        // Free tier: current month + 1 previous month visible; gate anything older
+        let startOfCurrentMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+        return Calendar.current.date(byAdding: .month, value: -1, to: startOfCurrentMonth) ?? Date()
     }
 
     private var thisMonthExpenses: [ExpenseWithSplits] {
@@ -169,20 +173,7 @@ struct MoneySpendingView: View {
     }
 
     private func spendingColour(for name: String) -> Color {
-        let palette: [Color] = [
-            Color(hex: 0xF06F48),
-            Color(hex: 0x36A873),
-            Color(hex: 0xF2A33A),
-            Color(hex: 0x35AFA6),
-            Color(hex: 0x4D8ECF),
-            Color(hex: 0xD75B83),
-            Color(hex: 0x8F73D9),
-            Color(hex: 0xB8832F),
-            Color(hex: 0x5BAA50),
-            Color(hex: 0xD65F45)
-        ]
-        let hash = name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
-        return palette[abs(hash) % palette.count]
+        moneyColour(for: name)
     }
 
     // MARK: - Body
@@ -236,6 +227,58 @@ struct MoneySpendingView: View {
             Text("This can't be undone.")
         }
         .nestUpsell(isPresented: $showHistoryUpsell, feature: .budgetHistory)
+        .nestUpsell(isPresented: $showBulkCategorizeUpsell, feature: .hazelBulkCategorize)
+        .overlay(alignment: .bottom) {
+            if let category = expensesVM.lastHazelCategorization {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .medium))
+                    Text("Hazel → \(category)")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(Color.roostPrimary, in: Capsule())
+                .padding(.bottom, DesignSystem.Spacing.screenBottom + 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if showHazelFreeTease {
+                Button { showBulkCategorizeUpsell = true } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .medium))
+                        Text("Hazel Pro auto-sorts as you add →")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(Color.roostPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(Color.roostCard, in: Capsule())
+                    .overlay(Capsule().stroke(Color.roostPrimary.opacity(0.3), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.07), radius: 8, y: 2)
+                    .padding(.bottom, DesignSystem.Spacing.screenBottom + 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: expensesVM.lastHazelCategorization)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: showHazelFreeTease)
+        .onChange(of: expensesVM.expenses.count) { old, new in
+            guard new > old, isFreeTier else { return }
+            let cal = Calendar.current
+            let now = Date()
+            if let newest = expensesVM.expenses.first(where: { ews in
+                guard let d = ews.incurredOnDate else { return false }
+                return cal.isDate(d, equalTo: now, toGranularity: .month)
+            }), newest.category == nil {
+                showHazelFreeTease = true
+                Task {
+                    try? await Task.sleep(for: .seconds(4))
+                    showHazelFreeTease = false
+                }
+            }
+        }
     }
 
     private var addExpenseButton: some View {
@@ -308,7 +351,7 @@ private extension MoneySpendingView {
                         spendingSummaryMetrics
                     }
 
-                    if let insight = hazelInsight {
+                    if let insight = budgetInsight {
                         Text(insight)
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
@@ -444,11 +487,11 @@ private extension MoneySpendingView {
     }
 }
 
-// MARK: - Hazel insight
+// MARK: - Budget insight
 
 private extension MoneySpendingView {
 
-    var hazelInsight: String? {
+    var budgetInsight: String? {
         let groups = categoryGroups
         guard !groups.isEmpty else { return nil }
 
@@ -684,6 +727,48 @@ private extension MoneySpendingView {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 2)
             }
+
+            if group.id == "__uncategorised__", !expenses.isEmpty {
+                if isFreeTier {
+                    Button {
+                        showBulkCategorizeUpsell = true
+                    } label: {
+                        Text("✨ Auto-sort with Hazel Pro →")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.roostPrimary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+                } else if expensesVM.isBulkCategorizing {
+                    Text("Hazel is sorting...")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 6)
+                } else {
+                    Button {
+                        guard let homeId = homeManager.homeId,
+                              let myUserId = homeManager.currentUserId else { return }
+                        let budgetCategories = budgetVM.lifestyleLines.map(\.name)
+                        Task {
+                            await expensesVM.bulkCategorizeUncategorized(
+                                homeId: homeId,
+                                myUserId: myUserId,
+                                partnerUserId: nil,
+                                budgetCategoryNames: budgetCategories
+                            )
+                        }
+                    } label: {
+                        Text("✨ Let Hazel sort these")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.roostPrimary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+                }
+            }
         }
         .padding(.bottom, 9)
         .background(Color.roostMuted.opacity(0.32))
@@ -761,7 +846,7 @@ private extension MoneySpendingView {
         if isLocked {
             // Locked placeholder for free tier
             HStack {
-                Text("Older expense")
+                Text("Hidden — 2+ months ago")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.roostForeground.opacity(0.35))
                 Spacer()
@@ -775,7 +860,7 @@ private extension MoneySpendingView {
                 ? memberNames.names.me
                 : memberNames.names.partner
 
-            HStack(spacing: 0) {
+            HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(expense.title)
                         .font(.system(size: 12, weight: .medium))
@@ -803,6 +888,26 @@ private extension MoneySpendingView {
                         .font(.system(size: 10))
                         .foregroundStyle(Color.roostMutedForeground)
                 }
+
+                Menu {
+                    Button {
+                        editingExpense = expense
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        deleteCandidate = expense
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.vertical, 9)
             .contentShape(Rectangle())
@@ -853,7 +958,7 @@ private extension MoneySpendingView {
                     partnerUserId: homeManager.partner?.userID ?? myId,
                     isRecurring: recurring,
                     hazelEnabled: hazelVM.expensesEnabled,
-                    isNest: homeManager.home?.hasProAccess ?? false,
+                    isPro: homeManager.home?.hasProAccess ?? false,
                     budgetCategoryNames: budgetVM.categories.map(\.name)
                 )
             }

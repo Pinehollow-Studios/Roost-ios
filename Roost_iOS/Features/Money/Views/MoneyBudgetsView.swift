@@ -8,21 +8,21 @@ private struct BudgetSectionDef: Identifiable {
     let isFixed: Bool
 
     var headerBorderColour: Color {
-        isFixed ? Color(hex: 0xF06F48) : Color(hex: 0x22BFA6)
+        isFixed ? Color.roostPrimary : Color.roostSecondary
     }
     var headerBgColour: Color {
-        isFixed ? Color(hex: 0xF06F48).opacity(0.10) : Color(hex: 0x22BFA6).opacity(0.10)
+        isFixed ? Color.roostPrimary.opacity(0.10) : Color.roostSecondary.opacity(0.10)
     }
     var allocationColour: Color {
         switch id {
-        case "housing-bills":       return Color(hex: 0xFF7048)
-        case "subscriptions-leisure": return Color(hex: 0xF7A928)
-        case "transport":           return Color(hex: 0x3E96D8)
-        case "food-drink":          return Color(hex: 0x2EBA70)
-        case "household":           return Color(hex: 0x23BFA8)
-        case "personal":            return Color(hex: 0x9172E8)
-        case "savings":             return Color(hex: 0xE25B8D)
-        default:                    return Color.roostMutedForeground
+        case "housing-bills":         return Color(hex: 0xD4795E) // terracotta
+        case "subscriptions-leisure": return Color(hex: 0xE6A563) // warm amber
+        case "transport":             return Color(hex: 0x337DD6) // money blue
+        case "food-drink":            return Color(hex: 0x7FA087) // sage-green
+        case "household":             return Color(hex: 0x9DB19F) // sage
+        case "personal":              return Color(hex: 0xB88B7E) // warm brown
+        case "savings":               return Color(hex: 0x6B8FAF) // muted slate-blue
+        default:                      return Color.roostMutedForeground
         }
     }
     var suggestions: [String] {
@@ -140,15 +140,15 @@ struct MoneyBudgetsView: View {
     }
     private var healthColour: Color {
         switch healthScore {
-        case 80...100: return Color(hex: 0x2EBA70)
-        case 60..<80:  return Color(hex: 0x2EBA70)
-        case 40..<60:  return Color(hex: 0xF7A928)
+        case 80...100: return Color.roostSuccess
+        case 60..<80:  return Color.roostSecondary
+        case 40..<60:  return Color.roostWarning
         default:       return Color.roostDestructive
         }
     }
     private var unallocatedColour: Color {
-        if unallocated > 50 { return Color(hex: 0x2EBA70) }
-        if unallocated >= 0 { return Color(hex: 0xF7A928) }
+        if unallocated > 50 { return Color.roostSuccess }
+        if unallocated >= 0 { return Color.roostWarning }
         return Color.roostDestructive
     }
 
@@ -250,7 +250,7 @@ struct MoneyBudgetsView: View {
 
                     // Budget table
                     if isCurrentMonth {
-                        if budgetVM.activeLines.isEmpty && !budgetVM.isLoading {
+                        if budgetVM.activeLines.isEmpty && !budgetVM.isLoading && !editMode {
                             emptyState
                                 .padding(.horizontal, DesignSystem.Spacing.page)
                                 .padding(.top, Spacing.xxl)
@@ -380,6 +380,9 @@ private extension MoneyBudgetsView {
                     Text(healthRating)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(healthColour)
+                    Text("Income vs spend vs savings rate")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.roostMutedForeground)
                 }
                 Spacer()
                 Text("\(healthScore)/100")

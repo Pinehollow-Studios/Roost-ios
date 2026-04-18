@@ -13,7 +13,7 @@ struct HouseholdSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
-                FigmaBackHeader(title: "Household")
+                FigmaBackHeader(title: "Household", accent: .roostPrimary)
 
                 if let home = homeManager.home {
                     householdNameCard(home)
@@ -57,7 +57,9 @@ struct HouseholdSettingsView: View {
     private func householdNameCard(_ home: Home) -> some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.inline) {
-                HStack {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    cardIcon("house.fill", size: 14)
+
                     Text("Household Name")
                         .font(.roostCardTitle)
                         .foregroundStyle(Color.roostForeground)
@@ -87,7 +89,9 @@ struct HouseholdSettingsView: View {
     private func householdIDCard(_ home: Home) -> some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.inline) {
-                HStack {
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    cardIcon("number", size: 14)
+
                     Text("Household ID")
                         .font(.roostCardTitle)
                         .foregroundStyle(Color.roostForeground)
@@ -114,6 +118,7 @@ struct HouseholdSettingsView: View {
                 Text(home.inviteCode)
                     .font(.system(.body, design: .monospaced))
                     .fontWeight(.medium)
+                    .tracking(2)
                     .foregroundStyle(Color.roostForeground)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DesignSystem.Spacing.card)
@@ -129,9 +134,12 @@ struct HouseholdSettingsView: View {
     private var membersCard: some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-                Text("Members")
-                    .font(.roostCardTitle)
-                    .foregroundStyle(Color.roostForeground)
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    cardIcon("person.2.fill", size: 13)
+                    Text("Members")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
 
                 VStack(spacing: 12) {
                     ForEach(homeManager.members) { member in
@@ -166,9 +174,12 @@ struct HouseholdSettingsView: View {
     private func inviteCard(_ home: Home) -> some View {
         RoostCard {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.row) {
-                Text("Invite Partner")
-                    .font(.roostCardTitle)
-                    .foregroundStyle(Color.roostForeground)
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    cardIcon("paperplane.fill", size: 14)
+                    Text("Invite Partner")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
 
                 Text("Share this invite code with your partner to join your household")
                     .font(.roostLabel)
@@ -178,6 +189,7 @@ struct HouseholdSettingsView: View {
                 HStack(spacing: DesignSystem.Spacing.inline) {
                     Text(home.inviteCode)
                         .font(.system(size: 17, weight: .medium, design: .monospaced))
+                        .tracking(2)
                         .foregroundStyle(Color.roostForeground)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
@@ -220,6 +232,17 @@ struct HouseholdSettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+
+    private func cardIcon(_ systemName: String, size: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color.roostPrimary.opacity(0.10))
+                .frame(width: 32, height: 32)
+            Image(systemName: systemName)
+                .font(.system(size: size, weight: .medium))
+                .foregroundStyle(Color.roostPrimary)
         }
     }
 

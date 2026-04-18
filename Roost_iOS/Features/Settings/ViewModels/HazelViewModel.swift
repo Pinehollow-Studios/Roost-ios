@@ -23,14 +23,19 @@ final class HazelViewModel {
         didSet { UserDefaults.standard.set(budgetEnabled, forKey: Keys.budget) }
     }
 
+    var insightsEnabled: Bool {
+        didSet { UserDefaults.standard.set(insightsEnabled, forKey: Keys.insights) }
+    }
+
     // MARK: - Init
 
     init() {
         let defaults = UserDefaults.standard
-        shoppingEnabled = defaults.object(forKey: Keys.shopping) as? Bool ?? true
-        expensesEnabled = defaults.object(forKey: Keys.expenses) as? Bool ?? true
-        choresEnabled   = defaults.object(forKey: Keys.chores)   as? Bool ?? true
-        budgetEnabled   = defaults.object(forKey: Keys.budget)   as? Bool ?? true
+        shoppingEnabled  = defaults.object(forKey: Keys.shopping)  as? Bool ?? true
+        expensesEnabled  = defaults.object(forKey: Keys.expenses)  as? Bool ?? true
+        choresEnabled    = defaults.object(forKey: Keys.chores)    as? Bool ?? true
+        budgetEnabled    = defaults.object(forKey: Keys.budget)    as? Bool ?? true
+        insightsEnabled  = defaults.object(forKey: Keys.insights)  as? Bool ?? true
     }
 
     // MARK: - Computed
@@ -81,9 +86,10 @@ final class HazelViewModel {
     // MARK: - Keys
 
     private enum Keys {
-        static let shopping = "hazel.shopping"
-        static let expenses = "hazel.expenses"
-        static let chores   = "hazel.chores"
-        static let budget   = "hazel.budget"
+        static let shopping  = "hazel.shopping"
+        static let expenses  = "hazel.expenses"
+        static let chores    = "hazel.chores"
+        static let budget    = "hazel.budget"
+        static let insights  = "hazel.insights"
     }
 }

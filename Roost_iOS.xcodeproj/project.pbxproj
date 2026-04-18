@@ -343,6 +343,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -369,6 +370,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -393,6 +395,7 @@
 		A10000000000000000000072 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -412,6 +415,7 @@
 		A10000000000000000000073 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -554,14 +558,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 22X48K6KSP;
+				DEVELOPMENT_TEAM = 7CAU82Q3B8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Roost;
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.roostapp.ios\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"studio.pinehollow.roost\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
 				INFOPLIST_KEY_SUPABASE_ANON_KEY = "$(SUPABASE_ANON_KEY)";
 				INFOPLIST_KEY_SUPABASE_URL = "$(SUPABASE_URL)";
 				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf";
@@ -576,7 +581,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.emberstudio.roost;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.pinehollow.roost;
 				PRODUCT_NAME = Roost;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -594,14 +599,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Roost_iOS/Roost_iOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 22X48K6KSP;
+				DEVELOPMENT_TEAM = 7CAU82Q3B8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Roost;
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.roostapp.ios\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"studio.pinehollow.roost\";\n    CFBundleURLSchemes =     (\n        \"roost-ios\"\n    );\n}";
 				INFOPLIST_KEY_SUPABASE_ANON_KEY = "$(SUPABASE_ANON_KEY)";
 				INFOPLIST_KEY_SUPABASE_URL = "$(SUPABASE_URL)";
 				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf";
@@ -616,7 +622,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.emberstudio.roost;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.pinehollow.roost;
 				PRODUCT_NAME = Roost;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

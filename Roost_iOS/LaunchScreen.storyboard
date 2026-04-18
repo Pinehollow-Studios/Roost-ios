@@ -14,29 +14,35 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" image="RoostIcon" translatesAutoresizingMaskIntoConstraints="NO" id="Img-IC-on">
+                            <!-- App icon — rounded variant, 104 × 104 -->
+                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" image="RoostIconRounded" translatesAutoresizingMaskIntoConstraints="NO" id="Img-IC-on">
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="86" id="wic-86"/>
-                                    <constraint firstAttribute="height" constant="86" id="hic-86"/>
+                                    <constraint firstAttribute="width" constant="104" id="wic-104"/>
+                                    <constraint firstAttribute="height" constant="104" id="hic-104"/>
                                 </constraints>
                             </imageView>
+                            <!-- App name -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Roost" textAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lbl-RS-t1">
-                                <fontDescription type="system" weight="medium" pointSize="36"/>
+                                <fontDescription type="system" weight="semibold" pointSize="32"/>
                                 <color key="textColor" name="LaunchForeground"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loch Studios" textAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lbl-LC-h1">
-                                <fontDescription type="system" weight="medium" pointSize="12"/>
+                            <!-- Studio credit -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Pinehollow Studios" textAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Lbl-PH-h1">
+                                <fontDescription type="system" weight="medium" pointSize="11"/>
                                 <color key="textColor" name="LaunchMuted"/>
                             </label>
                         </subviews>
                         <color key="backgroundColor" name="LaunchBackground"/>
                         <constraints>
+                            <!-- Icon: centred horizontally, 64pt above vertical centre -->
                             <constraint firstItem="Img-IC-on" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxIcon"/>
-                            <constraint firstItem="Img-IC-on" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-44" id="cyIcon"/>
+                            <constraint firstItem="Img-IC-on" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-64" id="cyIcon"/>
+                            <!-- "Roost" label: centred, 22pt below icon -->
                             <constraint firstItem="Lbl-RS-t1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxLabel"/>
-                            <constraint firstItem="Lbl-RS-t1" firstAttribute="top" secondItem="Img-IC-on" secondAttribute="bottom" constant="20" id="iconToLabel"/>
-                            <constraint firstItem="Lbl-LC-h1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxLoch"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Lbl-LC-h1" secondAttribute="bottom" constant="44" id="botLoch"/>
+                            <constraint firstItem="Lbl-RS-t1" firstAttribute="top" secondItem="Img-IC-on" secondAttribute="bottom" constant="22" id="iconToLabel"/>
+                            <!-- Studio credit: centred, 32pt above safe-area bottom -->
+                            <constraint firstItem="Lbl-PH-h1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cxPH"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Lbl-PH-h1" secondAttribute="bottom" constant="32" id="botPH"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -47,15 +53,18 @@
         </scene>
     </scenes>
     <resources>
-        <image name="RoostIcon" width="60" height="60"/>
+        <image name="RoostIconRounded" width="60" height="60"/>
+        <!-- Deep warm charcoal — mirrors auth screen dark background (#0F0D0B) -->
         <namedColor name="LaunchBackground">
-            <color colorSpace="custom" customColorSpace="sRGB" red="0.92157" green="0.89020" blue="0.83529" alpha="1" cocoaTouchSystemColor="no"/>
+            <color colorSpace="custom" customColorSpace="sRGB" red="0.05882" green="0.05098" blue="0.04314" alpha="1" cocoaTouchSystemColor="no"/>
         </namedColor>
+        <!-- Warm off-white foreground (#F2EBE0) -->
         <namedColor name="LaunchForeground">
-            <color colorSpace="custom" customColorSpace="sRGB" red="0.23922" green="0.19608" blue="0.16078" alpha="1" cocoaTouchSystemColor="no"/>
+            <color colorSpace="custom" customColorSpace="sRGB" red="0.94902" green="0.92157" blue="0.87843" alpha="1" cocoaTouchSystemColor="no"/>
         </namedColor>
+        <!-- Off-white at 45% for muted studio credit -->
         <namedColor name="LaunchMuted">
-            <color colorSpace="custom" customColorSpace="sRGB" red="0.41961" green="0.38039" blue="0.34118" alpha="1" cocoaTouchSystemColor="no"/>
+            <color colorSpace="custom" customColorSpace="sRGB" red="0.94902" green="0.92157" blue="0.87843" alpha="0.45" cocoaTouchSystemColor="no"/>
         </namedColor>
     </resources>
 </document>

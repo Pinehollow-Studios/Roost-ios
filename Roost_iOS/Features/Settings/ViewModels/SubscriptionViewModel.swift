@@ -55,7 +55,7 @@ final class SubscriptionViewModel {
         Feature(icon: "bell.badge", title: "Smart notifications"),
         Feature(icon: "person.2", title: "Unlimited members"),
         Feature(icon: "square.grid.2x2", title: "Room groups"),
-        Feature(icon: "crown", title: "Priority support"),
+        Feature(icon: "sparkles", title: "Hazel AI intelligence"),
     ]
 
     let freeFeatures: [Feature] = [

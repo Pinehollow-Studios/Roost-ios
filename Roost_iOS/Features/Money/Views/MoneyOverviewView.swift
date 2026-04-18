@@ -11,11 +11,16 @@ struct MoneyOverviewView: View {
     @Environment(MonthlyMoneyViewModel.self) private var summaryVM
     @Environment(MoneySettingsViewModel.self) private var settingsVM
     @Environment(ScrambleModeEnvironment.self) private var scramble
+    @Environment(HazelViewModel.self) private var hazelVM
 
     @State private var arcProgress: CGFloat = 0
     @State private var showHistoryUpsell = false
     @State private var showInsightsUpsell = false
     @State private var pastBillsExpanded = false
+    @State private var hazelInsight: HazelBudgetInsight?
+    @State private var hazelInsightLoading = false
+
+    @ObservationIgnored private let insightsService = BudgetInsightsService()
 
     // MARK: - Derived helpers
 
@@ -189,9 +194,75 @@ struct MoneyOverviewView: View {
             .sorted { ($0.dayOfMonth ?? 0) < ($1.dayOfMonth ?? 0) }
     }
 
-    // MARK: - Hazel insight
+    // MARK: - Hazel insights
 
-    private var hazelInsight: String? {
+    private var monthLabel: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMMM yyyy"
+        return fmt.string(from: currentMonth)
+    }
+
+    private var monthKeyForInsights: String {
+        "\(homeManager.homeId?.uuidString ?? "")-\(monthLabel)"
+    }
+
+    private var hazelInsightInput: HazelBudgetInsightInput? {
+        guard let summary = summaryVM.summary else { return nil }
+        let totalBudget = NSDecimalNumber(decimal: summary.totalBudgeted).doubleValue
+        let totalSpent = NSDecimalNumber(decimal: summary.actualSpend).doubleValue
+        let projected = NSDecimalNumber(decimal: summary.projectedTotal).doubleValue
+        let remaining = max(totalBudget - totalSpent, 0)
+        let overspend = max(totalSpent - totalBudget, 0)
+        let expenses = thisMonthExpensesAsExpense
+        let topCategories: [HazelBudgetInsightInput.TopCategory] = budgetVM.lifestyleLines
+            .compactMap { line -> HazelBudgetInsightInput.TopCategory? in
+                let spent = budgetVM.getSpent(category: line.name, month: currentMonth, expenses: expenses)
+                guard spent > 0 else { return nil }
+                let effective = budgetVM.getEffectiveAmount(lineId: line.id, month: currentMonth)
+                let spentD = NSDecimalNumber(decimal: spent).doubleValue
+                let limitD = effective > 0 ? NSDecimalNumber(decimal: effective).doubleValue : nil
+                let pct = limitD.map { $0 > 0 ? spentD / $0 * 100 : 0 } ?? 0
+                return HazelBudgetInsightInput.TopCategory(
+                    name: line.name,
+                    spend: spentD,
+                    limit: limitD,
+                    pct: pct,
+                    recurringTotal: 0
+                )
+            }
+            .sorted { $0.spend > $1.spend }
+            .prefix(5)
+            .map { $0 }
+        return HazelBudgetInsightInput(
+            monthLabel: monthLabel,
+            totalSpent: totalSpent,
+            totalBudget: totalBudget,
+            projectedMonthEnd: projected,
+            remaining: remaining,
+            overspend: overspend,
+            topCategories: topCategories
+        )
+    }
+
+    private func fetchHazelInsight() async {
+        guard !isFreeTier, hazelVM.insightsEnabled else { return }
+        guard let homeId = homeManager.homeId, let input = hazelInsightInput else { return }
+        let key = monthKeyForInsights
+        if let cached = insightsService.cachedInsight(for: key) {
+            hazelInsight = cached
+            return
+        }
+        hazelInsightLoading = true
+        if let result = try? await insightsService.fetchInsights(homeId: homeId, input: input) {
+            insightsService.cache(result, for: key)
+            hazelInsight = result
+        }
+        hazelInsightLoading = false
+    }
+
+    // MARK: - Budget insight
+
+    private var budgetInsight: String? {
         guard let summary = summaryVM.summary, !isLoading else { return nil }
         let expenses = thisMonthExpensesAsExpense
 
@@ -238,13 +309,7 @@ struct MoneyOverviewView: View {
     }
 
     private func categoryColour(for name: String) -> Color {
-        let palette: [Color] = [
-            Color.roostMoneyTint, Color(hex: 0x9DB19F), Color(hex: 0xE6A563),
-            Color(hex: 0xC17A6F), Color(hex: 0x7A9199), Color(hex: 0xA08AB8),
-            Color(hex: 0xC4789A), Color(hex: 0x8B9E7D)
-        ]
-        let hash = abs(name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) })
-        return palette[hash % palette.count]
+        moneyColour(for: name)
     }
 
     private func billDateLabel(day: Int) -> String {
@@ -278,7 +343,7 @@ struct MoneyOverviewView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: 8) {
 
                 FigmaBackHeader(title: "Overview", accent: .roostMoneyTint)
                     .padding(.horizontal, DesignSystem.Spacing.page)
@@ -286,9 +351,9 @@ struct MoneyOverviewView: View {
                 monthNavigator
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
 
-                    // Zone 1 — Ring + stats + Hazel insight
+                    // Zone 1 — Ring + stats + budget insight
                     zone1RingCard
 
                     // Zone 2 — Money flow
@@ -324,6 +389,9 @@ struct MoneyOverviewView: View {
             guard let homeId = homeManager.homeId else { return }
             await summaryVM.loadSummary(homeId: homeId)
             updateArcProgress()
+        }
+        .task(id: monthKeyForInsights) {
+            await fetchHazelInsight()
         }
         .onAppear {
             Task { @MainActor in
@@ -367,21 +435,48 @@ private extension MoneyOverviewView {
 private extension MoneyOverviewView {
 
     var zone1RingCard: some View {
-        RoostCard(padding: 12, prominence: .quiet) {
+        RoostCard(padding: 10, prominence: .quiet) {
             if let error = summaryVM.error, summaryVM.summary == nil {
                 errorState(error: error)
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .center, spacing: 14) {
                         ringArc104
                         zone1Stats
                     }
-                    if let insight = hazelInsight {
-                        Text(insight)
+                    if !isFreeTier, let insight = hazelInsight {
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 9))
+                                .foregroundStyle(Color.roostPrimary)
+                                .padding(.top, 1)
+                            Text(insight.summary)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.roostPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    } else if !isFreeTier, hazelInsightLoading {
+                        Text("Hazel is reading this month...")
                             .font(.system(size: 11))
                             .foregroundStyle(Color.roostMutedForeground)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 2)
+                            .redacted(reason: .placeholder)
+                    } else if let insight = budgetInsight {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(insight)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.roostMutedForeground)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if isFreeTier {
+                                Button {
+                                    showInsightsUpsell = true
+                                } label: {
+                                    Text("✨ Hazel can narrate this month →")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.roostPrimary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     } else if isLoading {
                         Text("Loading spending pace.")
                             .font(.system(size: 11))
@@ -821,7 +916,7 @@ private extension MoneyOverviewView {
             RoostCard(padding: 12, prominence: .quiet) {
                 VStack(alignment: .leading, spacing: 10) {
                     let allData = sixMonthSpend
-                    let chartData = isFreeTier ? Array(allData.suffix(1)) : allData
+                    let lockedBarCount = isFreeTier ? max(allData.count - 1, 0) : 0
 
                     if allData.allSatisfy({ $0.total == 0 }) {
                         Text("No spending data yet.")
@@ -829,12 +924,13 @@ private extension MoneyOverviewView {
                             .foregroundStyle(Color.roostMutedForeground)
                     } else {
                         Chart {
-                            ForEach(chartData) { point in
+                            ForEach(Array(allData.enumerated()), id: \.element.id) { index, point in
+                                let isLocked = isFreeTier && index < allData.count - 1
                                 BarMark(
                                     x: .value("Month", point.label),
                                     y: .value("Spend", NSDecimalNumber(decimal: point.total).doubleValue)
                                 )
-                                .foregroundStyle(Color.roostSecondary)
+                                .foregroundStyle(isLocked ? Color.roostMuted.opacity(0.55) : Color.roostSecondary)
                                 .cornerRadius(3)
                             }
                         }
@@ -861,17 +957,26 @@ private extension MoneyOverviewView {
                             }
                         }
                         .frame(height: 116)
-
-                        if isFreeTier {
-                            Button {
-                                showHistoryUpsell = true
-                            } label: {
-                                Text("See 6-month history with Roost Pro →")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(Color.roostMoneyTint)
+                        .overlay(alignment: .topTrailing) {
+                            if lockedBarCount > 0 {
+                                Button { showHistoryUpsell = true } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 9, weight: .semibold))
+                                        Text("\(lockedBarCount) month\(lockedBarCount == 1 ? "" : "s") locked")
+                                            .font(.system(size: 10, weight: .medium))
+                                    }
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.roostPrimary.opacity(0.85), in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 2)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture { if isFreeTier { showHistoryUpsell = true } }
                     }
                 }
             }

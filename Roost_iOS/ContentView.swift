@@ -12,6 +12,7 @@ struct ContentView: View {
     @Environment(AppearanceSettings.self) private var appearanceSettings
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(AppBootManager.self) private var appBootManager
+    @Environment(NotificationRouter.self) private var notificationRouter
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -45,9 +46,24 @@ struct ContentView: View {
                 )
         }
         .preferredColorScheme(appearanceSettings.preferredColorScheme)
-        .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
+        .onChange(of: authManager.isAuthenticated) { wasAuthenticated, isAuthenticated in
             if !isAuthenticated {
                 appBootManager.clear()
+                // Clear any stale navigation so the next login starts on home
+                notificationRouter.selectedTab = .home
+                notificationRouter.morePath = []
+            }
+            // After a fresh login, always land on home regardless of previous tab
+            if !wasAuthenticated && isAuthenticated {
+                notificationRouter.selectedTab = .home
+                notificationRouter.morePath = []
+            }
+        }
+        .onChange(of: authManager.hasHome) { wasHasHome, isHasHome in
+            // After completing onboarding (setup → home confirmed), always land on home
+            if wasHasHome == false && isHasHome == true {
+                notificationRouter.selectedTab = .home
+                notificationRouter.morePath = []
             }
         }
     }

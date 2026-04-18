@@ -23,4 +23,16 @@ extension Color {
     static let roostMoneyTint = DesignSystem.Palette.moneyAccent
     static let roostShoppingTint = DesignSystem.Palette.shoppingAccent
     static let roostChoreTint = DesignSystem.Palette.choresAccent
+
+    // MARK: - Pro Palette Convenience Tokens
+    static let proDeepBurn      = DesignSystem.ProPalette.deepBurn
+    static let proCopper        = DesignSystem.ProPalette.copper
+    static let proAmber         = DesignSystem.ProPalette.amber
+    static let proChampagne     = DesignSystem.ProPalette.champagne
+    static let proWarmWhite     = DesignSystem.ProPalette.warmWhite
+    static let proBodyText      = DesignSystem.ProPalette.bodyText
+    static let proMutedText     = DesignSystem.ProPalette.mutedText
+    static let proBg            = DesignSystem.ProPalette.bg
+    static let proCard          = DesignSystem.ProPalette.card
+    static let proMutedSurface  = DesignSystem.ProPalette.mutedSurface
 }
