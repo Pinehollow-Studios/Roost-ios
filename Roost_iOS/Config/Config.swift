@@ -24,22 +24,5 @@ enum Config {
 
     static let googleClientID: String = stringValue(for: "GOOGLE_CLIENT_ID")
 
-    static let stripeMonthlyPriceID: String = stringValue(for: "STRIPE_MONTHLY_PRICE_ID")
-
-    static let stripeAnnualPriceID: String = stringValue(for: "STRIPE_ANNUAL_PRICE_ID")
-
-    static let stripeCheckoutEndpoint: String = stringValue(
-        for: "STRIPE_CHECKOUT_ENDPOINT",
-        fallback: "https://kfpjfhzgtejhzqdurkuu.supabase.co/functions/v1/stripe-checkout"
-    )
-
-    static let stripePortalEndpoint: String = stringValue(
-        for: "STRIPE_PORTAL_ENDPOINT",
-        fallback: "https://kfpjfhzgtejhzqdurkuu.supabase.co/functions/v1/stripe-portal"
-    )
-
-    static let stripePricesEndpoint: String = stringValue(
-        for: "STRIPE_PRICES_ENDPOINT",
-        fallback: "https://kfpjfhzgtejhzqdurkuu.supabase.co/functions/v1/stripe-prices"
-    )
+    static let revenueCatAPIKey: String = stringValue(for: "REVENUECAT_API_KEY")
 }

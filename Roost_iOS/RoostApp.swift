@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
 
 @main
 struct RoostApp: App {
@@ -34,6 +35,10 @@ struct RoostApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        RevenueCatService.configure(apiKey: Config.revenueCatAPIKey)
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -67,16 +72,20 @@ struct RoostApp: App {
                 .onOpenURL { url in
                     authManager.handle(url: url)
                     notificationRouter.handle(url: url)
-                    if url.host == "subscription" {
-                        Task {
-                            await homeManager.refreshCurrentHome()
-                        }
-                    }
                 }
                 .task {
                     authManager.startSessionListener()
                     LocalNotificationManager.shared.configure(router: notificationRouter)
                     await subscriptionPricingStore.refresh()
+                }
+                .onChange(of: authManager.currentUser?.id) { _, userId in
+                    Task {
+                        if let userId {
+                            try? await RevenueCatService.shared.logIn(userId: userId.uuidString)
+                        } else {
+                            try? await RevenueCatService.shared.logOut()
+                        }
+                    }
                 }
                 .onChange(of: scenePhase) { _, newValue in
                     switch newValue {

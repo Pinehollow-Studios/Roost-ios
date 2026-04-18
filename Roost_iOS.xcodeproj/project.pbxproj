@@ -14,6 +14,7 @@
 		A10000000000000000000005 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000105 /* SwiftUIIntrospect */; };
 		A10000000000000000000006 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000106 /* FirebaseMessaging */; };
 		A10000000000000000000007 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000107 /* SwiftDate */; };
+		CF34273C2F93F11800F2228C /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = CF34273B2F93F11800F2228C /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +96,7 @@
 				A10000000000000000000002 /* KeychainAccess in Frameworks */,
 				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
 				A10000000000000000000004 /* Nuke in Frameworks */,
+				CF34273C2F93F11800F2228C /* RevenueCat in Frameworks */,
 				A10000000000000000000005 /* SwiftUIIntrospect in Frameworks */,
 				A10000000000000000000006 /* FirebaseMessaging in Frameworks */,
 				A10000000000000000000007 /* SwiftDate in Frameworks */,
@@ -113,6 +115,7 @@
 				CF2F9AF82F74804E0013AAC9 /* Products */,
 				CF2FA1082F7491760013AAC9 /* Recovered References */,
 				CF2FA20E2F7492A50013AAC9 /* Info.plist */,
+				CF34273A2F93F11800F2228C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -132,6 +135,13 @@
 				A10000000000000000000034 /* Roost_iOS/Config/Secrets.xcconfig */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		CF34273A2F93F11800F2228C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -207,6 +217,7 @@
 				A10000000000000000000105 /* SwiftUIIntrospect */,
 				A10000000000000000000106 /* FirebaseMessaging */,
 				A10000000000000000000107 /* SwiftDate */,
+				CF34273B2F93F11800F2228C /* RevenueCat */,
 			);
 			productName = Roost;
 			productReference = CF2F9AF72F74804E0013AAC9 /* Roost.app */;
@@ -252,6 +263,7 @@
 				A10000000000000000000124 /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 				A10000000000000000000125 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				A10000000000000000000126 /* XCRemoteSwiftPackageReference "SwiftDate" */,
+				CF2B50872F93DFFC00FE5DE7 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CF2F9AF82F74804E0013AAC9 /* Products */;
@@ -714,6 +726,14 @@
 				minimumVersion = 7.0.0;
 			};
 		};
+		CF2B50872F93DFFC00FE5DE7 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.68.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -751,6 +771,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000126 /* XCRemoteSwiftPackageReference "SwiftDate" */;
 			productName = SwiftDate;
+		};
+		CF34273B2F93F11800F2228C /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CF2B50872F93DFFC00FE5DE7 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

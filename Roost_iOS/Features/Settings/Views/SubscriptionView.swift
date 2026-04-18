@@ -7,9 +7,8 @@ struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel = SubscriptionViewModel()
-    @State private var promoExpanded = false
+    @State private var giftCodeExpanded = false
     @State private var faqExpanded = false
-    @State private var browserSession = SubscriptionBrowserSession()
 
     // Animation states
     @State private var glowPulsing = false
@@ -25,8 +24,7 @@ struct SubscriptionView: View {
             home.subscriptionTier ?? "",
             home.trialEndsAt?.ISO8601Format() ?? "",
             home.currentPeriodEndsAt?.ISO8601Format() ?? "",
-            home.stripeCustomerID ?? "",
-            home.stripePriceID ?? "",
+            home.subscriptionOwnerUserId?.uuidString ?? "",
             String(home.hasUsedTrialValue)
         ].joined(separator: "|")
     }
@@ -51,6 +49,10 @@ struct SubscriptionView: View {
                     .padding(.horizontal, -DesignSystem.Spacing.page)
 
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.block) {
+                    if viewModel.isDuplicateSubscriber {
+                        duplicateSubscriberNotice
+                    }
+
                     currentPlanCard
 
                     if showTrialBanner {
@@ -65,7 +67,7 @@ struct SubscriptionView: View {
 
                     ctaSection
 
-                    promoSection
+                    redemptionSection
                     faqSection
                 }
                 .padding(.horizontal, DesignSystem.Spacing.page)
@@ -83,6 +85,10 @@ struct SubscriptionView: View {
         }
         .task(id: subscriptionSyncKey + "|" + pricingSyncKey) {
             viewModel.sync(with: homeManager.home, prices: subscriptionPricingStore.prices)
+            await viewModel.checkDuplicateSubscriber(
+                home: homeManager.home,
+                currentUserId: homeManager.currentUserId
+            )
         }
         .settingsMessageOverlay()
         .onAppear {
@@ -209,6 +215,48 @@ struct SubscriptionView: View {
         )
     }
 
+    // MARK: - Duplicate Subscriber Notice
+
+    private var duplicateSubscriberNotice: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(Color.roostWarning)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Subscription already active")
+                    .font(.roostBody.weight(.semibold))
+                    .foregroundStyle(Color.roostForeground)
+
+                Text("Your household is already on Roost Pro. You have an active subscription on this Apple ID — you can cancel it in Settings without losing household access.")
+                    .font(.roostMeta)
+                    .foregroundStyle(Color.roostMutedForeground)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await viewModel.openManageSubscriptions() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Manage in Settings")
+                            .font(.roostCaption.weight(.semibold))
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.roostWarning)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
+            }
+        }
+        .padding(DesignSystem.Spacing.cardLarge)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.roostWarning.opacity(0.08), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .strokeBorder(Color.roostWarning.opacity(0.3), lineWidth: 1.5)
+        )
+    }
+
     // MARK: - Current Plan Card
 
     private var currentPlanCard: some View {
@@ -329,7 +377,8 @@ struct SubscriptionView: View {
                 .strokeBorder(
                     LinearGradient(
                         colors: [Color.roostPrimary.opacity(0.35), Color.roostSecondary.opacity(0.2)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     ),
                     lineWidth: 1.5
                 )
@@ -578,7 +627,7 @@ struct SubscriptionView: View {
                     .fill(Color.roostHairline)
                     .frame(width: 1, height: 20)
                 Spacer(minLength: 0)
-                trustBadge(icon: "lock.fill", label: "Secure checkout")
+                trustBadge(icon: "applelogo", label: "Managed by Apple")
             }
             .padding(.vertical, 12)
             .padding(.horizontal, DesignSystem.Spacing.card)
@@ -646,23 +695,26 @@ struct SubscriptionView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Promo
+    // MARK: - Redemption Section
 
-    private var promoSection: some View {
+    private var redemptionSection: some View {
         RoostCard {
-            VStack(alignment: .leading, spacing: promoExpanded ? 14 : 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Apple Offer Code row
                 Button {
-                    withAnimation(.roostEaseOut) { promoExpanded.toggle() }
+                    RevenueCatService.shared.presentOfferCodeRedemption()
                 } label: {
                     HStack {
-                        Text("Have a promo code?")
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostPrimary)
+                        Text("Redeem Apple Offer Code")
                             .font(.roostBody.weight(.medium))
                             .foregroundStyle(Color.roostForeground)
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 15, weight: .medium))
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Color.roostMutedForeground)
-                            .rotationEffect(.degrees(promoExpanded ? 180 : 0))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 44)
@@ -670,36 +722,64 @@ struct SubscriptionView: View {
                 }
                 .buttonStyle(.plain)
 
-                if promoExpanded {
-                    VStack(alignment: .leading, spacing: 10) {
-                        RoostTextField(title: "Enter code", text: $viewModel.promoCode)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
+                Divider()
+                    .padding(.vertical, 4)
 
-                        RoostButton(
-                            title: viewModel.isApplyingPromo ? "Applying..." : "Apply Code",
-                            variant: .secondary,
-                            isLoading: viewModel.isApplyingPromo
-                        ) {
-                            Task { await applyPromoCode() }
+                // Gift code (backend codes: lifetime / timed)
+                VStack(alignment: .leading, spacing: giftCodeExpanded ? 14 : 0) {
+                    Button {
+                        withAnimation(.roostEaseOut) { giftCodeExpanded.toggle() }
+                    } label: {
+                        HStack {
+                            Image(systemName: "gift")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.roostMutedForeground)
+                            Text("Have a gift code?")
+                                .font(.roostBody.weight(.medium))
+                                .foregroundStyle(Color.roostForeground)
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.roostMutedForeground)
+                                .rotationEffect(.degrees(giftCodeExpanded ? 180 : 0))
                         }
-                        .disabled(viewModel.promoCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isApplyingPromo)
-
-                        if viewModel.promoSuccess {
-                            Text("Promo code applied. Roost Pro access will refresh automatically.")
-                                .font(.roostCaption)
-                                .foregroundStyle(Color.roostSuccess)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        if let promoError = viewModel.promoError {
-                            Text(promoError)
-                                .font(.roostCaption)
-                                .foregroundStyle(Color.roostDestructive)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .buttonStyle(.plain)
+
+                    if giftCodeExpanded {
+                        VStack(alignment: .leading, spacing: 10) {
+                            RoostTextField(title: "Enter code", text: $viewModel.promoCode)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled()
+
+                            RoostButton(
+                                title: viewModel.isApplyingPromo ? "Applying..." : "Apply Code",
+                                variant: .secondary,
+                                isLoading: viewModel.isApplyingPromo
+                            ) {
+                                Task { await applyGiftCode() }
+                            }
+                            .disabled(viewModel.promoCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isApplyingPromo)
+
+                            if viewModel.promoSuccess {
+                                Text("Code applied — Roost Pro access will update automatically.")
+                                    .font(.roostCaption)
+                                    .foregroundStyle(Color.roostSuccess)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            if let promoError = viewModel.promoError {
+                                Text(promoError)
+                                    .font(.roostCaption)
+                                    .foregroundStyle(Color.roostDestructive)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
             }
         }
@@ -733,7 +813,7 @@ struct SubscriptionView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         faqRow(
                             question: "Can I cancel anytime?",
-                            answer: "Yes. Open Stripe billing from this page and cancel whenever you need. You keep access until the end of the billing period."
+                            answer: "Yes. Go to Settings → Apple ID → Subscriptions and cancel whenever you need. You keep access until the end of the billing period."
                         )
                         faqRow(
                             question: "Is Roost Pro per household or per person?",
@@ -746,6 +826,10 @@ struct SubscriptionView: View {
                         faqRow(
                             question: "Is there a free trial?",
                             answer: "Yes — 14 days of full Roost Pro access, no card required to start."
+                        )
+                        faqRow(
+                            question: "Where is my subscription managed?",
+                            answer: "Your subscription is managed by Apple through your Apple ID. You can view, change, or cancel it anytime in Settings → Apple ID → Subscriptions."
                         )
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -770,33 +854,28 @@ struct SubscriptionView: View {
 
     private func openPrimaryAction() async {
         viewModel.errorMessage = nil
-        let accessToken: String
-        do {
-            accessToken = try await authManager.validAccessToken()
-        } catch {
-            viewModel.errorMessage = error.localizedDescription
-            return
-        }
-        guard let destination = await viewModel.actionURL(
-            home: homeManager.home,
-            user: authManager.currentUser,
-            accessToken: accessToken,
-            plan: viewModel.selectedPlan
-        ) else { return }
 
-        do {
-            let callbackURL = try await browserSession.start(url: destination)
-            if callbackURL.host == "subscription" {
-                await homeManager.refreshCurrentHome()
+        switch viewModel.state {
+        case .free, .cancelled:
+            let package = viewModel.selectedPlan == .monthly
+                ? subscriptionPricingStore.monthlyPackage
+                : subscriptionPricingStore.annualPackage
+            guard let package else {
+                viewModel.errorMessage = "Plans are still loading. Please try again in a moment."
+                return
             }
-        } catch SubscriptionBrowserError.cancelled {
-            return
-        } catch {
-            viewModel.errorMessage = error.localizedDescription
+            await viewModel.purchase(package: package)
+            await homeManager.refreshCurrentHome()
+
+        case .trial, .active, .pastDue, .incomplete:
+            await viewModel.openManageSubscriptions()
+
+        case .lifetime:
+            break
         }
     }
 
-    private func applyPromoCode() async {
+    private func applyGiftCode() async {
         let accessToken: String
         do {
             accessToken = try await authManager.validAccessToken()
@@ -848,13 +927,13 @@ struct SubscriptionView: View {
         case .trial:
             return "Your household is trying Roost Pro with full access across the app."
         case .active:
-            return "Roost Pro is active for this household. Billing is managed in Stripe."
+            return "Roost Pro is active for this household. Subscription managed via your Apple ID."
         case .pastDue:
-            return "A billing issue is affecting your Pro access. Open billing to update your payment details."
+            return "A billing issue is affecting your Pro access. Open Settings → Apple ID → Subscriptions to update your payment details."
         case .cancelled:
             return "Your subscription has been cancelled. You can restart Roost Pro any time."
         case .incomplete:
-            return "Your last checkout didn't finish. Open billing to complete the setup."
+            return "Your last checkout didn't complete. Please try subscribing again."
         case .lifetime:
             return "This household has lifetime Roost Pro access."
         }
@@ -894,7 +973,7 @@ struct SubscriptionView: View {
 
     private var annualSavingsCopy: String {
         let monthly = subscriptionPricingStore.prices.monthly.unitAmount
-        let annual = subscriptionPricingStore.prices.annual.unitAmount
+        let annual  = subscriptionPricingStore.prices.annual.unitAmount
         let savings = max(monthly * 12 - annual, 0)
         guard savings > 0 else { return "Billed once per year" }
         let formatter = NumberFormatter()
@@ -919,11 +998,11 @@ struct SubscriptionView: View {
         switch viewModel.state {
         case .free:
             return homeManager.home?.hasUsedTrialValue == true ? "Upgrade to Roost Pro" : "Start 14-Day Free Trial"
-        case .trial: return "Manage Billing"
+        case .trial: return "Manage Subscription"
         case .active: return "Manage Subscription"
         case .pastDue: return "Update Payment Method"
         case .cancelled: return "Restart Roost Pro"
-        case .incomplete: return "Complete Subscription"
+        case .incomplete: return "Subscribe to Roost Pro"
         case .lifetime: return "Lifetime Access Active"
         }
     }
@@ -932,13 +1011,13 @@ struct SubscriptionView: View {
         switch viewModel.state {
         case .free:
             if homeManager.home?.hasUsedTrialValue == true {
-                return "Billed at \(selectedPlanPriceLabel). Managed securely in Stripe."
+                return "Billed at \(selectedPlanPriceLabel). Managed by Apple."
             }
             return "Cancel anytime. \(selectedPlanPriceLabel.capitalized) after the 14-day trial."
-        case .trial: return "Open Stripe billing to manage or cancel this trial."
-        case .active: return "Manage plan details, billing, and cancellation in Stripe."
-        case .pastDue, .incomplete: return "Stripe will guide you through fixing the billing issue."
-        case .cancelled: return "Restarting Roost Pro opens Stripe checkout for this household."
+        case .trial: return "Managed via your Apple ID — open Settings to cancel."
+        case .active: return "Manage plan details, billing, and cancellation via Settings → Apple ID → Subscriptions."
+        case .pastDue, .incomplete: return "Open Settings → Apple ID → Subscriptions to resolve the billing issue."
+        case .cancelled: return "You can restart Roost Pro through the App Store."
         case .lifetime: return nil
         }
     }
@@ -954,7 +1033,7 @@ struct SubscriptionView: View {
     private var primaryActionSymbol: String? {
         switch viewModel.state {
         case .free, .cancelled: return "crown.fill"
-        case .trial, .active: return "arrow.up.right.square"
+        case .trial, .active: return "gear"
         case .pastDue, .incomplete: return "creditcard"
         case .lifetime: return "checkmark.seal.fill"
         }
@@ -971,4 +1050,3 @@ struct SubscriptionView: View {
         }
     }
 }
-
