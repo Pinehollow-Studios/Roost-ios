@@ -35,7 +35,21 @@ struct LoadingView: View {
 
     var body: some View {
         ZStack {
-            // 1 — background drawn via .background modifier below
+            // 1 — background as the FIRST child of the ZStack, not a `.background`
+            // modifier. That way animated @State in the foreground layers below
+            // never causes the gradient view to be rebuilt / re-transitioned.
+            if isDawn {
+                DawnBackground()
+            } else {
+                RadialGradient(
+                    colors: isEffectivelyDark
+                        ? [Color(hex: 0x1A1816), Color(hex: 0x0F0D0B), Color(hex: 0x0A0908)]
+                        : [Color(hex: 0xF4ECDD), Color(hex: 0xEBE3D5), Color(hex: 0xE0D6C4)],
+                    center: UnitPoint(x: 0.5, y: 0.38),
+                    startRadius: 0, endRadius: 520
+                )
+                .ignoresSafeArea()
+            }
 
             // 2 — grain (keep simple; swap for a tiled noise image if you have one)
             // NoiseOverlay().opacity(0.05).blendMode(.overlay)
@@ -137,33 +151,6 @@ struct LoadingView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            Group {
-                if isDawn {
-                    // midnight-to-dawn linear gradient — matches LockScreenView / AuthLoadingView
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(hex: 0x0F0D0B), location: 0.0),
-                            .init(color: Color(hex: 0x1A1410), location: 0.4),
-                            .init(color: Color(hex: 0x2A1A12), location: 0.75),
-                            .init(color: Color(hex: 0xD4795E), location: 1.0),
-                        ],
-                        startPoint: UnitPoint(x: 0.5, y: -0.08),
-                        endPoint: UnitPoint(x: 0.5, y: 1.0)
-                    )
-                } else {
-                    // warm cream (light) / deep charcoal-brown (dark)
-                    RadialGradient(
-                        colors: isEffectivelyDark
-                            ? [Color(hex: 0x1A1816), Color(hex: 0x0F0D0B), Color(hex: 0x0A0908)]
-                            : [Color(hex: 0xF4ECDD), Color(hex: 0xEBE3D5), Color(hex: 0xE0D6C4)],
-                        center: UnitPoint(x: 0.5, y: 0.38),
-                        startRadius: 0, endRadius: 520
-                    )
-                }
-            }
-            .ignoresSafeArea()
-        }
         .preferredColorScheme(isDawn ? .dark : nil)
         .onAppear {
             guard !reduceMotion else { return }

@@ -43,9 +43,16 @@ struct RoostApp: App {
     }
 
     /// True when there is live sensitive content on screen that must be hidden
-    /// from the app switcher: authenticated, app lock not showing, boot complete.
+    /// from the app switcher: authenticated, app lock not showing, boot complete,
+    /// AND the auth-loading dawn animation has finished (MainTabView visible).
+    /// The `authLoadingComplete` gate is critical — without it the shield can
+    /// arm over `AuthLoadingView` during the window between boot-done and
+    /// animation-done, which caused the black-flash bug on login.
     private var privacyShieldEnabled: Bool {
-        authManager.isAuthenticated && !lockManager.isLocked && appBootManager.bootedHomeId != nil
+        authManager.isAuthenticated
+            && !lockManager.isLocked
+            && appBootManager.bootedHomeId != nil
+            && appBootManager.authLoadingComplete
     }
 
     var body: some Scene {
@@ -135,6 +142,9 @@ struct RoostApp: App {
                 .onChange(of: appBootManager.bootedHomeId) { _, _ in
                     AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
                 }
+                .onChange(of: appBootManager.authLoadingComplete) { _, _ in
+                    AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                }
                 // SwiftUI-layer privacy overlay — belt-and-suspenders cover for scene
                 // transitions that happen while the app is active (e.g. returning from
                 // a background task). The UIKit AppPrivacyShield handles the timing-
@@ -145,7 +155,13 @@ struct RoostApp: App {
                 // there is live authenticated content, never over the lock screen
                 // (which handles its own privacy) or during initial boot.
                 .overlay {
-                    if scenePhase != .active && privacyShieldEnabled {
+                    // Only the `.background` phase — `.inactive` happens during
+                    // every foreground transition (Face ID sheet dismissal, PIN
+                    // unlock handoff), and letting the overlay fire there was
+                    // the cause of black-flashes over the auth-loading screen.
+                    // The UIKit AppPrivacyShield still covers the app-switcher
+                    // snapshot itself, which is the real privacy surface.
+                    if scenePhase == .background && privacyShieldEnabled {
                         Color.roostBackground
                             .ignoresSafeArea()
                             .allowsHitTesting(false)

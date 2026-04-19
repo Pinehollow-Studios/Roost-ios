@@ -34,7 +34,7 @@ struct PINSetupView: View {
                             mismatchError = false
                             step = .choose
                         }
-                        .foregroundStyle(Color(hex: 0x3D3229))
+                        .foregroundStyle(Color.roostForeground)
                     }
                     Spacer()
                     if step == .choose {
@@ -42,7 +42,7 @@ struct PINSetupView: View {
                             onCancel?()
                             dismiss()
                         }
-                        .foregroundStyle(Color(hex: 0x3D3229))
+                        .foregroundStyle(Color.roostForeground)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -72,7 +72,7 @@ struct PINSetupView: View {
         VStack(spacing: 0) {
             Text(step == .choose ? "Create your PIN" : "Confirm your PIN")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(Color(hex: 0x3D3229))
+                .foregroundStyle(Color.roostForeground)
                 .padding(.bottom, 8)
 
             Text(step == .choose
@@ -88,10 +88,10 @@ struct PINSetupView: View {
             HStack(spacing: 16) {
                 ForEach(0..<6, id: \.self) { index in
                     Circle()
-                        .fill(index < currentPIN.count ? Color(hex: 0xD4795E) : Color.clear)
+                        .fill(index < currentPIN.count ? Color.roostPrimary : Color.clear)
                         .overlay(
                             Circle()
-                                .stroke(Color(hex: 0xD4795E).opacity(0.4), lineWidth: 1.5)
+                                .stroke(Color.roostPrimary.opacity(0.4), lineWidth: 1.5)
                         )
                         .frame(width: 14, height: 14)
                         .scaleEffect(index == currentPIN.count - 1 && justEntered ? 1.2 : 1.0)
@@ -122,10 +122,10 @@ struct PINSetupView: View {
         VStack(spacing: 16) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(Color(hex: 0x9DB19F))
+                .foregroundStyle(Color.roostSecondary)
             Text("PIN set")
                 .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(Color(hex: 0x3D3229))
+                .foregroundStyle(Color.roostForeground)
             Text("Roost will lock when you close or step away.")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)

@@ -35,18 +35,10 @@ struct AuthLoadingView: View {
 
     var body: some View {
         ZStack {
-            // 1 — midnight-to-dawn gradient (always dark — auth screens are always dark per design ethos)
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: 0x0F0D0B), location: 0.0),
-                    .init(color: Color(hex: 0x1A1410), location: 0.4),
-                    .init(color: Color(hex: 0x2A1A12), location: 0.75),
-                    .init(color: DesignSystem.Palette.primary, location: 1.0),
-                ],
-                startPoint: UnitPoint(x: 0.5, y: -0.08),
-                endPoint: UnitPoint(x: 0.5, y: 1.0)
-            )
-            .ignoresSafeArea()
+            // 1 — shared midnight-to-dawn gradient (identical view type in
+            // LoadingView / LockScreenView / AuthLoadingView so transitions
+            // between them read as one continuous background).
+            DawnBackground()
 
             // 2 — sun glow
             GeometryReader { geo in

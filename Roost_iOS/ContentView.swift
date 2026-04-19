@@ -12,12 +12,37 @@ struct ContentView: View {
     @Environment(AppearanceSettings.self) private var appearanceSettings
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(AppBootManager.self) private var appBootManager
+    @Environment(AppLockManager.self) private var lockManager
     @Environment(NotificationRouter.self) private var notificationRouter
+
+    /// True whenever any of the dawn-flow screens are on-screen:
+    ///   session restore → "checking home" loader → lock screen → auth loading.
+    /// Used to render a stable `DawnBackground` underneath so transitions
+    /// between those screens don't flicker the background.
+    private var isInDawnFlow: Bool {
+        if authManager.isRestoringSession { return true }
+        guard authManager.isAuthenticated else { return false }
+        if authManager.hasHome == nil { return true }
+        if authManager.hasHome == true {
+            return lockManager.isLocked || !appBootManager.authLoadingComplete
+        }
+        return false
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
             Color.roostBackground
                 .ignoresSafeArea()
+
+            // Persistent dawn gradient that survives state churn across the
+            // session-restore → lock → auth-loading → main-app sequence. Each
+            // child screen also paints DawnBackground as its first layer, but
+            // keeping one here means any mid-transition repaint has nothing
+            // to flash to.
+            if isInDawnFlow {
+                DawnBackground()
+                    .transition(.opacity)
+            }
 
             Group {
                 if authManager.isRestoringSession {
@@ -29,7 +54,7 @@ struct ContentView: View {
                     } else if authManager.hasHome == true {
                         RootAuthenticatedView()
                     } else {
-                        LoadingView(statusText: "Checking your home")
+                        LoadingView(statusText: "Checking your home", isDawn: true)
                     }
                 } else {
                     NavigationStack { WelcomeView() }
@@ -38,6 +63,7 @@ struct ContentView: View {
 
             OfflineBanner(isVisible: !networkMonitor.isConnected)
         }
+        .animation(.easeInOut(duration: 0.30), value: isInDawnFlow)
         .preferredColorScheme(appearanceSettings.preferredColorScheme)
         .onChange(of: authManager.isAuthenticated) { wasAuthenticated, isAuthenticated in
             if !isAuthenticated {
@@ -92,6 +118,7 @@ private struct RootAuthenticatedView: View {
             } else if needsBoot || !authLoadingDone {
                 AuthLoadingView(onComplete: {
                     withAnimation(.easeOut(duration: 0.40)) { authLoadingDone = true }
+                    appBootManager.markAuthLoadingComplete()
                 })
                 .ignoresSafeArea()
                 .transition(.opacity)
@@ -126,12 +153,24 @@ private struct RootAuthenticatedView: View {
         .task {
             // If this view is created while boot is already complete (e.g. recreated due to
             // an edge-case auth state flush), skip the loading animation immediately.
-            if !needsBoot { authLoadingDone = true }
+            if !needsBoot {
+                authLoadingDone = true
+                appBootManager.markAuthLoadingComplete()
+            }
         }
         .onChange(of: needsBoot) { _, isBooting in
             if isBooting {
                 authLoadingDone = false
                 showPINSetup = false
+                appBootManager.resetAuthLoading()
+            }
+        }
+        .onChange(of: lockManager.isLocked) { _, isLocked in
+            // Re-lock also re-runs the auth-loading animation, so treat it as
+            // "auth loading not yet complete" — keeps the privacy shield off.
+            if isLocked {
+                authLoadingDone = false
+                appBootManager.resetAuthLoading()
             }
         }
         .task(id: bootTaskId) {
