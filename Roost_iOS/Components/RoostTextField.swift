@@ -15,6 +15,9 @@ struct RoostTextField: View {
     var errorMessage: String? = nil
     /// Muted-toned copy that tells the user how to fix it. Rendered alongside `errorMessage`.
     var errorHint: String? = nil
+    /// When `true` (and `isError` is false), renders the success treatment — success-tinted
+    /// hairline border and a trailing `checkmark.circle.fill` glyph.
+    var isValid: Bool = false
 
     @FocusState private var isFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -58,21 +61,28 @@ struct RoostTextField: View {
                     .foregroundStyle(Color.roostDestructive)
                     .frame(width: 18, alignment: .center)
                     .accessibilityHidden(true)
+            } else if isValid {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: DesignSystem.Size.icon, weight: .regular))
+                    .foregroundStyle(Color.roostSuccess)
+                    .frame(width: 18, alignment: .center)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.card)
         .frame(minHeight: 48)
         .background(
-            RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
                 .fill(fillColor)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
                 .strokeBorder(borderColor, lineWidth: borderWidth)
         )
         .overlay(focusHalo)
         .animation(reduceMotion ? nil : .roostEaseOut, value: isFocused)
         .animation(reduceMotion ? nil : .roostEaseOut, value: isError)
+        .animation(reduceMotion ? nil : .roostEaseOut, value: isValid)
     }
 
     /// 4pt halo rendered outside the stroked border when focused — per design-system spec.
@@ -80,7 +90,7 @@ struct RoostTextField: View {
     @ViewBuilder
     private var focusHalo: some View {
         if isFocused && !isError {
-            RoundedRectangle(cornerRadius: RoostTheme.controlCornerRadius + 2, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.sm + 2, style: .continuous)
                 .stroke(Color.roostPrimary.opacity(RoostTheme.focusRingOpacity), lineWidth: 4)
                 .padding(-2)
                 .allowsHitTesting(false)
@@ -102,11 +112,15 @@ struct RoostTextField: View {
     }
 
     private var fillColor: Color {
-        isError ? Color.roostDestructiveSoft : Color.roostInput
+        if isError { return Color.roostDestructiveSoft }
+        // Focused-fill lift — DS prototype uses `#EFE5D3` on focus (components-inputs.html §364).
+        if isFocused { return Color.roostInputFocused }
+        return Color.roostInput
     }
 
     private var borderColor: Color {
         if isError { return Color.roostDestructive }
+        if isValid { return Color.roostSuccess.opacity(0.55) }
         return isFocused ? Color.roostPrimary : Color.roostHairline
     }
 
