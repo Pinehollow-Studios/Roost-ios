@@ -194,7 +194,6 @@ struct AuthLoadingView: View {
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, 72)
         }
-        .preferredColorScheme(.dark)
         .onAppear { startSequence() }
         .onReceive(statusTimer) { _ in
             statusIdx = (statusIdx + 1) % statuses.count
