@@ -44,8 +44,8 @@ struct FigmaTabBar: View {
                             )
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxHeight: .infinity, alignment: .center)
+                    .padding(.bottom, 6)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -56,25 +56,31 @@ struct FigmaTabBar: View {
         .frame(maxWidth: .infinity)
         .frame(height: DesignSystem.Size.tabBarHeight)
         .background {
-            ZStack(alignment: .top) {
-                UnevenRoundedRectangle(
-                    topLeadingRadius: DesignSystem.Radius.xl,
-                    topTrailingRadius: DesignSystem.Radius.xl,
-                    style: .continuous
-                )
+            // The card's rounded top corners are drawn via UnevenRoundedRectangle.
+            // The 1pt hairline sits as an overlay on the same shape so it's
+            // clipped automatically to the curved corners — previously it was
+            // a separate sibling `Rectangle` that bled past the curve edges.
+            let shape = UnevenRoundedRectangle(
+                topLeadingRadius: DesignSystem.Radius.xl,
+                topTrailingRadius: DesignSystem.Radius.xl,
+                style: .continuous
+            )
+
+            shape
                 .fill(Color.roostCard)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(Color.roostHairline)
+                        .frame(height: 1)
+                }
+                .clipShape(shape)
                 .shadow(
                     color: DesignSystem.Shadow.tabBarColor,
                     radius: DesignSystem.Shadow.tabBarRadius,
                     x: 0,
                     y: DesignSystem.Shadow.tabBarYOffset
                 )
-
-                Rectangle()
-                    .fill(Color.roostHairline)
-                    .frame(height: 1)
-            }
-            .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea(edges: .bottom)
         }
         .transaction { transaction in
             transaction.disablesAnimations = true
