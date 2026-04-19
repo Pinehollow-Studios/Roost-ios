@@ -62,6 +62,16 @@ final class AppPrivacyShield {
             name: UIApplication.didEnterBackgroundNotification,
             object: nil
         )
+        // Tear the cover down as early as possible when coming back to the
+        // foreground — before `scenePhase == .active` fires — so the cover
+        // can't linger over a loading / lock screen during the inactive→active
+        // handoff (Face ID sheet dismiss, PIN success, etc).
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
     }
 
     /// Called by the SwiftUI layer when `scenePhase == .active`.
@@ -78,6 +88,10 @@ final class AppPrivacyShield {
     @objc private func handleDidEnterBackground() {
         guard isEnabled else { return }
         addCover()
+    }
+
+    @objc private func handleWillEnterForeground() {
+        removeCover()
     }
 
     private func addCover() {
