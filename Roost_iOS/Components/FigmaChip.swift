@@ -45,7 +45,7 @@ struct FigmaChip: View {
         case .primary:
             return .roostPrimary
         case .secondary:
-            return .roostSecondary
+            return .roostSecondaryInteractive
         }
     }
 
@@ -62,7 +62,7 @@ struct FigmaChip: View {
         case .primary:
             return .roostPrimary.opacity(0.15)
         case .secondary:
-            return .roostSecondary.opacity(0.15)
+            return .roostSecondaryInteractive.opacity(0.15)
         }
     }
 }

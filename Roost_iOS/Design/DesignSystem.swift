@@ -11,14 +11,23 @@ enum DesignSystem {
         static let primary = Color(light: 0xD4795E, dark: 0xD4795E)
         static let primaryDeep = Color(hex: 0xB8563C)
         static let primaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
+        /// Sage — ATMOSPHERIC only. Illustrations, washes, empty-state tints, decorative fills.
+        /// Dissolves into warm cream at small sizes — that's the intent. Do NOT use for buttons,
+        /// chips, pills, status dots, or filled tags. For interactive sage, use `secondaryInteractive`.
         static let secondary = Color(light: 0x9DB19F, dark: 0x7A8C7C)
-        static let secondaryInteractive = Color(hex: 0x6B9673)
+        /// Sage — INTERACTIVE use. Buttons, chips, pills, status dots, filled tags.
+        /// Stronger green that holds its own on cream at small sizes and passes 4.5:1 with white text
+        /// on the filled variant. Dark-mode value is slightly lifted for cream-on-dark contrast.
+        static let secondaryInteractive = Color(light: 0x6B9673, dark: 0x8FB295)
         static let secondaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let muted = Color(light: 0xDDD4C6, dark: 0x2A2623)
         static let mutedForeground = Color(light: 0x6B6157, dark: 0xA39A8F)
         static let accent = Color(light: 0xE8D5BC, dark: 0x2A2623)
         static let accentForeground = Color(light: 0x3D3229, dark: 0xF2EBE0)
         static let destructive = Color(light: 0xC75146, dark: 0xC75146)
+        /// Tinted destructive fill for error-state form fields. Warmer than muted, unmistakably
+        /// destructive without shouting. Dark-mode value sits at the destructive hue, low-brightness.
+        static let destructiveSoft = Color(light: 0xF5DDD8, dark: 0x3A1E1B)
         static let destructiveForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let border = Color(lightRGBA: (0x3D3229, 0.15), darkRGBA: (0xF2EBE0, 0.10))
         static let inputBackground = Color(light: 0xE3D9CA, dark: 0x1F1C19)
@@ -106,19 +115,45 @@ enum DesignSystem {
     }
 
     enum Typography {
-        // Structural headings — bold weight for clear visual hierarchy
-        static let pageTitle = Font.custom("DMSans-Medium", size: 26, relativeTo: .title2).bold()
-        static let sectionHeading = Font.custom("DMSans-Medium", size: 20, relativeTo: .title3).bold()
-        static let cardTitle = Font.custom("DMSans-Medium", size: 17, relativeTo: .headline).bold()
-        // Body and utility — regular/medium for comfortable reading
+        // Explicit DM Sans face names so SwiftUI binds weights reliably.
+        // The design-system spec (colors_and_type.css) sets a specific weight per token;
+        // relying on `.bold()` modifiers on a custom Medium cut was fragile.
+
+        // Structural headings — Bold (700)
+        /// Page titles (26pt Bold, -0.005em tracking — apply `.tracking(pageTitleTracking)` at use).
+        static let pageTitle = Font.custom("DMSans-Bold", size: 26, relativeTo: .title2)
+        /// Section headings (20pt Bold).
+        static let sectionHeading = Font.custom("DMSans-Bold", size: 20, relativeTo: .title3)
+        /// Card headers (17pt Semibold — `--fs-card-title` + `h4, .roost-card-title` in CSS).
+        static let cardTitle = Font.custom("DMSans-SemiBold", size: 17, relativeTo: .headline)
+
+        // Body and utility
+        /// Standard body (15pt Regular).
         static let body = Font.custom("DMSans-Regular", size: 15, relativeTo: .body)
+        /// Buttons, tags, form labels (13pt Medium).
         static let label = Font.custom("DMSans-Medium", size: 13, relativeTo: .subheadline)
+        /// Timestamps, secondary meta (12pt Regular).
         static let caption = Font.custom("DMSans-Regular", size: 12, relativeTo: .caption)
+        /// Eyebrow / badges (11pt Medium). Apply `.tracking(microTracking)` + `.textCase(.uppercase)` at usage.
         static let micro = Font.custom("DMSans-Medium", size: 11, relativeTo: .caption2)
-        // Hero display — bold for large panel headlines and greetings
-        static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle).bold()
-        static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle).bold()
+        /// Tab-bar labels (10pt Medium).
         static let tabLabel = Font.custom("DMSans-Medium", size: 10, relativeTo: .caption2)
+
+        // Hero display — Bold
+        /// Large stats, money amounts (34pt Bold, -0.01em tracking).
+        static let heroNumber = Font.custom("DMSans-Bold", size: 34, relativeTo: .largeTitle)
+        /// Hero greetings (28pt Bold, -0.01em tracking).
+        static let largeGreeting = Font.custom("DMSans-Bold", size: 28, relativeTo: .largeTitle)
+
+        // ---- Tracking tokens (points, converted from em). Apply with `.tracking(...)` at use. ----
+        /// -0.01em at 34pt.
+        static let heroNumberTracking: CGFloat = -0.34
+        /// -0.01em at 28pt.
+        static let largeGreetingTracking: CGFloat = -0.28
+        /// -0.005em at 26pt.
+        static let pageTitleTracking: CGFloat = -0.13
+        /// +1px tracking on ALL-CAPS eyebrow / micro labels.
+        static let microTracking: CGFloat = 1
     }
 
     enum Motion {
