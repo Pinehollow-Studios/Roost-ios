@@ -8,10 +8,15 @@ struct FigmaFloatingActionButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(Color.roostCard)
+                .foregroundStyle(Color.roostWarmWhite)
                 .frame(width: 56, height: 56)
                 .background(Color.roostPrimary, in: Circle())
-                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 6)
+                .shadow(
+                    color: DesignSystem.Shadow.fabColor,
+                    radius: DesignSystem.Shadow.fabRadius,
+                    x: 0,
+                    y: DesignSystem.Shadow.fabYOffset
+                )
         }
         .buttonStyle(.plain)
     }
