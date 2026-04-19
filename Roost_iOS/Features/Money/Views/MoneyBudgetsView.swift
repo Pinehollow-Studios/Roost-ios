@@ -1346,7 +1346,7 @@ private struct FixedBudgetRow: View {
             Button { onNote() } label: {
                 Label("Note", systemImage: "note.text")
             }
-            .tint(Color.roostSecondary)
+            .tint(Color.roostSecondaryInteractive)
         }
     }
 
@@ -1628,7 +1628,7 @@ private struct LifestyleBudgetRow: View {
             Button { onNote() } label: {
                 Label("Note", systemImage: "note.text")
             }
-            .tint(Color.roostSecondary)
+            .tint(Color.roostSecondaryInteractive)
         }
     }
 
