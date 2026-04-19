@@ -66,6 +66,7 @@
 	<array>
 		<string>DMSans-Regular.ttf</string>
 		<string>DMSans-Medium.ttf</string>
+		<string>DMSans-Bold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

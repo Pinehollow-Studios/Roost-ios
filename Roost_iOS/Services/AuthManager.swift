@@ -11,6 +11,9 @@ final class AuthManager {
     var hasHome: Bool?
     var isRestoringSession = true
     var pendingJoinCode: String?
+    /// True only after a *fresh* sign-in (not session restore). Consumed by ContentView
+    /// to show the one-shot AuthLoadingView; reset when the cover dismisses.
+    var isNewSignIn = false
 
     @ObservationIgnored
     private var authStateTask: Task<Void, Never>?
@@ -86,9 +89,17 @@ final class AuthManager {
                 displayName: session.user.userMetadata["display_name"]?.stringValue
             )
             isRestoringSession = false
-            hasHome = nil
+            if event == .signedIn {
+                isNewSignIn = true
+            }
 
-            await refreshHomeStatus()
+            // Only reset hasHome (and re-check) on initial load or fresh sign-in.
+            // Token refresh / user-metadata updates should not reset hasHome — doing so
+            // tears down RootAuthenticatedView and shows the loading screen again for no reason.
+            if event == .initialSession || event == .signedIn || hasHome == nil {
+                hasHome = nil
+                await refreshHomeStatus()
+            }
 
         case .signedOut, .userDeleted:
             clearSessionState()

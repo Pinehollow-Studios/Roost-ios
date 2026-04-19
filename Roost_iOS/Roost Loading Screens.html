@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Roost — Loading Screens</title>
+<style>
+/* ===================================================================
+ * Roost Design System — Colors, Typography & Core Tokens
+ * ===================================================================
+ * Source of truth: src/Design Ethos V2.md, src/Roost Pro Brand Guidelines.md,
+ * and src/ios/DesignSystem.swift.
+ *
+ * DM Sans is self-hosted from fonts/ (uploaded brand TTFs).
+ * Values use sRGB hex — mirrors the Swift Color(hex:) tokens 1:1.
+ * =================================================================== */
+
+/* ---------- DM Sans (self-hosted, static cuts) ---------- */
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 100; font-display: swap; src: url("fonts/DMSans-Thin.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 100; font-display: swap; src: url("fonts/DMSans-ThinItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 200; font-display: swap; src: url("fonts/DMSans-ExtraLight.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 200; font-display: swap; src: url("fonts/DMSans-ExtraLightItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 300; font-display: swap; src: url("fonts/DMSans-Light.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 300; font-display: swap; src: url("fonts/DMSans-LightItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/DMSans-Regular.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 400; font-display: swap; src: url("fonts/DMSans-Italic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/DMSans-Medium.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 500; font-display: swap; src: url("fonts/DMSans-MediumItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/DMSans-SemiBold.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 600; font-display: swap; src: url("fonts/DMSans-SemiBoldItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/DMSans-Bold.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 700; font-display: swap; src: url("fonts/DMSans-BoldItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/DMSans-ExtraBold.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 800; font-display: swap; src: url("fonts/DMSans-ExtraBoldItalic.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 900; font-display: swap; src: url("fonts/DMSans-Black.ttf") format("truetype"); }
+@font-face { font-family: "DM Sans"; font-style: italic; font-weight: 900; font-display: swap; src: url("fonts/DMSans-BlackItalic.ttf") format("truetype"); }
+
+:root {
+  /* ---------- FONT FAMILY (single family, all platforms) ---------- */
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+
+  /* ---------- SURFACE / FOREGROUND (Light mode) ---------- */
+  --background: #EBE3D5;      /* Page / screen background */
+  --card: #F2EBE0;            /* Component surfaces, cards */
+  --muted: #DDD4C6;           /* Secondary surfaces, dividers, skeletons */
+  --input: #E3D9CA;           /* Form field backgrounds — matches ios/DesignSystem.swift inputBackground */
+  --foreground: #3D3229;      /* Primary text */
+  --muted-foreground: rgba(61, 50, 41, 0.45);
+  --hairline: rgba(61, 50, 41, 0.15);
+
+  /* ---------- BRAND ---------- */
+  --primary: #D4795E;         /* Terracotta */
+  --secondary: #9DB19F;       /* Sage — ATMOSPHERIC only (illustrations, washes, empty states, decorative tints).
+                                 DO NOT use for buttons, pills, chips or dots — it dissolves into warm cream.
+                                 For interactive sage surfaces, use --secondary-interactive below. */
+  --secondary-interactive: #6B9673;   /* Sage — INTERACTIVE use. Buttons, chips, pills, status dots, filled tags.
+                                         Stronger green, keeps sage DNA but holds its own on cream + passes 4.5:1
+                                         when paired with --foreground or white text on the filled variant. */
+  --destructive: #C75146;
+  --warning: #E6A563;
+  --success: #7FA087;
+  --ring: rgba(212, 121, 94, 0.30);
+
+  /* ---------- FEATURE ACCENTS (cannot cross features) ---------- */
+  --money: #337DD6;           /* blue — Money only */
+  --shopping: #E9822A;        /* orange — Shopping only */
+  --chores: #2FAE63;          /* green — Chores only */
+  /* Calendar + Pinboard reuse --primary */
+
+  /* ---------- DATA VIZ / CHARTS ---------- */
+  --chart-1: #D4795E;
+  --chart-2: #9DB19F;
+  --chart-3: #E6A563;
+  --chart-4: #7A9199;
+  --chart-5: #7FA087;
+
+  /* ---------- AVATAR PALETTE (12 values, ordered) ---------- */
+  --avatar-01: #D4795E;
+  --avatar-02: #9DB19F;
+  --avatar-03: #E6A563;
+  --avatar-04: #C17A6F;
+  --avatar-05: #7A9199;
+  --avatar-06: #A08AB8;
+  --avatar-07: #C4789A;
+  --avatar-08: #8B9E7D;
+  --avatar-09: #B88872;
+  --avatar-10: #7A8FA1;
+  --avatar-11: #C9A77C;
+  --avatar-12: #8A7B6F;
+
+  /* ---------- ROOST PRO PALETTE (dark-only, gated) ---------- */
+  --pro-deep-burn: #8B3A1E;
+  --pro-copper:    #C4622A;
+  --pro-amber:     #E8924A;
+  --pro-champagne: #F5C472;
+  --pro-warm-white:#FFF8F2;
+  --pro-body-text: #F0D9C0;
+  --pro-muted-text:#A07855;
+  --pro-bg:        #0C0A08;
+  --pro-card:      #1E1A16;
+  --pro-muted-surface: #2C2520;
+  --pro-border:    rgba(232, 146, 74, 0.15);
+  --pro-gradient: linear-gradient(135deg, #8B3A1E 0%, #C4622A 33%, #E8924A 66%, #F5C472 100%);
+  --pro-gradient-h: linear-gradient(90deg, #8B3A1E 0%, #C4622A 33%, #E8924A 66%, #F5C472 100%);
+
+  /* ---------- TYPE SCALE ---------- */
+  --fs-hero-number: 34px;      /* Large stats, money amounts — Bold */
+  --fs-large-greeting: 28px;   /* Hero greetings — Bold */
+  --fs-page-title: 26px;       /* Page titles — Bold */
+  --fs-section: 20px;          /* Section headings — Bold */
+  --fs-card-title: 17px;       /* Card headers — Semibold */
+  --fs-body: 15px;             /* Standard body — Regular */
+  --fs-label: 13px;            /* Buttons, tags, form labels — Medium */
+  --fs-caption: 12px;          /* Timestamps, secondary — Regular */
+  --fs-micro: 11px;            /* Eyebrow, badges — Medium, +1px tracking, CAPS */
+  --fs-tab-label: 10px;        /* Tab bar labels — Medium */
+
+  /* ---------- SPACING (atomic, 4-based) ---------- */
+  --sp-micro: 4px;
+  --sp-xs: 6px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-lg: 16px;
+  --sp-xl: 20px;
+  --sp-2xl: 24px;
+  --sp-3xl: 32px;
+
+  /* ---------- LAYOUT ---------- */
+  --page-inset: 16px;
+  --card-padding: 16px;
+  --card-padding-lg: 20px;
+  --screen-bottom: 32px;
+  --tab-bottom-inset: 20px;
+
+  /* ---------- RADIUS (continuous curve — use inset border + corner-smoothing where possible) ---------- */
+  --r-xs: 8px;     /* Small buttons, chips */
+  --r-sm: 10px;    /* Inputs, toggles */
+  --r-md: 14px;    /* Cards, list rows (default) */
+  --r-lg: 18px;    /* Larger cards, sheets */
+  --r-xl: 22px;    /* Hero cards */
+  --r-full: 999px; /* Capsule, avatar */
+
+  /* ---------- SHADOWS (warm, terracotta-biased — never neutral grey) ---------- */
+  --shadow-card: 0 2px 6px rgba(139, 58, 30, 0.05), 0 8px 20px rgba(139, 58, 30, 0.06);
+  --shadow-elevated: 0 4px 10px rgba(139, 58, 30, 0.06), 0 16px 32px rgba(139, 58, 30, 0.09);
+  --shadow-sheet: 0 30px 80px rgba(61, 50, 41, 0.22), 0 10px 30px rgba(139, 58, 30, 0.10);
+  --shadow-tabbar: 0 -6px 20px rgba(139, 58, 30, 0.07);
+  --shadow-press: 0 1px 2px rgba(139, 58, 30, 0.08);
+  --shadow-hover: 0 6px 14px rgba(139, 58, 30, 0.08), 0 20px 40px rgba(139, 58, 30, 0.10);
+
+  /* ---------- INNER HIGHLIGHTS (for material feel on elevated surfaces) ---------- */
+  --highlight-top:    inset 0 1px 0 rgba(255, 248, 240, 0.55);
+  --highlight-top-strong: inset 0 1px 0 rgba(255, 248, 240, 0.75);
+  --highlight-edge:   inset 0 0 0 1px rgba(255, 248, 240, 0.06);
+  /* Pro surfaces use a warmer copper-biased inner highlight */
+  --pro-highlight-top:   inset 0 1px 0 rgba(245, 196, 114, 0.18);
+  --pro-highlight-edge:  inset 0 0 0 1px rgba(232, 146, 74, 0.10);
+
+  /* ---------- GRAIN (material texture — overlay at 3–6% opacity) ---------- */
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.47 0 0 0 0 0.35 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  /* ---------- MOTION (spring-based tokens; approximate CSS cubic beziers) ---------- */
+  --motion-page: cubic-bezier(0.34, 1.08, 0.42, 1)   420ms;
+  --motion-modal: cubic-bezier(0.32, 0.88, 0.42, 1)  320ms;
+  --motion-press: cubic-bezier(0.18, 0.62, 0.3, 1)   180ms;
+  --motion-release: cubic-bezier(0.26, 0.68, 0.3, 1) 260ms;
+  --motion-list: cubic-bezier(0.38, 0.82, 0.4, 1)    380ms;
+  --motion-checkmark: cubic-bezier(0.28, 0.52, 0.4, 1.3) 280ms;
+  --motion-hover: cubic-bezier(0.25, 0.7, 0.35, 1)   220ms;
+}
+
+/* ---------- DARK MODE ---------- */
+/* Dark mode is warm charcoal-brown, never neutral grey / black. */
+[data-theme="dark"], .dark {
+  --background: #0F0D0B;
+  --card: #1A1816;
+  --muted: #2A2623;
+  --input: #2A2623;
+  --foreground: #F2EBE0;
+  --muted-foreground: rgba(242, 235, 224, 0.45);
+  --hairline: rgba(242, 235, 224, 0.10);
+
+  --secondary: #7A8C7C;
+  --secondary-interactive: #8FB295;   /* Dark-mode sage for interactive use — slightly lifted for cream-on-dark contrast */
+  --money: #5B9BE8;
+  --shopping: #F39A3D;
+  --chores: #45C978;
+}
+
+/* ============================================================
+ * BASE / SEMANTIC STYLES
+ * ============================================================ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Structural headings — matches DesignSystem.Typography exactly */
+h1, .roost-hero { font: 700 var(--fs-hero-number)/1.1 var(--font-sans); letter-spacing: -0.01em; }
+.roost-greeting { font: 700 var(--fs-large-greeting)/1.15 var(--font-sans); letter-spacing: -0.01em; }
+h2, .roost-page-title { font: 700 var(--fs-page-title)/1.2 var(--font-sans); letter-spacing: -0.005em; }
+h3, .roost-section    { font: 700 var(--fs-section)/1.25 var(--font-sans); }
+h4, .roost-card-title { font: 600 var(--fs-card-title)/1.3 var(--font-sans); }
+
+p, .roost-body { font: 400 var(--fs-body)/1.45 var(--font-sans); }
+.roost-label   { font: 500 var(--fs-label)/1.3 var(--font-sans); }
+.roost-caption { font: 400 var(--fs-caption)/1.35 var(--font-sans); color: var(--muted-foreground); }
+
+/* Eyebrow / micro — ALL CAPS, +1px tracking */
+.roost-eyebrow, .roost-micro {
+  font: 500 var(--fs-micro)/1.3 var(--font-sans);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Tab-bar label */
+.roost-tab-label { font: 500 var(--fs-tab-label)/1.2 var(--font-sans); }
+
+/* Tabular numerals for money/figures */
+.roost-tabular { font-variant-numeric: tabular-nums; }
+
+/* Signature display — hero numbers (money, stats). Use sparingly. */
+.roost-hero-number {
+  font: 900 76px/1 var(--font-sans);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "ss01";
+}
+.roost-hero-number--sm {
+  font: 900 48px/1 var(--font-sans);
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Material card — cream surface with warm shadow + inner highlight */
+.roost-material {
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--highlight-top), var(--shadow-card);
+  transition: transform var(--motion-hover), box-shadow var(--motion-hover);
+}
+.roost-material:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--highlight-top-strong), var(--shadow-hover);
+}
+.roost-material:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: var(--highlight-top), var(--shadow-press);
+  transition-duration: 120ms;
+}
+
+/* Grain overlay utility — apply as pseudo-element on Pro surfaces */
+.roost-grain {
+  position: relative;
+  isolation: isolate;
+}
+.roost-grain::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: var(--noise);
+  background-size: 180px 180px;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Pro surface — dark base with copper gradient as LIGHT SOURCE (edges + glow), not fill */
+.roost-pro-surface {
+  position: relative;
+  background: var(--pro-card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--pro-highlight-top), var(--pro-highlight-edge), 0 20px 50px rgba(0,0,0,0.5);
+  overflow: hidden;
+  isolation: isolate;
+}
+.roost-pro-surface::before {
+  /* copper radial glow behind content, top-right */
+  content: "";
+  position: absolute;
+  top: -40%; right: -20%;
+  width: 70%; height: 120%;
+  background: radial-gradient(ellipse at center, rgba(232,146,74,0.35), transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+.roost-pro-surface::after {
+  /* grain */
+  content: "";
+  position: absolute; inset: 0;
+  background-image: var(--noise);
+  background-size: 180px 180px;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+.roost-pro-surface > * { position: relative; z-index: 2; }
+
+/* Pro CTA — the ONE place solid copper gradient is allowed as a fill */
+.roost-pro-cta {
+  height: 52px;
+  border-radius: var(--r-full);
+  border: none;
+  background: var(--pro-gradient-h);
+  color: #4A1D0E;
+  font: 700 15px var(--font-sans);
+  letter-spacing: -0.2px;
+  padding: 0 24px;
+  box-shadow: var(--pro-highlight-top-strong, inset 0 1px 0 rgba(255,248,240,0.3)), 0 10px 24px rgba(232,146,74,0.28);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--motion-press), box-shadow var(--motion-hover);
+}
+.roost-pro-cta:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,248,240,0.35), 0 14px 30px rgba(232,146,74,0.36); }
+.roost-pro-cta:active { transform: scale(0.97); }
+.roost-pro-cta::after {
+  /* shimmer sweep */
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255,248,240,0.45) 50%, transparent 65%);
+  background-size: 220% 100%;
+  animation: roost-shimmer 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes roost-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* Pro text gradient utility */
+.pro-gradient-text {
+  background: var(--pro-gradient-h);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Structural headings — matches DesignSystem.Typography exactly */
+h1, .roost-hero { font: 700 var(--fs-hero-number)/1.1 var(--font-sans); letter-spacing: -0.01em; }
+.roost-greeting { font: 700 var(--fs-large-greeting)/1.15 var(--font-sans); letter-spacing: -0.01em; }
+h2, .roost-page-title { font: 700 var(--fs-page-title)/1.2 var(--font-sans); letter-spacing: -0.005em; }
+h3, .roost-section    { font: 700 var(--fs-section)/1.25 var(--font-sans); }
+h4, .roost-card-title { font: 600 var(--fs-card-title)/1.3 var(--font-sans); }
+
+p, .roost-body { font: 400 var(--fs-body)/1.45 var(--font-sans); }
+.roost-label   { font: 500 var(--fs-label)/1.3 var(--font-sans); }
+.roost-caption { font: 400 var(--fs-caption)/1.35 var(--font-sans); color: var(--muted-foreground); }
+
+/* Eyebrow / micro — ALL CAPS, +1px tracking */
+.roost-eyebrow, .roost-micro {
+  font: 500 var(--fs-micro)/1.3 var(--font-sans);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Tab-bar label */
+.roost-tab-label { font: 500 var(--fs-tab-label)/1.2 var(--font-sans); }
+
+/* Tabular numerals for money/figures */
+.roost-tabular { font-variant-numeric: tabular-nums; }
+
+/* Signature display — hero numbers (money, stats). Use sparingly. */
+.roost-hero-number {
+  font: 900 76px/1 var(--font-sans);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "ss01";
+}
+.roost-hero-number--sm {
+  font: 900 48px/1 var(--font-sans);
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Material card — cream surface with warm shadow + inner highlight */
+.roost-material {
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--highlight-top), var(--shadow-card);
+  transition: transform var(--motion-hover), box-shadow var(--motion-hover);
+}
+.roost-material:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--highlight-top-strong), var(--shadow-hover);
+}
+.roost-material:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: var(--highlight-top), var(--shadow-press);
+  transition-duration: 120ms;
+}
+
+/* Grain overlay utility — apply as pseudo-element on Pro surfaces */
+.roost-grain {
+  position: relative;
+  isolation: isolate;
+}
+.roost-grain::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: var(--noise);
+  background-size: 180px 180px;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Pro surface — dark base with copper gradient as LIGHT SOURCE (edges + glow), not fill */
+.roost-pro-surface {
+  position: relative;
+  background: var(--pro-card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--pro-highlight-top), var(--pro-highlight-edge), 0 20px 50px rgba(0,0,0,0.5);
+  overflow: hidden;
+  isolation: isolate;
+}
+.roost-pro-surface::before {
+  /* copper radial glow behind content, top-right */
+  content: "";
+  position: absolute;
+  top: -40%; right: -20%;
+  width: 70%; height: 120%;
+  background: radial-gradient(ellipse at center, rgba(232,146,74,0.35), transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+.roost-pro-surface::after {
+  /* grain */
+  content: "";
+  position: absolute; inset: 0;
+  background-image: var(--noise);
+  background-size: 180px 180px;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+.roost-pro-surface > * { position: relative; z-index: 2; }
+
+/* Pro CTA — the ONE place solid copper gradient is allowed as a fill */
+.roost-pro-cta {
+  height: 52px;
+  border-radius: var(--r-full);
+  border: none;
+  background: var(--pro-gradient-h);
+  color: #4A1D0E;
+  font: 700 15px var(--font-sans);
+  letter-spacing: -0.2px;
+  padding: 0 24px;
+  box-shadow: var(--pro-highlight-top-strong, inset 0 1px 0 rgba(255,248,240,0.3)), 0 10px 24px rgba(232,146,74,0.28);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--motion-press), box-shadow var(--motion-hover);
+}
+.roost-pro-cta:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,248,240,0.35), 0 14px 30px rgba(232,146,74,0.36); }
+.roost-pro-cta:active { transform: scale(0.97); }
+.roost-pro-cta::after {
+  /* shimmer sweep */
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255,248,240,0.45) 50%, transparent 65%);
+  background-size: 220% 100%;
+  animation: roost-shimmer 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes roost-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* Pro text gradient utility */
+.pro-gradient-text {
+  background: var(--pro-gradient-h);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ─── Screen 1: General loading keyframes ─── */
+
+/* Each egg cycles: orbit start → orbit mid → orbit end → nest position → hold → back */
+@keyframes eggCycle {
+  0% {
+    transform: translate(var(--orbit-start-x), var(--orbit-start-y)) scale(1);
+  }
+  18% {
+    transform: translate(var(--orbit-mid-x), var(--orbit-mid-y)) scale(1);
+  }
+  36% {
+    transform: translate(var(--orbit-end-x), var(--orbit-end-y)) scale(1);
+  }
+  50% {
+    /* Converge into the nest */
+    transform: translate(var(--nx), var(--ny)) scale(1.08);
+  }
+  62% {
+    transform: translate(var(--nx), var(--ny)) scale(1);
+  }
+  72% {
+    /* Hold nest */
+    transform: translate(var(--nx), var(--ny)) scale(1);
+  }
+  100% {
+    /* Scatter back to orbit start */
+    transform: translate(var(--orbit-start-x), var(--orbit-start-y)) scale(1);
+  }
+}
+
+@keyframes breathe {
+  from { transform: scale(0.94); opacity: 0.4; }
+  to   { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes spinCW  { from { transform: rotate(0deg); }  to { transform: rotate(360deg); } }
+@keyframes spinCCW { from { transform: rotate(0deg); }  to { transform: rotate(-360deg); } }
+
+@keyframes tileMorph {
+  0%   { border-radius: 40px; transform: scale(1) rotate(0deg); }
+  50%  { border-radius: 50% 40% 50% 40% / 40% 50% 40% 50%; transform: scale(1.04) rotate(2deg); }
+  100% { border-radius: 40px; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes tileShine {
+  0%   { left: -60%; }
+  60%  { left: 120%; }
+  100% { left: 120%; }
+}
+
+@keyframes auraDrift {
+  from { transform: translate(-2%, -1%) scale(1); }
+  to   { transform: translate(2%,  1%) scale(1.06); }
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+
+@keyframes dotBounce {
+  0%, 100% { transform: translateY(0);   opacity: 0.35; }
+  50%      { transform: translateY(-3px); opacity: 0.85; }
+}
+
+@keyframes captionFade {
+  0%, 30%   { opacity: 0; transform: translateY(4px); }
+  40%, 60%  { opacity: 1; transform: translateY(0); }
+  70%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* ─── Screen 2: Auth loading keyframes ─── */
+
+@keyframes eggFly {
+  0% {
+    transform: translate(var(--ox), var(--oy)) scale(0.6);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  30% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  55% {
+    transform: translate(var(--mx), var(--my)) scale(1.1);
+    opacity: 1;
+    filter: blur(0);
+  }
+  85% {
+    transform: translate(var(--nx), var(--ny)) scale(1.18);
+  }
+  100% {
+    transform: translate(var(--nx), var(--ny)) scale(1);
+  }
+}
+
+@keyframes eggBreathe {
+  0%, 100% { transform: translate(var(--nx), var(--ny)) scale(1); }
+  50%      { transform: translate(var(--nx), var(--ny)) scale(1.06); }
+}
+
+@keyframes tileLift {
+  0%   { transform: scale(0.7); opacity: 0; }
+  30%  { transform: scale(0.7); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes pulseRing {
+  0%   { transform: scale(0.9); opacity: 0; }
+  20%  { opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes sageBreeze {
+  0%   { left: -40%; opacity: 0; }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.7; }
+  100% { left: 120%; opacity: 0; }
+}
+
+@keyframes auroraA {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(10%, 8%) scale(1.15); }
+}
+@keyframes auroraB {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-8%, -10%) scale(1.1); }
+}
+@keyframes auroraC {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-6%, 8%) scale(1.2); }
+}
+
+@keyframes letterDrop {
+  0%   { opacity: 0; transform: translateY(-14px) scale(0.85); }
+  60%  { opacity: 1; transform: translateY(2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50%      { transform: scale(1.5); opacity: 1; }
+}
+
+@keyframes progressSlide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+
+  html, body {
+    margin: 0; padding: 0;
+    background: #E3D9CA;
+    min-height: 100vh;
+    font-family: "DM Sans", system-ui, sans-serif;
+    color: #3D3229;
+    overflow-x: hidden;
+  }
+  .stage {
+    min-height: 100vh;
+    padding: 56px 32px 80px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 48px;
+  }
+  .header { text-align: center; max-width: 760px; }
+  .header .eyebrow {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: rgba(61,50,41,0.45); margin-bottom: 10px;
+  }
+  .header h1 { font-size: 38px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 12px; }
+  .header p {
+    font-size: 15px; color: rgba(61,50,41,0.62);
+    max-width: 580px; margin: 0 auto; line-height: 1.55;
+  }
+  .frames { display: flex; gap: 56px; flex-wrap: wrap; justify-content: center; }
+  .frame-col { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .frame-col .label { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+  .frame-col .label .tag {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 1.2px; text-transform: uppercase; color: #D4795E;
+  }
+  .frame-col .label .name { font-size: 18px; font-weight: 600; color: #3D3229; }
+  .frame-col .label .desc {
+    font-size: 13px; color: rgba(61,50,41,0.55);
+    max-width: 320px; line-height: 1.4; margin-top: 2px;
+  }
+
+  .tweaks {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 280px;
+    background: #F2EBE0;
+    border-radius: 18px;
+    padding: 18px 16px 14px;
+    box-shadow: 0 20px 50px rgba(139,58,30,0.18), inset 0 1px 0 rgba(255,248,240,0.75);
+    border: 1px solid rgba(61,50,41,0.08);
+    z-index: 1000; display: none;
+  }
+  .tweaks.visible { display: block; }
+  .tweaks h3 {
+    margin: 0 0 14px;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase; color: #3D3229;
+  }
+  .tweaks .row { margin-bottom: 14px; }
+  .tweaks .row:last-child { margin-bottom: 0; }
+  .tweaks .row label {
+    display: block;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.6px; text-transform: uppercase;
+    color: rgba(61,50,41,0.55); margin-bottom: 6px;
+  }
+  .tweaks .seg {
+    display: flex; gap: 4px;
+    background: #DDD4C6; border-radius: 10px; padding: 3px;
+  }
+  .tweaks .seg button {
+    flex: 1; background: transparent; border: none;
+    padding: 7px 10px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    color: rgba(61,50,41,0.65);
+    cursor: pointer; font-family: inherit;
+    transition: all 180ms cubic-bezier(0.26, 0.68, 0.3, 1);
+  }
+  .tweaks .seg button.active {
+    background: #F2EBE0; color: #3D3229;
+    box-shadow: 0 2px 6px rgba(139,58,30,0.08), inset 0 1px 0 rgba(255,248,240,0.6);
+  }
+  .tweaks .replay {
+    width: 100%;
+    background: #D4795E; color: #F2EBE0;
+    border: none; padding: 9px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; margin-top: 2px;
+  }
+  .tweaks .replay:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="header">
+    <div class="eyebrow">Roost iOS · loading concepts</div>
+    <h1>Settling into the nest</h1>
+    <p>Two loading screens built from the one shape that already means Roost: the nest of eggs in the app icon. On the left, a general-purpose loading loop. On the right, the auth moment — eggs flying home.</p>
+  </div>
+
+  <div id="root"></div>
+</div>
+
+<div class="tweaks" id="tweaks-panel">
+  <h3>Tweaks</h3>
+  <div class="row">
+    <label>Animation speed</label>
+    <div class="seg" data-group="speed">
+      <button data-value="0.75">Slow</button>
+      <button data-value="1" class="active">Normal</button>
+      <button data-value="1.4">Fast</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>Status copy (general)</label>
+    <div class="seg" data-group="status">
+      <button data-value="settling" class="active">Settling in…</button>
+      <button data-value="loading">Loading…</button>
+      <button data-value="home">Warming up…</button>
+    </div>
+  </div>
+  <button class="replay" id="replay-btn">Replay auth intro</button>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
+// Exports: IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+
+// Roost Loading Screens — v2
+// Two treatments, both using the real AppIcon.png (never redrawn).
+//
+// 01 · General loader — "Window light"
+//     Icon sits calmly on a warm cream ground. A soft diagonal shaft of
+//     warm light rakes slowly across. The icon breathes (2% scale).
+//     A subtle sage wisp drifts through negative space. Status line below.
+//
+// 02 · Auth loader — "Coming home"
+//     A warm horizon gradient. A single terracotta arc draws itself
+//     across the screen like a horizon being inked. Icon fades up,
+//     settles, shimmers once. "Roost" wordmark drops in letter by letter.
+//     Sage breeze passes. One-shot, ~3.4s, then holds.
+
+const { useState, useEffect, useRef } = React;
+
+const T = '#D4795E';
+const T_DEEP = '#B8563C';
+const CREAM = '#F2EBE0';
+const BG = '#EBE3D5';
+const FG = '#3D3229';
+const MUTED = 'rgba(61,50,41,0.48)';
+const SAGE = '#9DB19F';
+const SAGE_INT = '#6B9673';
+
+const ICON_SRC = 'data:image/png;base64,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';
+
+// ─────────────────────────────────────────────────────────────
+// SCREEN 1 — GENERAL LOADING · "Window light"
+// ─────────────────────────────────────────────────────────────
+function GeneralLoading({ statusText = 'Settling in' }) {
+  const [dotCount, setDotCount] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => setDotCount(c => (c % 3) + 1), 500);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: '100%',
+      background: `radial-gradient(ellipse at 50% 38%, #F4ECDD 0%, ${BG} 62%, #E0D6C4 100%)`,
+      overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      fontFamily: '"DM Sans", system-ui, sans-serif',
+    }}>
+      {/* Subtle grain */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.47 0 0 0 0 0.35 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
+        opacity: 0.05, mixBlendMode: 'overlay', pointerEvents: 'none',
+      }} />
+
+      {/* Window-light shaft — slow diagonal rake across the scene */}
+      <div style={{
+        position: 'absolute', inset: 0, overflow: 'hidden',
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          position: 'absolute',
+          width: '180%', height: 160,
+          top: '50%', left: '-40%',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,237,210,0.0) 10%, rgba(255,237,210,0.65) 42%, rgba(255,245,225,0.85) 50%, rgba(255,237,210,0.65) 58%, rgba(255,237,210,0) 90%, transparent 100%)',
+          filter: 'blur(18px)',
+          transformOrigin: 'center',
+          animation: 'windowLight 8s ease-in-out infinite',
+        }} />
+      </div>
+
+      {/* Sage wisp — a single soft curl drifting past */}
+      <svg style={{
+        position: 'absolute', top: '30%', left: '-30%',
+        width: '160%', height: 240,
+        opacity: 0.32, pointerEvents: 'none',
+        animation: 'sageWisp 12s ease-in-out infinite',
+      }} viewBox="0 0 800 240" fill="none">
+        <path d="M 0 120 Q 150 40, 300 120 T 600 120 T 900 120"
+          stroke={SAGE_INT} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+        <path d="M 0 130 Q 180 80, 340 140 T 650 120 T 900 140"
+          stroke={SAGE_INT} strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.5" />
+      </svg>
+
+      {/* Soft halo behind the icon */}
+      <div style={{
+        position: 'absolute', width: 280, height: 280, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(212,121,94,0.14) 0%, rgba(212,121,94,0) 65%)',
+        animation: 'halo 4.4s ease-in-out infinite',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, calc(-50% - 32px))',
+        filter: 'blur(8px)',
+      }} />
+
+      {/* The actual AppIcon — breathing, never redrawn */}
+      <div style={{
+        width: 108, height: 108,
+        marginBottom: 40,
+        borderRadius: 24,
+        overflow: 'hidden',
+        boxShadow: '0 2px 6px rgba(139,58,30,0.08), 0 18px 40px rgba(139,58,30,0.16), inset 0 1px 0 rgba(255,248,240,0.4)',
+        animation: 'iconBreathe 4.4s ease-in-out infinite',
+        position: 'relative',
+      }}>
+        <img src={ICON_SRC} alt="Roost" style={{
+          width: '100%', height: '100%', display: 'block',
+        }} />
+      </div>
+
+      {/* Status line */}
+      <div style={{
+        fontSize: 14, color: MUTED,
+        letterSpacing: 0.2,
+        display: 'flex', alignItems: 'baseline', gap: 2,
+        animation: 'statusFade 4.4s ease-in-out infinite',
+      }}>
+        <span>{statusText}</span>
+        <span style={{ display: 'inline-block', width: 18, textAlign: 'left' }}>
+          {'.'.repeat(dotCount)}
+        </span>
+      </div>
+
+      <style>{`
+        @keyframes windowLight {
+          0%   { transform: translateY(-120%) rotate(-18deg); opacity: 0; }
+          20%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(120%) rotate(-18deg); opacity: 0; }
+        }
+        @keyframes sageWisp {
+          0%   { transform: translateX(-10%); opacity: 0; }
+          15%  { opacity: 0.32; }
+          85%  { opacity: 0.32; }
+          100% { transform: translateX(30%); opacity: 0; }
+        }
+        @keyframes halo {
+          0%, 100% { opacity: 0.7; transform: translate(-50%, calc(-50% - 32px)) scale(0.96); }
+          50%      { opacity: 1;   transform: translate(-50%, calc(-50% - 32px)) scale(1.04); }
+        }
+        @keyframes iconBreathe {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.025); }
+        }
+        @keyframes statusFade {
+          0%, 100% { opacity: 0.62; }
+          50%      { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// SCREEN 2 — AUTH LOADING · "Coming home"
+// ─────────────────────────────────────────────────────────────
+function AuthLoading() {
+  const ROOST = ['R', 'o', 'o', 's', 't'];
+  const [statusIdx, setStatusIdx] = useState(0);
+  const STATUSES = ['Unlocking your home', 'Gathering the nest', 'Almost there'];
+  useEffect(() => {
+    const id = setInterval(() => setStatusIdx(i => (i + 1) % STATUSES.length), 1800);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: '100%',
+      overflow: 'hidden',
+      background: `linear-gradient(175deg, #F6E8D3 0%, #EBD4B8 40%, #DCA88A 75%, ${T} 100%)`,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      fontFamily: '"DM Sans", system-ui, sans-serif',
+      color: FG,
+    }}>
+      {/* Soft sun glow at the horizon */}
+      <div style={{
+        position: 'absolute',
+        bottom: '28%', left: '50%',
+        width: 420, height: 420, borderRadius: '50%',
+        transform: 'translate(-50%, 50%)',
+        background: 'radial-gradient(circle, rgba(255,215,170,0.85) 0%, rgba(255,180,130,0.35) 30%, rgba(212,121,94,0) 65%)',
+        filter: 'blur(6px)',
+        animation: 'sunGlow 4s ease-out 0.2s both',
+      }} />
+
+      {/* Horizon arc — draws itself across the screen */}
+      <svg style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
+        pointerEvents: 'none',
+      }} viewBox="0 0 340 720" preserveAspectRatio="none">
+        <path
+          d="M -20 440 Q 170 380 360 440"
+          stroke={T_DEEP} strokeWidth="1.5" fill="none" strokeLinecap="round"
+          strokeDasharray="600" strokeDashoffset="600"
+          style={{ animation: 'horizonDraw 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards' }}
+        />
+        <path
+          d="M -20 452 Q 180 404 360 452"
+          stroke={T_DEEP} strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.5"
+          strokeDasharray="600" strokeDashoffset="600"
+          style={{ animation: 'horizonDraw 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards' }}
+        />
+      </svg>
+
+      {/* Grain */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.47 0 0 0 0 0.35 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
+        opacity: 0.06, mixBlendMode: 'overlay', pointerEvents: 'none',
+      }} />
+
+      {/* Sage breeze — a single thin pass */}
+      <div style={{
+        position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '38%', left: '-40%',
+          width: '180%', height: 2,
+          background: `linear-gradient(90deg, transparent, ${SAGE_INT}, transparent)`,
+          opacity: 0.6,
+          transform: 'rotate(-6deg)',
+          animation: 'breeze 3.2s ease-in-out 1.8s both',
+        }} />
+      </div>
+
+      {/* Content stack — pushed up slightly above horizon */}
+      <div style={{
+        position: 'relative', zIndex: 2,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        marginBottom: 120,
+      }}>
+        {/* The icon — fades up as horizon completes */}
+        <div style={{
+          width: 96, height: 96,
+          borderRadius: 22,
+          overflow: 'hidden',
+          marginBottom: 22,
+          boxShadow: '0 4px 12px rgba(139,58,30,0.18), 0 24px 48px rgba(139,58,30,0.24), inset 0 1px 0 rgba(255,248,240,0.5)',
+          position: 'relative',
+          animation: 'iconRise 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) 1.3s both',
+        }}>
+          <img src={ICON_SRC} alt="Roost" style={{
+            width: '100%', height: '100%', display: 'block',
+          }} />
+          {/* One-time shimmer sweep across the icon */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(100deg, transparent 40%, rgba(255,248,240,0.7) 50%, transparent 60%)',
+            backgroundSize: '220% 100%',
+            backgroundPosition: '120% 0',
+            animation: 'iconShimmer 1.4s ease-out 2.4s both',
+            mixBlendMode: 'overlay',
+          }} />
+        </div>
+
+        {/* Wordmark — drops in letter by letter */}
+        <div style={{
+          display: 'flex', gap: 0,
+          fontSize: 32, fontWeight: 700, letterSpacing: -0.6,
+          color: FG,
+          marginBottom: 10,
+        }}>
+          {ROOST.map((ch, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              animation: `letterDrop 0.55s cubic-bezier(0.34, 1.18, 0.42, 1) ${2.5 + i * 0.07}s both`,
+            }}>{ch}</span>
+          ))}
+        </div>
+
+        {/* Tagline */}
+        <div style={{
+          fontSize: 13, color: 'rgba(61,50,41,0.62)', letterSpacing: 0.3,
+          animation: 'taglineIn 0.8s ease-out 3s both',
+        }}>
+          your home, together
+        </div>
+      </div>
+
+      {/* Status line + progress — below horizon */}
+      <div style={{
+        position: 'absolute', bottom: 72, left: 0, right: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        animation: 'statusIn 0.6s ease-out 3.3s both',
+      }}>
+        <div style={{
+          fontSize: 12, color: 'rgba(61,50,41,0.55)',
+          letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: 500,
+          minHeight: 16, position: 'relative',
+        }}>
+          {STATUSES.map((s, i) => (
+            <span key={s} style={{
+              position: i === 0 ? 'relative' : 'absolute',
+              top: i === 0 ? 0 : 0, left: 0, right: 0,
+              opacity: i === statusIdx ? 1 : 0,
+              transition: 'opacity 450ms ease-out',
+              whiteSpace: 'nowrap', textAlign: 'center',
+            }}>{s}</span>
+          ))}
+        </div>
+
+        <div style={{
+          width: 120, height: 2,
+          borderRadius: 1,
+          background: 'rgba(184,86,60,0.22)',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: '-40%',
+            width: '40%', height: '100%',
+            background: T_DEEP,
+            borderRadius: 1,
+            animation: 'progressSlide 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+          }} />
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes sunGlow {
+          0%   { opacity: 0; transform: translate(-50%, 70%) scale(0.6); }
+          100% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+        }
+        @keyframes horizonDraw {
+          to { stroke-dashoffset: 0; }
+        }
+        @keyframes iconRise {
+          0%   { opacity: 0; transform: translateY(24px) scale(0.82); filter: blur(6px); }
+          60%  { opacity: 1; filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes iconShimmer {
+          0%   { background-position: 120% 0; opacity: 0; }
+          20%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { background-position: -120% 0; opacity: 0; }
+        }
+        @keyframes letterDrop {
+          0%   { opacity: 0; transform: translateY(-18px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes taglineIn {
+          0%   { opacity: 0; transform: translateY(6px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes breeze {
+          0%   { transform: translateX(-10%) rotate(-6deg); opacity: 0; }
+          30%  { opacity: 0.6; }
+          100% { transform: translateX(40%) rotate(-6deg); opacity: 0; }
+        }
+        @keyframes statusIn {
+          0%   { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes progressSlide {
+          0%   { left: -40%; }
+          100% { left: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Expose to global scope
+Object.assign(window, { GeneralLoading, AuthLoading });
+
+// Main app entry — renders both loading frames
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "speed": "1.4",
+  "status": "loading"
+}/*EDITMODE-END*/;
+
+const STATUS_COPY = {
+  settling: 'Settling in',
+  loading: 'Loading',
+  home: 'Warming up',
+};
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAKS);
+  const [replayKey, setReplayKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (!e.data) return;
+      if (e.data.type === '__activate_edit_mode') {
+        document.getElementById('tweaks-panel').classList.add('visible');
+      } else if (e.data.type === '__deactivate_edit_mode') {
+        document.getElementById('tweaks-panel').classList.remove('visible');
+      }
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+    document.querySelectorAll('.tweaks .seg').forEach(seg => {
+      const group = seg.dataset.group;
+      seg.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          seg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const value = btn.dataset.value;
+          setTweaks(t => {
+            const next = { ...t, [group]: value };
+            window.parent.postMessage({
+              type: '__edit_mode_set_keys',
+              edits: { [group]: value },
+            }, '*');
+            return next;
+          });
+        });
+      });
+    });
+    document.getElementById('replay-btn').addEventListener('click', () => {
+      setReplayKey(k => k + 1);
+    });
+
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const applySpeed = React.useCallback((el) => {
+    if (!el) return;
+    const speed = parseFloat(tweaks.speed) || 1;
+    const factor = 1 / speed;
+    requestAnimationFrame(() => {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT);
+      let n = walker.currentNode;
+      while (n) {
+        const cs = getComputedStyle(n);
+        if (cs.animationName && cs.animationName !== 'none') {
+          if (!n.dataset.origDur) n.dataset.origDur = cs.animationDuration;
+          const scaled = n.dataset.origDur.split(',').map(s => {
+            const val = parseFloat(s);
+            const unit = s.trim().endsWith('ms') ? 'ms' : 's';
+            return (val * factor).toFixed(3) + unit;
+          }).join(', ');
+          n.style.animationDuration = scaled;
+        }
+        n = walker.nextNode();
+      }
+    });
+  }, [tweaks.speed]);
+
+  const status = STATUS_COPY[tweaks.status] || 'Settling in';
+
+  return (
+    <div className="frames">
+      <div className="frame-col">
+        <div className="label">
+          <span className="tag">01 · general</span>
+          <span className="name">Window light</span>
+          <span className="desc">The icon sits calmly while a shaft of morning light rakes across. A sage wisp drifts past.</span>
+        </div>
+        <div data-screen-label="01 General Loading" ref={applySpeed} key={'g' + tweaks.speed + tweaks.status}>
+          <IOSDevice width={340} height={720}>
+            <GeneralLoading statusText={status} />
+          </IOSDevice>
+        </div>
+      </div>
+
+      <div className="frame-col">
+        <div className="label">
+          <span className="tag">02 · auth / log in</span>
+          <span className="name">Coming home</span>
+          <span className="desc">A terracotta horizon inks itself across the screen; the icon rises with the sun, then "Roost" drops in.</span>
+        </div>
+        <div data-screen-label="02 Auth Loading" ref={applySpeed} key={'a' + tweaks.speed + replayKey}>
+          <IOSDevice width={340} height={720}>
+            <AuthLoading />
+          </IOSDevice>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+
+</body>
+</html>

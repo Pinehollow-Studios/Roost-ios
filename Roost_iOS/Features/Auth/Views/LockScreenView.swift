@@ -24,7 +24,19 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            Color.roostBackground.ignoresSafeArea()
+            // Same midnight-to-dawn gradient as AuthLoadingView — the
+            // PIN → loading transition is seamless because the background never changes.
+            LinearGradient(
+                stops: [
+                    .init(color: Color(hex: 0x0F0D0B), location: 0.0),
+                    .init(color: Color(hex: 0x1A1410), location: 0.4),
+                    .init(color: Color(hex: 0x2A1A12), location: 0.75),
+                    .init(color: Color(hex: 0xD4795E), location: 1.0),
+                ],
+                startPoint: UnitPoint(x: 0.5, y: -0.08),
+                endPoint: UnitPoint(x: 0.5, y: 1.0)
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 28) {
                 Spacer(minLength: 28)
@@ -42,6 +54,7 @@ struct LockScreenView: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.xl)
         }
+        .preferredColorScheme(.dark)
         .background(_SecureTextField().frame(width: 0, height: 0))
         .onAppear {
             preventScreenshotWindowState()
