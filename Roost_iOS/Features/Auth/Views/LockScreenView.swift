@@ -24,19 +24,10 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            // Same midnight-to-dawn gradient as AuthLoadingView — the
-            // PIN → loading transition is seamless because the background never changes.
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: 0x0F0D0B), location: 0.0),
-                    .init(color: Color(hex: 0x1A1410), location: 0.4),
-                    .init(color: Color(hex: 0x2A1A12), location: 0.75),
-                    .init(color: Color(hex: 0xD4795E), location: 1.0),
-                ],
-                startPoint: UnitPoint(x: 0.5, y: -0.08),
-                endPoint: UnitPoint(x: 0.5, y: 1.0)
-            )
-            .ignoresSafeArea()
+            // Shared midnight-to-dawn gradient — same DawnBackground instance
+            // used by LoadingView (isDawn) and AuthLoadingView so the three
+            // screens form one continuous backdrop across transitions.
+            DawnBackground()
 
             VStack(spacing: 28) {
                 Spacer(minLength: 28)
