@@ -67,7 +67,7 @@ struct RoostButton: View {
         case .primary:
             return .roostPrimary
         case .secondary:
-            return .roostSecondary
+            return .roostSecondaryInteractive
         case .outline:
             return Color.roostCard
         case .ghost:
