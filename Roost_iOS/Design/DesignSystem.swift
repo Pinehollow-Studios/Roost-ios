@@ -11,14 +11,23 @@ enum DesignSystem {
         static let primary = Color(light: 0xD4795E, dark: 0xD4795E)
         static let primaryDeep = Color(hex: 0xB8563C)
         static let primaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
+        /// Sage — ATMOSPHERIC only. Illustrations, washes, empty-state tints, decorative fills.
+        /// Dissolves into warm cream at small sizes — that's the intent. Do NOT use for buttons,
+        /// chips, pills, status dots, or filled tags. For interactive sage, use `secondaryInteractive`.
         static let secondary = Color(light: 0x9DB19F, dark: 0x7A8C7C)
-        static let secondaryInteractive = Color(hex: 0x6B9673)
+        /// Sage — INTERACTIVE use. Buttons, chips, pills, status dots, filled tags.
+        /// Stronger green that holds its own on cream at small sizes and passes 4.5:1 with white text
+        /// on the filled variant. Dark-mode value is slightly lifted for cream-on-dark contrast.
+        static let secondaryInteractive = Color(light: 0x6B9673, dark: 0x8FB295)
         static let secondaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let muted = Color(light: 0xDDD4C6, dark: 0x2A2623)
         static let mutedForeground = Color(light: 0x6B6157, dark: 0xA39A8F)
         static let accent = Color(light: 0xE8D5BC, dark: 0x2A2623)
         static let accentForeground = Color(light: 0x3D3229, dark: 0xF2EBE0)
         static let destructive = Color(light: 0xC75146, dark: 0xC75146)
+        /// Tinted destructive fill for error-state form fields. Warmer than muted, unmistakably
+        /// destructive without shouting. Dark-mode value sits at the destructive hue, low-brightness.
+        static let destructiveSoft = Color(light: 0xF5DDD8, dark: 0x3A1E1B)
         static let destructiveForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let border = Color(lightRGBA: (0x3D3229, 0.15), darkRGBA: (0xF2EBE0, 0.10))
         static let inputBackground = Color(light: 0xE3D9CA, dark: 0x1F1C19)
