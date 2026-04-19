@@ -16,12 +16,12 @@ struct FigmaTabBar: View {
                             ZStack {
                                 if selectedTab == item.tab {
                                     Capsule()
-                                        .fill(item.accent.opacity(0.11))
+                                        .fill(item.accent.opacity(0.12))
                                 }
 
                                 tabIcon(for: item)
                             }
-                            .frame(width: 50, height: 30)
+                            .frame(width: 50, height: 28)
 
                             // Badge
                             if let badge = item.badge {
@@ -56,19 +56,25 @@ struct FigmaTabBar: View {
         .frame(maxWidth: .infinity)
         .frame(height: DesignSystem.Size.tabBarHeight)
         .background {
-            Color.roostCard
+            ZStack(alignment: .top) {
+                UnevenRoundedRectangle(
+                    topLeadingRadius: DesignSystem.Radius.xl,
+                    topTrailingRadius: DesignSystem.Radius.xl,
+                    style: .continuous
+                )
+                .fill(Color.roostCard)
                 .shadow(
                     color: DesignSystem.Shadow.tabBarColor,
                     radius: DesignSystem.Shadow.tabBarRadius,
                     x: 0,
                     y: DesignSystem.Shadow.tabBarYOffset
                 )
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Color.roostHairline)
-                        .frame(height: 1)
-                }
-                .ignoresSafeArea(edges: .bottom)
+
+                Rectangle()
+                    .fill(Color.roostHairline)
+                    .frame(height: 1)
+            }
+            .ignoresSafeArea(edges: .bottom)
         }
         .transaction { transaction in
             transaction.disablesAnimations = true
@@ -83,7 +89,7 @@ struct FigmaTabBar: View {
                 ForEach(0..<3, id: \.self) { _ in
                     Circle()
                         .fill(selectedTab == item.tab ? item.accent : Color.roostMutedForeground)
-                        .frame(width: 4, height: 4)
+                        .frame(width: 3, height: 3)
                 }
             }
         } else {
@@ -125,7 +131,7 @@ private extension FigmaTabBar {
         var symbol: String {
             switch self {
             case .home: "house"
-            case .money: "creditcard"
+            case .money: "dollarsign.circle"
             case .shopping: "cart"
             case .chores: "checkmark.circle"
             case .more: "ellipsis"
@@ -135,7 +141,7 @@ private extension FigmaTabBar {
         var activeSymbol: String {
             switch self {
             case .home: "house.fill"
-            case .money: "creditcard.fill"
+            case .money: "dollarsign.circle.fill"
             case .shopping: "cart.fill"
             case .chores: "checkmark.circle.fill"
             case .more: "ellipsis"

@@ -18,14 +18,14 @@ struct MemberAvatar: View {
             }
         }
 
+        /// DMSans-SemiBold at the size spec'd by `components-avatars.html`.
         var font: Font {
             switch self {
-            case .xs, .sm:
-                return .roostCaption
-            case .md, .lg:
-                return .roostLabel
-            case .xl:
-                return .roostSection
+            case .xs: return Font.custom("DMSans-SemiBold", size: 11)
+            case .sm: return Font.custom("DMSans-SemiBold", size: 12)
+            case .md: return Font.custom("DMSans-SemiBold", size: 15)
+            case .lg: return Font.custom("DMSans-SemiBold", size: 18)
+            case .xl: return Font.custom("DMSans-SemiBold", size: 24)
             }
         }
     }

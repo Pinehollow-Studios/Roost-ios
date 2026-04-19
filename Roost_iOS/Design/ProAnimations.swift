@@ -25,10 +25,10 @@ struct ProBadge: View {
 
             Text("Pro")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.proDeepBurn)
+                .foregroundStyle(Color.proWarmWhite)
                 .tracking(0.3)
         }
-        .frame(height: 18)
+        .frame(height: 20)
         .padding(.horizontal, 8)
         .clipShape(Capsule())
         .onAppear {
@@ -231,7 +231,7 @@ struct ProLockPill: View {
                 Text(label)
                     .font(.system(size: 10, weight: .semibold))
             }
-            .foregroundStyle(Color.proDeepBurn)
+            .foregroundStyle(Color.proWarmWhite)
         }
         .frame(height: 22)
         .padding(.horizontal, 10)

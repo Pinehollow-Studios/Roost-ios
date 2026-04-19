@@ -23,13 +23,14 @@ struct FigmaChip: View {
 
             Text(title)
                 .font(.roostMeta)
+                .tracking(0.2)
                 .lineLimit(1)
         }
         .foregroundStyle(foregroundColor)
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(backgroundColor, in: Capsule())
-        .overlay(Capsule().stroke(foregroundColor.opacity(0.2), lineWidth: 1))
+        .overlay(Capsule().strokeBorder(foregroundColor.opacity(0.25), lineWidth: 1))
     }
 
     private var foregroundColor: Color {

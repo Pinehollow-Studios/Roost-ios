@@ -17,6 +17,8 @@ extension Color {
     static let roostDestructive = DesignSystem.Palette.destructive
     static let roostDestructiveSoft = DesignSystem.Palette.destructiveSoft
     static let roostInput = DesignSystem.Palette.inputBackground
+    static let roostInputFocused = DesignSystem.Palette.inputFocusedBackground
+    static let roostWarmWhite = DesignSystem.Palette.warmWhite
     static let roostSwitch = DesignSystem.Palette.switchBackground
     static let roostSurface = DesignSystem.Palette.card
     static let roostSurfaceRaised = DesignSystem.Palette.card

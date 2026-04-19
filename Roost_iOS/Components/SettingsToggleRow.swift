@@ -29,25 +29,44 @@ struct SettingsToggleRow: View {
     }
 }
 
+/// Toggle row per design-system spec (`components-inputs.html §399-405`):
+/// - Track 46×28, `r-full`, terracotta when on / muted when off.
+/// - Inset 1pt dark shadow on the track for inner depth.
+/// - Thumb 22pt circle, warm-white fill, warm copper shadow `rgba(139,58,30,0.25)`.
 struct FigmaSwitchToggleStyle: ToggleStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         Button {
             configuration.isOn.toggle()
         } label: {
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                // Track
                 Capsule()
                     .fill(configuration.isOn ? Color.roostPrimary : Color.roostMuted)
-                    .frame(width: 48, height: 24)
+                    .frame(width: 46, height: 28)
+                    .overlay(
+                        // Inner dark border — gives the track depth per DS prototype.
+                        Capsule()
+                            .strokeBorder(Color(hex: 0x3D3229, alpha: 0.10), lineWidth: 1)
+                    )
 
+                // Thumb
                 Circle()
-                    .fill(Color.roostCard)
-                    .frame(width: 20, height: 20)
-                    .padding(2)
+                    .fill(Color.roostWarmWhite)
+                    .frame(width: 22, height: 22)
+                    .shadow(
+                        color: Color(hex: 0x8B3A1E, alpha: 0.25),
+                        radius: 3,
+                        x: 0,
+                        y: 1
+                    )
+                    .padding(3)
             }
-            .frame(width: 48, height: 44)
+            .frame(width: 46, height: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .animation(.roostEaseOut, value: configuration.isOn)
+        .animation(reduceMotion ? nil : .roostEaseOut, value: configuration.isOn)
     }
 }
