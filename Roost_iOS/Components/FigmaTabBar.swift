@@ -16,12 +16,12 @@ struct FigmaTabBar: View {
                             ZStack {
                                 if selectedTab == item.tab {
                                     Capsule()
-                                        .fill(item.accent.opacity(0.11))
+                                        .fill(item.accent.opacity(0.12))
                                 }
 
                                 tabIcon(for: item)
                             }
-                            .frame(width: 50, height: 30)
+                            .frame(width: 50, height: 28)
 
                             // Badge
                             if let badge = item.badge {
@@ -44,8 +44,8 @@ struct FigmaTabBar: View {
                             )
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxHeight: .infinity, alignment: .center)
+                    .padding(.bottom, 6)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -56,18 +56,30 @@ struct FigmaTabBar: View {
         .frame(maxWidth: .infinity)
         .frame(height: DesignSystem.Size.tabBarHeight)
         .background {
-            Color.roostCard
+            // The card's rounded top corners are drawn via UnevenRoundedRectangle.
+            // The 1pt hairline sits as an overlay on the same shape so it's
+            // clipped automatically to the curved corners — previously it was
+            // a separate sibling `Rectangle` that bled past the curve edges.
+            let shape = UnevenRoundedRectangle(
+                topLeadingRadius: DesignSystem.Radius.xl,
+                topTrailingRadius: DesignSystem.Radius.xl,
+                style: .continuous
+            )
+
+            shape
+                .fill(Color.roostCard)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(Color.roostHairline)
+                        .frame(height: 1)
+                }
+                .clipShape(shape)
                 .shadow(
                     color: DesignSystem.Shadow.tabBarColor,
                     radius: DesignSystem.Shadow.tabBarRadius,
                     x: 0,
                     y: DesignSystem.Shadow.tabBarYOffset
                 )
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Color.roostHairline)
-                        .frame(height: 1)
-                }
                 .ignoresSafeArea(edges: .bottom)
         }
         .transaction { transaction in
@@ -83,7 +95,7 @@ struct FigmaTabBar: View {
                 ForEach(0..<3, id: \.self) { _ in
                     Circle()
                         .fill(selectedTab == item.tab ? item.accent : Color.roostMutedForeground)
-                        .frame(width: 4, height: 4)
+                        .frame(width: 3, height: 3)
                 }
             }
         } else {
@@ -125,7 +137,7 @@ private extension FigmaTabBar {
         var symbol: String {
             switch self {
             case .home: "house"
-            case .money: "creditcard"
+            case .money: "dollarsign.circle"
             case .shopping: "cart"
             case .chores: "checkmark.circle"
             case .more: "ellipsis"
@@ -135,7 +147,7 @@ private extension FigmaTabBar {
         var activeSymbol: String {
             switch self {
             case .home: "house.fill"
-            case .money: "creditcard.fill"
+            case .money: "dollarsign.circle.fill"
             case .shopping: "cart.fill"
             case .chores: "checkmark.circle.fill"
             case .more: "ellipsis"

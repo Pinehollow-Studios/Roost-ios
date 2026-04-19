@@ -39,7 +39,6 @@ struct WelcomeView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .statusBarHidden(true)
@@ -194,7 +193,7 @@ struct WelcomeView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                .stroke(Color.roostHairline, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.28), radius: 32, x: 0, y: 12)
         .opacity(entered ? 1 : 0)

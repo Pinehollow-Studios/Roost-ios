@@ -119,7 +119,7 @@ struct JoinView: View {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: DesignSystem.Radius.xl, style: .continuous)
-                                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                                .stroke(Color.roostHairline, lineWidth: 1)
                         )
                         .shadow(color: Color.black.opacity(0.24), radius: 28, x: 0, y: 10)
                         .opacity(entered ? 1 : 0)
@@ -144,7 +144,6 @@ struct JoinView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             withAnimation(.spring(response: 0.75, dampingFraction: 0.72)) {

@@ -9,17 +9,35 @@ enum DesignSystem {
         static let popover = Color(light: 0xF2EBE0, dark: 0x1A1816)
         static let popoverForeground = Color(light: 0x3D3229, dark: 0xF2EBE0)
         static let primary = Color(light: 0xD4795E, dark: 0xD4795E)
+        static let primaryDeep = Color(hex: 0xB8563C)
         static let primaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
+        /// Sage — ATMOSPHERIC only. Illustrations, washes, empty-state tints, decorative fills.
+        /// Dissolves into warm cream at small sizes — that's the intent. Do NOT use for buttons,
+        /// chips, pills, status dots, or filled tags. For interactive sage, use `secondaryInteractive`.
         static let secondary = Color(light: 0x9DB19F, dark: 0x7A8C7C)
+        /// Sage — INTERACTIVE use. Buttons, chips, pills, status dots, filled tags.
+        /// Stronger green that holds its own on cream at small sizes and passes 4.5:1 with white text
+        /// on the filled variant. Dark-mode value is slightly lifted for cream-on-dark contrast.
+        static let secondaryInteractive = Color(light: 0x6B9673, dark: 0x8FB295)
         static let secondaryForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let muted = Color(light: 0xDDD4C6, dark: 0x2A2623)
-        static let mutedForeground = Color(light: 0x6B6157, dark: 0xA39A8F)
+        /// 45% of foreground over the background — matches `--muted-foreground: rgba(foreground, 0.45)`
+        /// from colors_and_type.css. Used for captions, placeholders, dividers, inactive tab labels.
+        static let mutedForeground = Color(lightRGBA: (0x3D3229, 0.45), darkRGBA: (0xF2EBE0, 0.45))
         static let accent = Color(light: 0xE8D5BC, dark: 0x2A2623)
         static let accentForeground = Color(light: 0x3D3229, dark: 0xF2EBE0)
         static let destructive = Color(light: 0xC75146, dark: 0xC75146)
+        /// Tinted destructive fill for error-state form fields. Warmer than muted, unmistakably
+        /// destructive without shouting. Dark-mode value sits at the destructive hue, low-brightness.
+        static let destructiveSoft = Color(light: 0xF5DDD8, dark: 0x3A1E1B)
         static let destructiveForeground = Color(light: 0xF2EBE0, dark: 0xF2EBE0)
         static let border = Color(lightRGBA: (0x3D3229, 0.15), darkRGBA: (0xF2EBE0, 0.10))
-        static let inputBackground = Color(light: 0xE3D9CA, dark: 0x1F1C19)
+        static let inputBackground = Color(light: 0xE3D9CA, dark: 0x2A2623)
+        /// Input fill when focused — lifts the field 1.5% vs resting. From components-inputs.html.
+        static let inputFocusedBackground = Color(light: 0xEFE5D3, dark: 0x332E2A)
+        /// Warm off-white — the canonical text colour on primary/destructive buttons and Pro chrome.
+        /// Maps to `--warm-white: #FFF8F2` in colors_and_type.css.
+        static let warmWhite = Color(hex: 0xFFF8F2)
         static let switchBackground = Color(light: 0xDDD4C6, dark: 0x2A2623)
         static let ring = Color(lightRGBA: (0xD4795E, 0.30), darkRGBA: (0xD4795E, 0.30))
         static let success = Color(light: 0x7FA087, dark: 0x7FA087)
@@ -27,7 +45,7 @@ enum DesignSystem {
         static let chart1 = Color(light: 0xD4795E, dark: 0xD4795E)
         static let chart2 = Color(light: 0x9DB19F, dark: 0x7A8C7C)
         static let chart3 = Color(light: 0xE6A563, dark: 0xE6A563)
-        static let chart4 = Color(light: 0xB88B7E, dark: 0xB88B7E)
+        static let chart4 = Color(light: 0x7A9199, dark: 0x7A9199)
         static let chart5 = Color(light: 0x7FA087, dark: 0x7FA087)
         static let shoppingAccent = Color(light: 0xE9822A, dark: 0xF39A3D)
         static let choresAccent = Color(light: 0x2FAE63, dark: 0x45C978)
@@ -85,7 +103,7 @@ enum DesignSystem {
         static let inputHeight: CGFloat = 44
         static let icon: CGFloat = 20
         static let navigationIcon: CGFloat = 24
-        static let tabBarHeight: CGFloat = 49
+        static let tabBarHeight: CGFloat = 64
         static let authLogoMark: CGFloat = 60
         static let authLogoGlyph: CGFloat = 36
         static let miniLogoMark: CGFloat = 24
@@ -104,19 +122,81 @@ enum DesignSystem {
     }
 
     enum Typography {
-        // Structural headings — bold weight for clear visual hierarchy
-        static let pageTitle = Font.custom("DMSans-Medium", size: 26, relativeTo: .title2).bold()
-        static let sectionHeading = Font.custom("DMSans-Medium", size: 20, relativeTo: .title3).bold()
-        static let cardTitle = Font.custom("DMSans-Medium", size: 17, relativeTo: .headline).bold()
-        // Body and utility — regular/medium for comfortable reading
+        // Explicit DM Sans face names so SwiftUI binds weights reliably.
+        // The design-system spec (colors_and_type.css) sets a specific weight per token;
+        // relying on `.bold()` modifiers on a custom Medium cut was fragile.
+
+        // Structural headings — Bold (700)
+        /// Page titles (26pt Bold, -0.005em tracking — apply `.tracking(pageTitleTracking)` at use).
+        static let pageTitle = Font.custom("DMSans-Bold", size: 26, relativeTo: .title2)
+        /// Section headings (20pt Bold).
+        static let sectionHeading = Font.custom("DMSans-Bold", size: 20, relativeTo: .title3)
+        /// Card headers (17pt Semibold — `--fs-card-title` + `h4, .roost-card-title` in CSS).
+        static let cardTitle = Font.custom("DMSans-SemiBold", size: 17, relativeTo: .headline)
+
+        // Body and utility
+        /// Standard body (15pt Regular).
         static let body = Font.custom("DMSans-Regular", size: 15, relativeTo: .body)
+        /// Buttons, tags, form labels (13pt Medium).
         static let label = Font.custom("DMSans-Medium", size: 13, relativeTo: .subheadline)
+        /// Timestamps, secondary meta (12pt Regular).
         static let caption = Font.custom("DMSans-Regular", size: 12, relativeTo: .caption)
+        /// Eyebrow / badges (11pt Medium). Apply `.tracking(microTracking)` + `.textCase(.uppercase)` at usage.
         static let micro = Font.custom("DMSans-Medium", size: 11, relativeTo: .caption2)
-        // Hero display — bold for large panel headlines and greetings
-        static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle).bold()
-        static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle).bold()
+        /// Tab-bar labels (10pt Medium).
         static let tabLabel = Font.custom("DMSans-Medium", size: 10, relativeTo: .caption2)
+
+        // Hero display — Bold
+        /// Large stats, money amounts (34pt Bold, -0.01em tracking).
+        static let heroNumber = Font.custom("DMSans-Bold", size: 34, relativeTo: .largeTitle)
+        /// Hero greetings (28pt Bold, -0.01em tracking).
+        static let largeGreeting = Font.custom("DMSans-Bold", size: 28, relativeTo: .largeTitle)
+
+        // Signature hero display — Black (900). Use sparingly, for signature moments
+        // (Pro upsell hero, headline money stats). Maps to `.roost-hero-number` /
+        // `.roost-hero-number--sm` in colors_and_type.css.
+        /// 76pt Black, -0.04em tracking, tabular-nums. Signature display — use sparingly.
+        static let heroDisplayLarge = Font.custom("DMSans-Black", size: 76, relativeTo: .largeTitle)
+        /// 48pt Black, -0.035em tracking, tabular-nums.
+        static let heroDisplayMedium = Font.custom("DMSans-Black", size: 48, relativeTo: .largeTitle)
+
+        // ---- Tracking tokens (points, converted from em). Apply with `.tracking(...)` at use. ----
+        /// -0.04em at 76pt.
+        static let heroDisplayLargeTracking: CGFloat = -3.04
+        /// -0.035em at 48pt.
+        static let heroDisplayMediumTracking: CGFloat = -1.68
+        /// -0.01em at 34pt.
+        static let heroNumberTracking: CGFloat = -0.34
+        /// -0.01em at 28pt.
+        static let largeGreetingTracking: CGFloat = -0.28
+        /// -0.005em at 26pt.
+        static let pageTitleTracking: CGFloat = -0.13
+        /// +1px tracking on ALL-CAPS eyebrow / micro labels.
+        static let microTracking: CGFloat = 1
+
+        // ---- Line-spacing tokens (pt). Apply with `.lineSpacing(...)` at use. ----
+        // SwiftUI's lineSpacing is *additional* leading on top of the font's intrinsic ascent+descent.
+        // Values below = (CSS-line-height × font-size) − font-size, rounded. Multi-line text only.
+        /// Hero number line-height 1.1 → add 3pt (34 × 0.1).
+        static let heroNumberLineSpacing: CGFloat = 3
+        /// Large greeting line-height 1.15 → add 4pt (28 × 0.15).
+        static let largeGreetingLineSpacing: CGFloat = 4
+        /// Page title line-height 1.2 → add 5pt (26 × 0.2).
+        static let pageTitleLineSpacing: CGFloat = 5
+        /// Section heading line-height 1.25 → add 5pt (20 × 0.25).
+        static let sectionHeadingLineSpacing: CGFloat = 5
+        /// Card title line-height 1.3 → add 5pt (17 × 0.3).
+        static let cardTitleLineSpacing: CGFloat = 5
+        /// Body line-height 1.45 → add 7pt (15 × 0.45).
+        static let bodyLineSpacing: CGFloat = 7
+        /// Label line-height 1.3 → add 4pt (13 × 0.3).
+        static let labelLineSpacing: CGFloat = 4
+        /// Caption line-height 1.35 → add 4pt (12 × 0.35).
+        static let captionLineSpacing: CGFloat = 4
+        /// Micro line-height 1.3 → add 3pt (11 × 0.3).
+        static let microLineSpacing: CGFloat = 3
+        /// Tab-label line-height 1.2 → add 2pt (10 × 0.2).
+        static let tabLabelLineSpacing: CGFloat = 2
     }
 
     enum Motion {
@@ -139,12 +219,60 @@ enum DesignSystem {
     }
 
     enum Shadow {
-        static let sheetColor = Color.black.opacity(0.15)
-        static let sheetRadius: CGFloat = 60
-        static let sheetYOffset: CGFloat = 20
-        static let tabBarColor = Color.black.opacity(0.05)
-        static let tabBarRadius: CGFloat = 16
-        static let tabBarYOffset: CGFloat = -4
+        // ---- Warm-biased shadow palette ----
+        // All shadows use terracotta-tinted colour (#8B3A1E) — "warm, terracotta-biased — never
+        // neutral grey" per colors_and_type.css. SwiftUI's single-layer .shadow modifier can't
+        // replicate CSS's two-layer offsets/blurs exactly; we use the second (ambient) layer
+        // values since those dominate the visual footprint.
+
+        /// Card resting shadow — `0 8px 20px rgba(139,58,30,0.06)` (ambient layer).
+        static let cardColor = Color(hex: 0x8B3A1E, alpha: 0.06)
+        static let cardRadius: CGFloat = 20
+        static let cardYOffset: CGFloat = 8
+
+        /// Elevated (hero card / settled modal) shadow — `0 16px 32px rgba(139,58,30,0.09)`.
+        static let elevatedColor = Color(hex: 0x8B3A1E, alpha: 0.09)
+        static let elevatedRadius: CGFloat = 32
+        static let elevatedYOffset: CGFloat = 16
+
+        /// Sheet shadow — `0 30px 80px rgba(61,50,41,0.22)` (foreground-tinted for the biggest pop).
+        static let sheetColor = Color(hex: 0x3D3229, alpha: 0.22)
+        static let sheetRadius: CGFloat = 80
+        static let sheetYOffset: CGFloat = 30
+
+        /// Tab-bar inverted shadow — `0 -6px 20px rgba(139,58,30,0.07)`.
+        static let tabBarColor = Color(hex: 0x8B3A1E, alpha: 0.07)
+        static let tabBarRadius: CGFloat = 20
+        static let tabBarYOffset: CGFloat = -6
+
+        /// Pressed state shadow — `0 1px 2px rgba(139,58,30,0.05)` (tight, near-surface).
+        static let pressColor = Color(hex: 0x8B3A1E, alpha: 0.05)
+        static let pressRadius: CGFloat = 2
+        static let pressYOffset: CGFloat = 1
+
+        /// Hover / lifted state — `0 12px 28px rgba(139,58,30,0.10)`.
+        static let hoverColor = Color(hex: 0x8B3A1E, alpha: 0.10)
+        static let hoverRadius: CGFloat = 28
+        static let hoverYOffset: CGFloat = 12
+
+        /// FAB — warm version of card-elevated, tuned for round surface.
+        static let fabColor = Color(hex: 0x8B3A1E, alpha: 0.18)
+        static let fabRadius: CGFloat = 10
+        static let fabYOffset: CGFloat = 6
+    }
+
+    enum Highlight {
+        // ---- Inner highlight tokens ----
+        // Warm-white inner highlight applied to the top edge of cards, buttons, and material
+        // surfaces — creates the subtle "lift" that distinguishes Roost from a flat design
+        // system. Maps to `--highlight-top` / `--highlight-top-strong` / `--highlight-edge`.
+
+        /// Standard top-edge highlight — `inset 0 1px 0 rgba(255,248,240,0.55)`.
+        static let topColor = Color(hex: 0xFFF8F2, alpha: 0.55)
+        /// Strong top-edge highlight — used on primary/destructive buttons.
+        static let topColorStrong = Color(hex: 0xFFF8F2, alpha: 0.75)
+        /// Full inner border — `inset 0 0 0 1px rgba(255,248,240,0.06)`. Material surface edge.
+        static let edgeColor = Color(hex: 0xFFF8F2, alpha: 0.06)
     }
 
     // MARK: - Pro Palette

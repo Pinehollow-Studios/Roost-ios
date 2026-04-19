@@ -12,23 +12,49 @@ struct ContentView: View {
     @Environment(AppearanceSettings.self) private var appearanceSettings
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(AppBootManager.self) private var appBootManager
+    @Environment(AppLockManager.self) private var lockManager
     @Environment(NotificationRouter.self) private var notificationRouter
+
+    /// True whenever any of the dawn-flow screens are on-screen:
+    ///   session restore → "checking home" loader → lock screen → auth loading.
+    /// Used to render a stable `DawnBackground` underneath so transitions
+    /// between those screens don't flicker the background.
+    private var isInDawnFlow: Bool {
+        if authManager.isRestoringSession { return true }
+        guard authManager.isAuthenticated else { return false }
+        if authManager.hasHome == nil { return true }
+        if authManager.hasHome == true {
+            return lockManager.isLocked || !appBootManager.authLoadingComplete
+        }
+        return false
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
             Color.roostBackground
                 .ignoresSafeArea()
 
+            // Persistent dawn gradient that survives state churn across the
+            // session-restore → lock → auth-loading → main-app sequence. Each
+            // child screen also paints DawnBackground as its first layer, but
+            // keeping one here means any mid-transition repaint has nothing
+            // to flash to.
+            if isInDawnFlow {
+                DawnBackground()
+                    .transition(.opacity)
+            }
+
             Group {
                 if authManager.isRestoringSession {
-                    RoostLoadingView(message: "Restoring session…")
+                    LoadingView(statusText: "Restoring session", isDawn: true)
+                        .ignoresSafeArea()
                 } else if authManager.isAuthenticated {
                     if authManager.hasHome == false {
                         NavigationStack { SetupView() }
                     } else if authManager.hasHome == true {
                         RootAuthenticatedView()
                     } else {
-                        RoostLoadingView(message: "Checking your home…")
+                        LoadingView(statusText: "Checking your home", isDawn: true)
                     }
                 } else {
                     NavigationStack { WelcomeView() }
@@ -37,32 +63,20 @@ struct ContentView: View {
 
             OfflineBanner(isVisible: !networkMonitor.isConnected)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if authManager.isAuthenticated {
-                Color.clear
-                    .frame(height: DesignSystem.Size.statusBarInset)
-                    .background(
-                        Color.roostBackground
-                            .ignoresSafeArea(edges: .top)
-                    )
-            }
-        }
+        .animation(.easeInOut(duration: 0.30), value: isInDawnFlow)
         .preferredColorScheme(appearanceSettings.preferredColorScheme)
         .onChange(of: authManager.isAuthenticated) { wasAuthenticated, isAuthenticated in
             if !isAuthenticated {
                 appBootManager.clear()
-                // Clear any stale navigation so the next login starts on home
                 notificationRouter.selectedTab = .home
                 notificationRouter.morePath = []
             }
-            // After a fresh login, always land on home regardless of previous tab
             if !wasAuthenticated && isAuthenticated {
                 notificationRouter.selectedTab = .home
                 notificationRouter.morePath = []
             }
         }
         .onChange(of: authManager.hasHome) { wasHasHome, isHasHome in
-            // After completing onboarding (setup → home confirmed), always land on home
             if wasHasHome == false && isHasHome == true {
                 notificationRouter.selectedTab = .home
                 notificationRouter.morePath = []
@@ -95,15 +109,29 @@ private struct RootAuthenticatedView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var showPINSetup = false
+    @State private var authLoadingDone = false
 
     var body: some View {
         ZStack(alignment: .top) {
             if lockManager.isLocked {
                 LockScreenView()
-            } else if needsBoot {
-                SecureLoginLoadingView()
+            } else if needsBoot || !authLoadingDone {
+                AuthLoadingView(onComplete: {
+                    withAnimation(.easeOut(duration: 0.40)) { authLoadingDone = true }
+                    appBootManager.markAuthLoadingComplete()
+                })
+                .ignoresSafeArea()
+                .transition(.opacity)
             } else {
                 MainTabView()
+                    // Status bar inset only for the main app — loading/lock screens
+                    // use full-bleed gradients so the top safe area must be transparent.
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        Color.clear
+                            .frame(height: DesignSystem.Size.statusBarInset)
+                            .background(Color.roostBackground.ignoresSafeArea(edges: .top))
+                    }
+                    .transition(.opacity)
 
                 if lockManager.migrationNeeded {
                     PINMigrationBanner {
@@ -120,8 +148,31 @@ private struct RootAuthenticatedView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.roostBackground.ignoresSafeArea())
-        .animation(.easeInOut(duration: 0.15), value: lockManager.isLocked)
+        .animation(.easeInOut(duration: 0.30), value: lockManager.isLocked)
         .animation(DesignSystem.Motion.modalTransition, value: lockManager.migrationNeeded)
+        .task {
+            // If this view is created while boot is already complete (e.g. recreated due to
+            // an edge-case auth state flush), skip the loading animation immediately.
+            if !needsBoot {
+                authLoadingDone = true
+                appBootManager.markAuthLoadingComplete()
+            }
+        }
+        .onChange(of: needsBoot) { _, isBooting in
+            if isBooting {
+                authLoadingDone = false
+                showPINSetup = false
+                appBootManager.resetAuthLoading()
+            }
+        }
+        .onChange(of: lockManager.isLocked) { _, isLocked in
+            // Re-lock also re-runs the auth-loading animation, so treat it as
+            // "auth loading not yet complete" — keeps the privacy shield off.
+            if isLocked {
+                authLoadingDone = false
+                appBootManager.resetAuthLoading()
+            }
+        }
         .task(id: bootTaskId) {
             guard !lockManager.isLocked else { return }
             guard let homeId = authManager.homeId,
@@ -129,7 +180,10 @@ private struct RootAuthenticatedView: View {
             guard !appBootManager.isBooted(homeId: homeId, userId: userId) else { return }
             await bootAuthenticatedApp(homeId: homeId, userId: userId)
         }
-        .sheet(isPresented: $showPINSetup) {
+        .sheet(isPresented: Binding(
+            get: { showPINSetup && !needsBoot && authLoadingDone },
+            set: { showPINSetup = $0 }
+        )) {
             PINSetupView {
                 showPINSetup = false
             }

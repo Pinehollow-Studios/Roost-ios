@@ -68,6 +68,9 @@ struct MainTabView: View {
                 if appBootManager.isBooted(homeId: homeId, userId: userId) {
                     await restartRealtime(homeId: homeId, userId: userId)
                     warmedHomeId = homeId
+                    // Delay so any auth loading / transition animation fully completes
+                    // before a fullScreenCover can appear on top.
+                    try? await Task.sleep(for: .seconds(0.7))
                     if shouldShowIncomeSetup() { showIncomeSetup = true }
                     loadedTabs.insert(notificationRouter.selectedTab)
                     return
@@ -81,7 +84,8 @@ struct MainTabView: View {
                     _ = await (pageWarm, userWarm)
                     warmedHomeId = homeId
                     appBootManager.markBooted(homeId: homeId, userId: userId)
-                    // Check income onboarding after home data is warm
+                    // Delay so the auth loading cross-fade completes before cover appears.
+                    try? await Task.sleep(for: .seconds(0.7))
                     if shouldShowIncomeSetup() { showIncomeSetup = true }
                 }
                 loadedTabs.insert(notificationRouter.selectedTab)

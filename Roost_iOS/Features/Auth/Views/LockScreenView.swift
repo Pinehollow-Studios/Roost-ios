@@ -24,7 +24,10 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            Color.roostBackground.ignoresSafeArea()
+            // Shared midnight-to-dawn gradient — same DawnBackground instance
+            // used by LoadingView (isDawn) and AuthLoadingView so the three
+            // screens form one continuous backdrop across transitions.
+            DawnBackground()
 
             VStack(spacing: 28) {
                 Spacer(minLength: 28)
