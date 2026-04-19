@@ -103,7 +103,7 @@ enum DesignSystem {
         static let inputHeight: CGFloat = 44
         static let icon: CGFloat = 20
         static let navigationIcon: CGFloat = 24
-        static let tabBarHeight: CGFloat = 64
+        static let tabBarHeight: CGFloat = 54
         static let authLogoMark: CGFloat = 60
         static let authLogoGlyph: CGFloat = 36
         static let miniLogoMark: CGFloat = 24

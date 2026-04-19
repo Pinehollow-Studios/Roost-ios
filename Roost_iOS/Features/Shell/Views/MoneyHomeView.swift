@@ -116,7 +116,9 @@ struct MoneyHomeView: View {
                     balance: abs(partnerBalance),
                     currencyCode: settingsViewModel.userPreferences.currency,
                     myName: memberNames.names.me,
-                    partnerName: memberNames.names.partner
+                    partnerName: memberNames.names.partner,
+                    partnerPaypalUsername: homeManager.partner?.paypalUsername,
+                    partnerMonzoUsername: homeManager.partner?.monzoUsername
                 ) { note in
                     let fromId = partnerBalance < 0 ? myUserId : partnerUserId
                     let toId = partnerBalance < 0 ? partnerUserId : myUserId
@@ -510,18 +512,20 @@ struct MoneyHomeView: View {
 
             Spacer(minLength: 4)
 
-            Button("Settle up") {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                showSettleUp = true
+            if settingsVM.settings.settlementMode != "shared" {
+                Button("Settle up") {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showSettleUp = true
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.roostMoneyTint)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.roostMoneyTint, lineWidth: 0.5)
+                )
             }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Color.roostMoneyTint)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.roostMoneyTint, lineWidth: 0.5)
-            )
         }
         .padding(.horizontal, 14)
         .frame(height: 52)

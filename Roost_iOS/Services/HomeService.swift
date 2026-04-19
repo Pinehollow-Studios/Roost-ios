@@ -74,6 +74,19 @@ struct HomeService {
             .execute()
     }
 
+    func updateMemberPaymentHandles(id: UUID, paypalUsername: String?, monzoUsername: String?) async throws {
+        let client = try SupabaseClientProvider.shared.requireClient()
+        let payload: [String: AnyJSON] = [
+            "paypal_username": paypalUsername.map { .string($0) } ?? .null,
+            "monzo_username":  monzoUsername.map  { .string($0) } ?? .null
+        ]
+        try await client
+            .from("home_members")
+            .update(payload)
+            .eq("id", value: id)
+            .execute()
+    }
+
     func updateHomeName(id: UUID, name: String) async throws {
         let client = try SupabaseClientProvider.shared.requireClient()
         try await client

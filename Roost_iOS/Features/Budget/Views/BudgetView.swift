@@ -644,7 +644,7 @@ struct BudgetView: View {
     }
 
     private var loadingState: some View {
-        RoostLoadingView(message: "Loading budgets…", logoSize: DesignSystem.Size.miniLogoMark * 2)
+        LoadingView(statusText: "Loading budgets")
     }
 
     private var budgetProgress: Double {

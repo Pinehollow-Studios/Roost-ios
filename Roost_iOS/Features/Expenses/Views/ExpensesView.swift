@@ -132,7 +132,9 @@ struct ExpensesView: View {
                     balance: balance,
                     currencyCode: currencyCode,
                     myName: myName,
-                    partnerName: partnerName
+                    partnerName: partnerName,
+                    partnerPaypalUsername: homeManager.partner?.paypalUsername,
+                    partnerMonzoUsername: homeManager.partner?.monzoUsername
                 ) { note in
                     guard let homeId = homeManager.homeId else { return }
                     let fromId = balance < 0 ? myId : partnerId

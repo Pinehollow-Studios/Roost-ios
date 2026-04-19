@@ -3,6 +3,8 @@ import SwiftUI
 struct FigmaTabBar: View {
     @Binding var selectedTab: NotificationRouter.AppTab
 
+    @State private var tabBarWidth: CGFloat = 0
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(TabItem.allCases, id: \.self) { item in
@@ -45,12 +47,30 @@ struct FigmaTabBar: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(maxHeight: .infinity, alignment: .center)
-                    .padding(.bottom, 6)
+                    .padding(.top, 4)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
+        .background(
+            GeometryReader { geo in
+                Color.clear.onAppear { tabBarWidth = geo.size.width }
+            }
+        )
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 6)
+                .onChanged { value in
+                    guard tabBarWidth > 0 else { return }
+                    let tabCount = CGFloat(TabItem.allCases.count)
+                    let index = Int((value.location.x / (tabBarWidth / tabCount)).rounded())
+                    let clamped = max(0, min(Int(tabCount) - 1, index))
+                    let newTab = TabItem.allCases[clamped].tab
+                    guard selectedTab != newTab else { return }
+                    selectedTab = newTab
+                    UISelectionFeedbackGenerator().selectionChanged()
+                }
+        )
         .padding(.horizontal, 4)
         .frame(maxWidth: DesignSystem.Size.maxPhoneWidth)
         .frame(maxWidth: .infinity)

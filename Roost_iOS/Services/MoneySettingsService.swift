@@ -22,7 +22,8 @@ struct MoneySettingsService {
             "budget_carry_forward": .string(settings.budgetCarryForward),
             "scramble_mode": .bool(settings.scrambleMode),
             "overspend_alert_threshold": .integer(settings.overspendAlertThreshold),
-            "currency_symbol": .string(settings.currencySymbol)
+            "currency_symbol": .string(settings.currencySymbol),
+            "settlement_mode": .string(settings.settlementMode)
         ]
         try await client
             .from("homes")

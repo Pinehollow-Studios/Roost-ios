@@ -38,6 +38,7 @@ final class NotificationRouter {
     var selectedTab: AppTab = .home
     var selectedTasksSection: TasksSection = .shopping
     var morePath: [MoreDestination] = []
+    var homePath: [MoreDestination] = []
 
     func handle(url: URL) {
         guard url.host == "subscription" else { return }

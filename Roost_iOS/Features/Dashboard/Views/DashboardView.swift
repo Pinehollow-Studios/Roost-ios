@@ -116,8 +116,7 @@ struct DashboardView: View {
             Spacer(minLength: 0)
 
             Button {
-                notificationRouter.selectedTab = .more
-                notificationRouter.morePath = [.notifications]
+                notificationRouter.homePath = [.notifications]
             } label: {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")

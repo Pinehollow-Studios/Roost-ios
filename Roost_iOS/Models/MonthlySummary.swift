@@ -65,19 +65,22 @@ struct MoneySettings {
     var scrambleMode: Bool
     var overspendAlertThreshold: Int // 50–100
     var currencySymbol: String
+    var settlementMode: String       // "shared" or "separate"
 
     init(
         defaultExpenseSplit: Double = 50.0,
         budgetCarryForward: String = "auto",
         scrambleMode: Bool = false,
         overspendAlertThreshold: Int = 80,
-        currencySymbol: String = "£"
+        currencySymbol: String = "£",
+        settlementMode: String = "separate"
     ) {
         self.defaultExpenseSplit = defaultExpenseSplit
         self.budgetCarryForward = budgetCarryForward
         self.scrambleMode = scrambleMode
         self.overspendAlertThreshold = overspendAlertThreshold
         self.currencySymbol = currencySymbol
+        self.settlementMode = settlementMode
     }
 
     static func from(home: Home) -> MoneySettings {
@@ -86,7 +89,8 @@ struct MoneySettings {
             budgetCarryForward: home.budgetCarryForward ?? "auto",
             scrambleMode: home.scrambleMode ?? false,
             overspendAlertThreshold: home.overspendAlertThreshold ?? 80,
-            currencySymbol: home.currencySymbol ?? "£"
+            currencySymbol: home.currencySymbol ?? "£",
+            settlementMode: home.settlementMode ?? "separate"
         )
     }
 }

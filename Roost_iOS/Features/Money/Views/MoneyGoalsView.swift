@@ -83,7 +83,7 @@ struct MoneyGoalsView: View {
                 }
                 .padding(.horizontal, goalPageInset)
 
-                Spacer(minLength: DesignSystem.Spacing.screenBottom + 84)
+                Spacer(minLength: DesignSystem.Spacing.screenBottom + 16)
             }
         }
         .background(Color.roostBackground.ignoresSafeArea())
@@ -125,7 +125,7 @@ struct MoneyGoalsView: View {
             .foregroundStyle(Color.roostCard)
             .padding(.horizontal, 13)
             .frame(height: 38)
-            .background(Color.roostPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Color.roostMoneyTint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -155,12 +155,12 @@ struct MoneyGoalsView: View {
                 }
             }
 
-            GoalProgressBar(progress: summaryProgress, tint: Color.roostPrimary, height: 8)
+            GoalProgressBar(progress: summaryProgress, tint: Color.roostMoneyTint, height: 8)
 
             HStack(spacing: 8) {
-                GoalMetricTile(label: "Active", value: "\(activeGoals.count)", tint: Color.roostPrimary)
-                GoalMetricTile(label: "Monthly", value: scramble.format(goalsVM.totalMonthlyContribution, symbol: sym), tint: goalColour("sage"))
-                GoalMetricTile(label: "Need", value: totalNeeded > 0 ? scramble.format(totalNeeded, symbol: sym) : "-", tint: goalColour("amber"))
+                GoalMetricTile(label: "Active", value: "\(activeGoals.count)", tint: Color.roostMoneyTint)
+                GoalMetricTile(label: "Monthly", value: scramble.format(goalsVM.totalMonthlyContribution, symbol: sym), tint: Color.roostMoneyTint)
+                GoalMetricTile(label: "Need", value: totalNeeded > 0 ? scramble.format(totalNeeded, symbol: sym) : "-", tint: Color.roostMoneyTint)
             }
         }
         .padding(16)
@@ -342,7 +342,7 @@ struct MoneyGoalsView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                RoostIconBadge(systemImage: "flag.checkered", tint: Color.roostPrimary, size: 38)
+                RoostIconBadge(systemImage: "flag.checkered", tint: Color.roostMoneyTint, size: 38)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("No goals yet")
                         .font(.system(size: 17, weight: .semibold))
@@ -361,7 +361,7 @@ struct MoneyGoalsView: View {
                     .foregroundStyle(Color.roostCard)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(Color.roostPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Color.roostMoneyTint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
         }
@@ -376,7 +376,7 @@ struct MoneyGoalsView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView()
-                .tint(Color.roostPrimary)
+                .tint(Color.roostMoneyTint)
             Text("Loading goals")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color.roostMutedForeground)
@@ -912,10 +912,10 @@ private struct AddGoalPage: View {
                         MoneySectionTitle(title: "Target date")
 
                         HStack(spacing: 8) {
-                            GoalChoiceButton(title: "Set date", isSelected: hasTargetDate, tint: tint) {
+                            GoalChoiceButton(title: "Set date", isSelected: hasTargetDate, tint: Color.roostMoneyTint) {
                                 withAnimation(.easeInOut(duration: 0.18)) { hasTargetDate = true }
                             }
-                            GoalChoiceButton(title: "No date", isSelected: !hasTargetDate, tint: tint) {
+                            GoalChoiceButton(title: "No date", isSelected: !hasTargetDate, tint: Color.roostMoneyTint) {
                                 withAnimation(.easeInOut(duration: 0.18)) { hasTargetDate = false }
                             }
                         }
@@ -924,7 +924,7 @@ private struct AddGoalPage: View {
                             DatePicker("", selection: $targetDate, in: Date()..., displayedComponents: .date)
                                 .datePickerStyle(.compact)
                                 .labelsHidden()
-                                .tint(tint)
+                                .tint(Color.roostMoneyTint)
 
                             if let needed = monthlyNeeded {
                                 Text("\(sym)\(needed.formatted()) per month keeps this on track.")
@@ -944,10 +944,10 @@ private struct AddGoalPage: View {
                         MoneySectionTitle(title: "Monthly plan")
 
                         HStack(spacing: 8) {
-                            GoalChoiceButton(title: "Monthly", isSelected: hasContribution, tint: tint) {
+                            GoalChoiceButton(title: "Monthly", isSelected: hasContribution, tint: Color.roostMoneyTint) {
                                 withAnimation(.easeInOut(duration: 0.18)) { hasContribution = true }
                             }
-                            GoalChoiceButton(title: "Later", isSelected: !hasContribution, tint: tint) {
+                            GoalChoiceButton(title: "Later", isSelected: !hasContribution, tint: Color.roostMoneyTint) {
                                 withAnimation(.easeInOut(duration: 0.18)) { hasContribution = false }
                             }
                         }
@@ -961,7 +961,7 @@ private struct AddGoalPage: View {
                                     focused: $focusedField,
                                     equals: .contribution
                                 )
-                                GoalDayStepper(day: $contributionDay, tint: tint)
+                                GoalDayStepper(day: $contributionDay, tint: Color.roostMoneyTint)
                             }
                         }
                     }
@@ -1021,7 +1021,7 @@ private struct AddGoalPage: View {
                             .foregroundStyle(Color.roostCard)
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)
-                            .background(canSave ? tint : Color.roostMutedForeground.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(canSave ? Color.roostPrimary : Color.roostMutedForeground.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSave || isSaving)

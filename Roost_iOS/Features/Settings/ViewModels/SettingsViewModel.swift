@@ -137,6 +137,18 @@ final class SettingsViewModel {
         }
     }
 
+    func updatePaymentHandles(member: HomeMember, paypalUsername: String?, monzoUsername: String?) async {
+        do {
+            try await homeService.updateMemberPaymentHandles(
+                id: member.id,
+                paypalUsername: paypalUsername?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+                monzoUsername:  monzoUsername?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            )
+        } catch {
+            // silently fail — same pattern as other settings
+        }
+    }
+
     func updateHomeName(_ home: Home, newName: String) async -> Bool {
         let trimmedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return false }
@@ -242,4 +254,8 @@ final class SettingsViewModel {
         (error as? URLError)?.code == .cancelled ||
         (error as NSError).code == NSURLErrorCancelled
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

@@ -126,8 +126,21 @@ struct MainTabView: View {
         ZStack {
             if loadedTabs.contains(.home) {
                 tabContainer(for: .home) {
-                    NavigationStack {
+                    NavigationStack(path: Binding(
+                        get: { notificationRouter.homePath },
+                        set: { notificationRouter.homePath = $0 }
+                    )) {
                         DashboardView()
+                            .navigationDestination(for: NotificationRouter.MoreDestination.self) { destination in
+                                switch destination {
+                                case .notifications:
+                                    NotificationsView()
+                                case .notificationSettings:
+                                    NotificationSettingsView()
+                                default:
+                                    EmptyView()
+                                }
+                            }
                     }
                 }
             }

@@ -21,6 +21,7 @@ struct Home: Codable, Identifiable, Hashable {
     var scrambleMode: Bool? = nil
     var overspendAlertThreshold: Int? = nil
     var currencySymbol: String? = nil
+    var settlementMode: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -42,6 +43,7 @@ struct Home: Codable, Identifiable, Hashable {
         case scrambleMode = "scramble_mode"
         case overspendAlertThreshold = "overspend_alert_threshold"
         case currencySymbol = "currency_symbol"
+        case settlementMode = "settlement_mode"
     }
 
     /// Parsed next shop date (the DB column may be a date-only string like "2026-03-28")
@@ -86,6 +88,10 @@ struct Home: Codable, Identifiable, Hashable {
     var hasUsedTrialValue: Bool {
         hasUsedTrial ?? false
     }
+
+    var hasSharedAccount: Bool {
+        (settlementMode ?? "separate") == "shared"
+    }
 }
 
 enum SubscriptionStatus: String {
@@ -116,6 +122,9 @@ struct HomeMember: Codable, Identifiable, Hashable {
     var personalIncome: Decimal? = nil
     var incomeVisibleToPartner: Bool? = nil
     var incomeSetAt: Date? = nil
+    // Payment handles
+    var paypalUsername: String? = nil
+    var monzoUsername: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -129,5 +138,7 @@ struct HomeMember: Codable, Identifiable, Hashable {
         case personalIncome = "personal_income"
         case incomeVisibleToPartner = "income_visible_to_partner"
         case incomeSetAt = "income_set_at"
+        case paypalUsername = "paypal_username"
+        case monzoUsername = "monzo_username"
     }
 }

@@ -30,7 +30,15 @@ struct MoneySettingsView: View {
     @State private var currency = "£"
     @State private var showCurrencyPicker = false
 
+    // Settle up section
+    @State private var settlementMode = "separate"
+    @State private var paypalHandleText = ""
+    @State private var monzoHandleText  = ""
+    @State private var isSavingHandles  = false
+    @State private var showHandlesSaved = false
+
     private let incomeService = HouseholdIncomeService()
+    private let homeService   = HomeService()
     private var sym: String { currency }
 
     private var myIncome: Decimal { Decimal(string: myIncomeText.replacingOccurrences(of: ",", with: "")) ?? 0 }
@@ -54,6 +62,7 @@ struct MoneySettingsView: View {
                 FigmaBackHeader(title: "Money", accent: .roostPrimary)
                 incomeCard
                 privacyCard
+                settleUpCard
                 budgetCard
                 currencyCard
             }
@@ -508,7 +517,169 @@ struct MoneySettingsView: View {
         }
     }
 
+    // MARK: - Settle Up Card
+
+    private var settleUpCard: some View {
+        RoostCard {
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack(spacing: DesignSystem.Spacing.inline) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.roostMoneyTint.opacity(0.10))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "arrow.left.arrow.right.circle.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.roostMoneyTint)
+                    }
+                    Text("Settle up")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .padding(.bottom, DesignSystem.Spacing.row)
+
+                // Mode picker
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("How do you settle up?")
+                        .font(.roostBody.weight(.medium))
+                        .foregroundStyle(Color.roostForeground)
+                    Text("Shared account — settle up is disabled. Separate accounts — payment options appear when settling.")
+                        .font(.roostCaption)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 12)
+                .padding(.bottom, DesignSystem.Spacing.inline)
+
+                HStack(spacing: 6) {
+                    ForEach([("shared", "Shared account"), ("separate", "Separate accounts")], id: \.0) { value, label in
+                        Button {
+                            settlementMode = value
+                            Task {
+                                guard let homeId = homeManager.homeId else { return }
+                                try? await settingsVM.updateSetting(\.settlementMode, value: value, homeId: homeId)
+                            }
+                        } label: {
+                            Text(label)
+                                .font(.roostLabel)
+                                .foregroundStyle(settlementMode == value ? Color.roostCard : Color.roostMutedForeground)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                                .background(
+                                    settlementMode == value ? Color.roostMoneyTint : Color.roostInput,
+                                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.roostSnappy, value: settlementMode)
+                    }
+                }
+
+                if settlementMode == "separate" {
+                    Divider().overlay(Color.roostHairline)
+                        .padding(.top, 16)
+
+                    // PayPal handle
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Your PayPal.me username")
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Your partner is directed here to pay you.")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, DesignSystem.Spacing.inline)
+
+                    HStack(spacing: 8) {
+                        Text("paypal.me/")
+                            .font(.roostBody)
+                            .foregroundStyle(Color.roostMutedForeground)
+                        TextField("username", text: $paypalHandleText)
+                            .keyboardType(.asciiCapable)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                            .tint(Color.roostPrimary)
+                    }
+                    .padding(.horizontal, DesignSystem.Spacing.card)
+                    .frame(height: 44)
+                    .background(Color.roostInput, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                            .strokeBorder(Color.roostHairline, lineWidth: 1)
+                    )
+
+                    Divider().overlay(Color.roostHairline)
+                        .padding(.top, 16)
+
+                    // Monzo handle
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Your Monzo.me username")
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                        Text("Your partner is directed here to pay you.")
+                            .font(.roostCaption)
+                            .foregroundStyle(Color.roostMutedForeground)
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, DesignSystem.Spacing.inline)
+
+                    HStack(spacing: 8) {
+                        Text("monzo.me/")
+                            .font(.roostBody)
+                            .foregroundStyle(Color.roostMutedForeground)
+                        TextField("username", text: $monzoHandleText)
+                            .keyboardType(.asciiCapable)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.roostBody.weight(.medium))
+                            .foregroundStyle(Color.roostForeground)
+                            .tint(Color.roostPrimary)
+                    }
+                    .padding(.horizontal, DesignSystem.Spacing.card)
+                    .frame(height: 44)
+                    .background(Color.roostInput, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.sm, style: .continuous)
+                            .strokeBorder(Color.roostHairline, lineWidth: 1)
+                    )
+
+                    RoostButton(
+                        title: showHandlesSaved ? "Saved" : "Save payment handles",
+                        systemImage: showHandlesSaved ? "checkmark" : nil,
+                        isLoading: isSavingHandles
+                    ) {
+                        Task { await savePaymentHandles() }
+                    }
+                    .disabled(isSavingHandles)
+                    .padding(.top, DesignSystem.Spacing.inline)
+                    .padding(.bottom, 12)
+                }
+            }
+        }
+        .animation(.roostEaseOut, value: settlementMode)
+    }
+
     // MARK: - Data loading
+
+    private func savePaymentHandles() async {
+        guard let member = homeManager.currentMember else { return }
+        isSavingHandles = true
+        let paypal = paypalHandleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let monzo  = monzoHandleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        try? await homeService.updateMemberPaymentHandles(
+            id: member.id,
+            paypalUsername: paypal.isEmpty ? nil : paypal,
+            monzoUsername:  monzo.isEmpty  ? nil : monzo
+        )
+        await homeManager.refreshCurrentHome()
+        isSavingHandles = false
+        withAnimation { showHandlesSaved = true }
+        try? await Task.sleep(for: .seconds(2))
+        withAnimation { showHandlesSaved = false }
+    }
 
     private func loadData() async {
         guard let homeId = homeManager.homeId,
@@ -538,6 +709,11 @@ struct MoneySettingsView: View {
         currency = settingsVM.settings.currencySymbol
         scrambleMode = settingsVM.settings.scrambleMode
         hideBalances = UserDefaults.standard.bool(forKey: "roost-hide-balances")
+        settlementMode = settingsVM.settings.settlementMode
+        if let member = homeManager.currentMember {
+            paypalHandleText = member.paypalUsername ?? ""
+            monzoHandleText  = member.monzoUsername  ?? ""
+        }
     }
 
     private func saveMyIncome() async {

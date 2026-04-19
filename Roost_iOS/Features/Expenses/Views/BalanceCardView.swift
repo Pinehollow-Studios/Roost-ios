@@ -4,7 +4,10 @@ struct BalanceCardView: View {
     let balance: Decimal
     let currencyCode: String
     let partnerName: String
+    let hasSharedAccount: Bool
     let onSettleUp: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         RoostHeroCard(tint: balanceTint) {
@@ -31,7 +34,7 @@ struct BalanceCardView: View {
                         .foregroundStyle(balanceTint)
                 }
 
-                if balance != 0 {
+                if balance != 0 && !hasSharedAccount {
                     HStack(spacing: Spacing.sm) {
                         RoostStatCard(
                             title: "Status",
@@ -40,8 +43,33 @@ struct BalanceCardView: View {
                         )
                         .frame(maxWidth: .infinity)
 
-                        RoostButton(title: "Settle up", variant: .secondary, systemImage: "arrow.left.arrow.right", action: onSettleUp)
-                            .frame(maxWidth: 150)
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onSettleUp()
+                        } label: {
+                            HStack(spacing: Spacing.sm) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                    .font(.roostLabel)
+                                Text("Settle up")
+                                    .font(.roostLabel)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: DesignSystem.Size.buttonHeight)
+                            .padding(.horizontal, DesignSystem.Spacing.card)
+                        }
+                        .buttonStyle(
+                            RoostPressableButtonStyle(
+                                reduceMotion: reduceMotion,
+                                backgroundColor: balanceTint,
+                                foregroundColor: .roostWarmWhite,
+                                borderColor: .clear,
+                                borderWidth: 0,
+                                cornerRadius: RoostTheme.controlCornerRadius,
+                                showHighlight: true
+                            )
+                        )
+                        .frame(maxWidth: 150)
                     }
                 }
             }
