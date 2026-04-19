@@ -45,7 +45,6 @@ struct LockScreenView: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.xl)
         }
-        .preferredColorScheme(.dark)
         .background(_SecureTextField().frame(width: 0, height: 0))
         .onAppear {
             preventScreenshotWindowState()

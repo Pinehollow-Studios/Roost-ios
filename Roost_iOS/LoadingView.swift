@@ -12,9 +12,9 @@ import Combine
 struct LoadingView: View {
     var statusText: String = "Settling in"
     var speedMultiplier: Double = 1.0
-    /// When true, renders the midnight-to-dawn gradient (same as AuthLoadingView / LockScreenView)
-    /// and forces dark mode. Use for the session-restore screen so the full auth flow shares
-    /// one consistent background.
+    /// When true, renders the shared dawn gradient (same as AuthLoadingView / LockScreenView)
+    /// so the full auth flow shares one consistent background. DawnBackground is itself
+    /// adaptive — light mode renders a warm-sand sky, dark mode renders pre-dawn night.
     var isDawn: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,10 +26,10 @@ struct LoadingView: View {
     @State private var wispOffset: CGFloat = -0.4     // -0.4 → 0.3
     @State private var wispOpacity: Double = 0
 
-    /// True when this view should render in dark palette — either forced by isDawn
-    /// or because the system is already in dark mode. Using a local flag avoids the
-    /// one-frame lag that happens when .preferredColorScheme(.dark) propagates.
-    private var isEffectivelyDark: Bool { isDawn || colorScheme == .dark }
+    /// True when the current system scheme is dark. Used to tint internal effects
+    /// (window-light shaft, icon shadow). The dawn background itself is adaptive
+    /// via `DawnBackground`, so we no longer force-dark on `isDawn`.
+    private var isEffectivelyDark: Bool { colorScheme == .dark }
 
     private let dotTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
@@ -151,7 +151,6 @@ struct LoadingView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .preferredColorScheme(isDawn ? .dark : nil)
         .onAppear {
             guard !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.5 / speedMultiplier).repeatForever(autoreverses: true)) {
