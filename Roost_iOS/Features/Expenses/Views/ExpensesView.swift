@@ -802,7 +802,7 @@ private struct ExpenseActionsSheet: View {
                     actionButton(
                         title: "Edit Expense",
                         systemImage: "square.and.pencil",
-                        tint: .roostSecondary,
+                        tint: .roostSecondaryInteractive,
                         action: onEdit
                     )
 
