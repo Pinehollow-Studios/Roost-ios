@@ -115,19 +115,45 @@ enum DesignSystem {
     }
 
     enum Typography {
-        // Structural headings — bold weight for clear visual hierarchy
-        static let pageTitle = Font.custom("DMSans-Medium", size: 26, relativeTo: .title2).bold()
-        static let sectionHeading = Font.custom("DMSans-Medium", size: 20, relativeTo: .title3).bold()
-        static let cardTitle = Font.custom("DMSans-Medium", size: 17, relativeTo: .headline).bold()
-        // Body and utility — regular/medium for comfortable reading
+        // Explicit DM Sans face names so SwiftUI binds weights reliably.
+        // The design-system spec (colors_and_type.css) sets a specific weight per token;
+        // relying on `.bold()` modifiers on a custom Medium cut was fragile.
+
+        // Structural headings — Bold (700)
+        /// Page titles (26pt Bold, -0.005em tracking — apply `.tracking(pageTitleTracking)` at use).
+        static let pageTitle = Font.custom("DMSans-Bold", size: 26, relativeTo: .title2)
+        /// Section headings (20pt Bold).
+        static let sectionHeading = Font.custom("DMSans-Bold", size: 20, relativeTo: .title3)
+        /// Card headers (17pt Semibold — `--fs-card-title` + `h4, .roost-card-title` in CSS).
+        static let cardTitle = Font.custom("DMSans-SemiBold", size: 17, relativeTo: .headline)
+
+        // Body and utility
+        /// Standard body (15pt Regular).
         static let body = Font.custom("DMSans-Regular", size: 15, relativeTo: .body)
+        /// Buttons, tags, form labels (13pt Medium).
         static let label = Font.custom("DMSans-Medium", size: 13, relativeTo: .subheadline)
+        /// Timestamps, secondary meta (12pt Regular).
         static let caption = Font.custom("DMSans-Regular", size: 12, relativeTo: .caption)
+        /// Eyebrow / badges (11pt Medium). Apply `.tracking(microTracking)` + `.textCase(.uppercase)` at usage.
         static let micro = Font.custom("DMSans-Medium", size: 11, relativeTo: .caption2)
-        // Hero display — bold for large panel headlines and greetings
-        static let heroNumber = Font.custom("DMSans-Medium", size: 34, relativeTo: .largeTitle).bold()
-        static let largeGreeting = Font.custom("DMSans-Medium", size: 28, relativeTo: .largeTitle).bold()
+        /// Tab-bar labels (10pt Medium).
         static let tabLabel = Font.custom("DMSans-Medium", size: 10, relativeTo: .caption2)
+
+        // Hero display — Bold
+        /// Large stats, money amounts (34pt Bold, -0.01em tracking).
+        static let heroNumber = Font.custom("DMSans-Bold", size: 34, relativeTo: .largeTitle)
+        /// Hero greetings (28pt Bold, -0.01em tracking).
+        static let largeGreeting = Font.custom("DMSans-Bold", size: 28, relativeTo: .largeTitle)
+
+        // ---- Tracking tokens (points, converted from em). Apply with `.tracking(...)` at use. ----
+        /// -0.01em at 34pt.
+        static let heroNumberTracking: CGFloat = -0.34
+        /// -0.01em at 28pt.
+        static let largeGreetingTracking: CGFloat = -0.28
+        /// -0.005em at 26pt.
+        static let pageTitleTracking: CGFloat = -0.13
+        /// +1px tracking on ALL-CAPS eyebrow / micro labels.
+        static let microTracking: CGFloat = 1
     }
 
     enum Motion {
