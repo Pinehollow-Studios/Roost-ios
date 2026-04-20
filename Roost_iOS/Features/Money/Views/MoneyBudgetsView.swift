@@ -1,53 +1,5 @@
 import SwiftUI
 
-// MARK: - Section definition
-
-private struct BudgetSectionDef: Identifiable {
-    let id: String
-    let label: String
-    let isFixed: Bool
-
-    var headerBorderColour: Color {
-        isFixed ? Color.roostPrimary : Color.roostSecondary
-    }
-    var headerBgColour: Color {
-        isFixed ? Color.roostPrimary.opacity(0.10) : Color.roostSecondary.opacity(0.10)
-    }
-    var allocationColour: Color {
-        switch id {
-        case "housing-bills":         return Color(hex: 0xD4795E) // terracotta
-        case "subscriptions-leisure": return Color(hex: 0xE6A563) // warm amber
-        case "transport":             return Color(hex: 0x337DD6) // money blue
-        case "food-drink":            return Color(hex: 0x7FA087) // sage-green
-        case "household":             return Color(hex: 0x9DB19F) // sage
-        case "personal":              return Color(hex: 0xB88B7E) // warm brown
-        case "savings":               return Color(hex: 0x6B8FAF) // muted slate-blue
-        default:                      return Color.roostMutedForeground
-        }
-    }
-    var suggestions: [String] {
-        switch id {
-        case "housing-bills":         return ["Rent", "Mortgage", "Council Tax", "Gas & Electricity", "Water", "Broadband", "Contents Insurance", "TV Licence"]
-        case "subscriptions-leisure": return ["Netflix", "Spotify", "Disney+", "Amazon Prime", "Gym", "Game Pass", "iCloud", "Other subscriptions"]
-        case "transport":             return ["Public transport", "Fuel", "Car insurance", "Parking", "Taxi/Uber", "Rail season ticket"]
-        case "food-drink":            return ["Groceries", "Eating out", "Takeaways", "Coffee & cafés", "Work lunches"]
-        case "household":             return ["Cleaning & toiletries", "Small home items", "Household repairs"]
-        case "personal":              return ["Personal spending", "Clothing", "Haircuts", "Gifts", "Health & wellbeing"]
-        case "savings":               return ["Emergency fund", "Holiday fund", "ISA savings", "Other savings"]
-        default:                      return []
-        }
-    }
-    static let all: [BudgetSectionDef] = [
-        .init(id: "housing-bills",         label: "Housing & bills",         isFixed: true),
-        .init(id: "subscriptions-leisure", label: "Subscriptions & leisure", isFixed: true),
-        .init(id: "transport",             label: "Transport",                isFixed: true),
-        .init(id: "food-drink",            label: "Food & drink",             isFixed: false),
-        .init(id: "household",             label: "Household",                isFixed: false),
-        .init(id: "personal",              label: "Personal",                 isFixed: false),
-        .init(id: "savings",               label: "Savings allocation",       isFixed: false),
-    ]
-}
-
 // MARK: - MoneyBudgetsView
 
 struct MoneyBudgetsView: View {
@@ -75,9 +27,12 @@ struct MoneyBudgetsView: View {
     // Split slider debounce
     @State private var sliderDebounceTasks: [UUID: Task<Void, Never>] = [:]
 
-    // Add line sheet
-    @State private var showAddSheet = false
-    @State private var addSheetSection: BudgetSectionDef? = nil
+    // Inline add
+    @State private var inlineAddSection: String? = nil
+    @State private var inlineAddName = ""
+    @State private var inlineAddAmount = ""
+    @State private var inlineAddDay: Int = 1
+    @State private var inlineAddSaving = false
 
     // Note editor
     @State private var showNoteEditor = false
@@ -86,6 +41,7 @@ struct MoneyBudgetsView: View {
 
     // Remove
     @State private var removeTarget: BudgetTemplateLine? = nil
+    @State private var showBreakdown = false
 
     // MARK: - Derived
 
@@ -232,17 +188,14 @@ struct MoneyBudgetsView: View {
                     }
                     .padding(.horizontal, DesignSystem.Spacing.page)
 
-                    VStack(alignment: .leading, spacing: 18) {
-                        monthNavigatorRow
-
-                        if isCurrentMonth {
-                            viewModeRow
-                        }
+                    VStack(alignment: .leading, spacing: 14) {
+                        controlRow
 
                         summaryCardsSection
 
-                        if isCurrentMonth && income > 0 && !budgetVM.activeLines.isEmpty {
+                        if showBreakdown && isCurrentMonth && income > 0 && !budgetVM.activeLines.isEmpty {
                             incomeAllocationBar(scrollProxy: scrollProxy)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                     }
                     .padding(.horizontal, DesignSystem.Spacing.page)
@@ -286,19 +239,6 @@ struct MoneyBudgetsView: View {
         .onAppear {
             loadCollapsedSections()
         }
-        .sheet(isPresented: $showAddSheet) {
-            if let section = addSheetSection {
-                AddBudgetLineSheet(
-                    sectionId: section.id,
-                    sectionLabel: section.label,
-                    isFixed: section.isFixed,
-                    suggestions: section.suggestions,
-                    currencySymbol: sym
-                ) { line, _ in
-                    try await budgetVM.addLine(line)
-                }
-            }
-        }
         .sheet(isPresented: $showNoteEditor) {
             if let target = noteTarget {
                 NoteEditorSheet(
@@ -341,92 +281,113 @@ struct MoneyBudgetsView: View {
 private extension MoneyBudgetsView {
 
     var summaryCardsSection: some View {
-        VStack(spacing: 0) {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 0),
-                    GridItem(.flexible(), spacing: 0)
-                ],
-                spacing: 0
-            ) {
-                metricCell(
-                    label: "INCOME",
-                    value: income > 0 ? scramble.format(income, symbol: sym) : "Not set",
-                    valueColour: income > 0 ? Color.roostForeground : Color.roostPrimary
-                )
-                metricCell(
-                    label: "BUDGETED",
-                    value: scramble.format(totalBudgeted, symbol: sym)
-                )
-                metricCell(
-                    label: "UNALLOCATED",
-                    value: scramble.format(unallocated, symbol: sym),
-                    valueColour: unallocatedColour
-                )
-                metricCell(
-                    label: "SPENT",
-                    value: scramble.format(actualSpend, symbol: sym)
-                )
-            }
+        RoostCard(prominence: .hero(accent: .roostMoneyTint)) {
+            VStack(alignment: .leading, spacing: 14) {
 
-            moneyHairline
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("BUDGET HEALTH")
-                        .font(.system(size: 9, weight: .medium))
-                        .tracking(1.0)
-                        .foregroundStyle(Color.roostMutedForeground)
-                    Text(healthRating)
-                        .font(.system(size: 14, weight: .medium))
+                // Eyebrow + health pill
+                HStack(alignment: .center) {
+                    Text("BUDGETS")
+                        .font(.roostMeta)
+                        .tracking(1.2)
+                        .foregroundStyle(Color.roostMoneyTint)
+                    Spacer()
+                    Text("\(healthRating)  \(healthScore)/100")
+                        .font(.roostMeta)
                         .foregroundStyle(healthColour)
-                    Text("Income vs spend vs savings rate")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.roostMutedForeground)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(healthColour.opacity(0.14), in: Capsule())
+                        .overlay(Capsule().stroke(healthColour.opacity(0.22), lineWidth: 1))
                 }
-                Spacer()
-                Text("\(healthScore)/100")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+
+                // Hero figure — total budgeted
+                Text(scramble.format(totalBudgeted, symbol: sym))
+                    .font(.roostHero)
+                    .foregroundStyle(Color.roostMoneyTint)
+                    .minimumScaleFactor(0.72)
+                    .lineLimit(1)
+
+                // Stat chips
+                HStack(spacing: 6) {
+                    budgetStatChip(
+                        label: "INCOME",
+                        value: income > 0 ? scramble.format(income, symbol: sym) : "Not set",
+                        tint: income > 0 ? Color.roostMoneyTint : Color.roostPrimary
+                    )
+                    budgetStatChip(
+                        label: "SPENT",
+                        value: scramble.format(actualSpend, symbol: sym),
+                        tint: spentPct > 100 ? Color.roostDestructive : spentPct >= 80 ? Color.roostWarning : Color.roostForeground
+                    )
+                    budgetStatChip(
+                        label: "FREE",
+                        value: scramble.format(unallocated, symbol: sym),
+                        tint: unallocatedColour
+                    )
+                }
+
+                // Progress bar
+                if totalBudgeted > 0 {
+                    let progress = min(spentPct / 100.0, 1.0)
+                    let barColour: Color = spentPct > 100 ? .roostDestructive : spentPct >= 80 ? .roostWarning : .roostSuccess
+                    VStack(alignment: .leading, spacing: 6) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.roostMuted.opacity(0.55))
+                                    .frame(height: 6)
+                                Capsule()
+                                    .fill(barColour)
+                                    .frame(width: geo.size.width * progress, height: 6)
+                            }
+                        }
+                        .frame(height: 6)
+
+                        HStack {
+                            Text("\(Int(spentPct))% of budget spent")
+                                .font(.roostCaption)
+                                .foregroundStyle(Color.roostMutedForeground)
+                            Spacer()
+                            if isCurrentMonth && income > 0 && !budgetVM.activeLines.isEmpty {
+                                Button {
+                                    withAnimation(.roostSnappy) { showBreakdown.toggle() }
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Text(showBreakdown ? "Hide" : "Breakdown")
+                                            .font(.roostCaption)
+                                            .foregroundStyle(Color.roostMoneyTint)
+                                        Image(systemName: showBreakdown ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 9, weight: .medium))
+                                            .foregroundStyle(Color.roostMoneyTint)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
-        .moneyBudgetPanel()
     }
 
-    func metricCell(label: String, value: String, valueColour: Color = Color.roostForeground, subtext: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    func budgetStatChip(label: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 9, weight: .medium))
-                .tracking(1.0)
+                .font(.roostMeta)
                 .foregroundStyle(Color.roostMutedForeground)
             Text(value)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(valueColour)
+                .font(.roostLabel)
+                .foregroundStyle(tint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            if let sub = subtext {
-                Text(sub)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.roostMutedForeground)
-                    .lineLimit(1)
-            }
         }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
-            Rectangle()
-                .fill(Color.roostHairline)
-                .frame(width: 1),
-            alignment: .trailing
-        )
-        .overlay(
-            Rectangle()
-                .fill(Color.roostHairline)
-                .frame(height: 1),
-            alignment: .bottom
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
         )
     }
 }
@@ -495,19 +456,12 @@ private extension MoneyBudgetsView {
     }
 }
 
-// MARK: - Month navigator
+// MARK: - Control row (month navigator + view mode)
 
 private extension MoneyBudgetsView {
 
-    var monthNavigatorRow: some View {
-        HStack(spacing: 12) {
-            Text("MONTH")
-                .font(.system(size: 10, weight: .medium))
-                .tracking(1.2)
-                .foregroundStyle(Color.roostMutedForeground)
-
-            Spacer(minLength: 8)
-
+    var controlRow: some View {
+        HStack(spacing: 10) {
             MonthNavigator(
                 label: monthLabel,
                 onPrevious: { navigateBudgetMonth(direction: -1) },
@@ -516,28 +470,13 @@ private extension MoneyBudgetsView {
                 isPro: true,
                 onProGate: {}
             )
-        }
-        .padding(12)
-        .moneyBudgetPanel()
-    }
-
-    var viewModeRow: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("VIEW")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.2)
-                    .foregroundStyle(Color.roostMutedForeground)
-                Text("Current budget")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+            Spacer(minLength: 0)
+            if isCurrentMonth {
+                BudgetViewPicker(showSplit: $showSplit)
             }
-
-            Spacer()
-
-            BudgetViewPicker(showSplit: $showSplit)
         }
-        .padding(12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .moneyBudgetPanel()
     }
 
@@ -649,7 +588,7 @@ private extension MoneyBudgetsView {
 
             Text(scramble.format(remaining, symbol: sym))
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(remaining >= 0 ? Color(hex: 0x2EBA70) : Color.roostDestructive)
+                .foregroundStyle(remaining >= 0 ? Color.roostSuccess : Color.roostDestructive)
                 .frame(width: 78, alignment: .trailing)
         }
         .padding(.vertical, 10)
@@ -674,7 +613,7 @@ private extension MoneyBudgetsView {
 
             Text(scramble.format(remaining, symbol: sym))
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(remaining >= 0 ? Color(hex: 0x2EBA70) : Color.roostDestructive)
+                .foregroundStyle(remaining >= 0 ? Color.roostSuccess : Color.roostDestructive)
                 .frame(width: 78, alignment: .trailing)
         }
         .padding(.vertical, 11)
@@ -717,7 +656,7 @@ private extension MoneyBudgetsView {
 
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.roostSnappy) {
                     if collapsed {
                         collapsedSections.remove(section.id)
                         UserDefaults.standard.set(true, forKey: "roost-budget-section-\(section.id)")
@@ -727,28 +666,44 @@ private extension MoneyBudgetsView {
                     }
                 }
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: collapsed ? "chevron.right" : "chevron.down")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(Color.roostMutedForeground)
-                        .animation(.easeInOut(duration: 0.2), value: collapsed)
+                let sectionBudgeted = lines.reduce(Decimal(0)) { acc, line in
+                    acc + budgetVM.getEffectiveAmount(lineId: line.id, month: currentMonth)
+                }
+                HStack(spacing: 10) {
+                    // Colored icon circle
+                    RoostIconContainer(
+                        systemImage: section.sfSymbol,
+                        tint: section.allocationColour,
+                        size: .custom(30, iconSize: 14)
+                    )
 
-                    Text(section.label)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.roostForeground)
+                    // Label + type badge
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(section.label)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.roostForeground)
+                        Text(section.isFixed ? "Fixed" : "Lifestyle")
+                            .font(.roostMeta)
+                            .foregroundStyle(section.allocationColour)
+                    }
 
                     Spacer()
 
-                    // Type badge
-                    Text(section.isFixed ? "Fixed" : "Lifestyle")
-                        .font(.system(size: 9, weight: .medium))
-                        .padding(.horizontal, 7)
-                        .frame(height: 22)
-                        .background(section.headerBorderColour.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .foregroundStyle(section.headerBorderColour)
+                    // Section total (shown when collapsed or always)
+                    if sectionBudgeted > 0 {
+                        Text(scramble.format(sectionBudgeted, symbol: sym))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(section.allocationColour)
+                    }
+
+                    // Chevron
+                    Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .animation(.roostSnappy, value: collapsed)
                 }
-                .padding(.vertical, 11)
-                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
                 .background(section.headerBgColour)
                 .overlay(
@@ -854,10 +809,15 @@ private extension MoneyBudgetsView {
                     }
                 }
 
-                // Add row (edit mode only)
+                // Add row or inline add form (edit mode only)
                 if editMode {
-                    addRow(section: section)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    if inlineAddSection == section.id {
+                        inlineAddRow(section: section)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    } else {
+                        addRow(section: section)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
 
                 // Section total
@@ -904,31 +864,212 @@ private extension MoneyBudgetsView {
 
     func addRow(section: BudgetSectionDef) -> some View {
         Button {
-            addSheetSection = section
-            showAddSheet = true
+            inlineAddName = ""
+            inlineAddAmount = ""
+            inlineAddDay = 1
+            inlineAddSaving = false
+            withAnimation(.roostSnappy) { inlineAddSection = section.id }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "plus")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(hex: 0x9DB19F))
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(section.allocationColour)
                 Text("Add \(section.isFixed ? "fixed cost" : section.label.lowercased() + " line")")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: 0x9DB19F))
+                    .font(.roostLabel)
+                    .foregroundStyle(section.allocationColour)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
         .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(
-                    style: StrokeStyle(lineWidth: 0.5, dash: [4])
-                )
-                .foregroundStyle(Color(hex: 0x9DB19F).opacity(0.4))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 3)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                .foregroundStyle(section.allocationColour.opacity(0.35))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
         )
+    }
+
+    // MARK: Inline add form
+
+    @ViewBuilder
+    func inlineAddRow(section: BudgetSectionDef) -> some View {
+        let canSave = !inlineAddName.trimmingCharacters(in: .whitespaces).isEmpty && !inlineAddAmount.isEmpty && !inlineAddSaving
+
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 12) {
+
+                // Row 1: name field
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("NAME")
+                        .font(.roostMeta)
+                        .tracking(0.8)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    TextField("e.g. \(section.suggestions.first ?? "Line item")", text: $inlineAddName)
+                        .font(.roostBody)
+                        .foregroundStyle(Color.roostForeground)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 9)
+                        .background(Color.roostMuted.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(inlineAddName.isEmpty ? Color.clear : section.allocationColour.opacity(0.4), lineWidth: 1)
+                        )
+                }
+
+                // Row 2: amount + (fixed: day of month)
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("AMOUNT")
+                            .font(.roostMeta)
+                            .tracking(0.8)
+                            .foregroundStyle(Color.roostMutedForeground)
+                        HStack(spacing: 4) {
+                            Text(sym)
+                                .font(.roostBody)
+                                .foregroundStyle(Color.roostMutedForeground)
+                            TextField("0.00", text: $inlineAddAmount)
+                                .keyboardType(.decimalPad)
+                                .font(.roostBody)
+                                .toolbar {
+                                    ToolbarItemGroup(placement: .keyboard) {
+                                        Spacer()
+                                        Button {
+                                            UIApplication.shared.sendAction(
+                                                #selector(UIResponder.resignFirstResponder),
+                                                to: nil, from: nil, for: nil
+                                            )
+                                        } label: {
+                                            Text("Done")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 6)
+                                                .background(section.allocationColour, in: Capsule())
+                                        }
+                                    }
+                                }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 9)
+                        .background(Color.roostMuted.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(inlineAddAmount.isEmpty ? Color.clear : section.allocationColour.opacity(0.4), lineWidth: 1)
+                        )
+                    }
+
+                    if section.isFixed {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("DAY")
+                                .font(.roostMeta)
+                                .tracking(0.8)
+                                .foregroundStyle(Color.roostMutedForeground)
+                            HStack(spacing: 0) {
+                                Button {
+                                    if inlineAddDay > 1 { inlineAddDay -= 1 }
+                                } label: {
+                                    Image(systemName: "minus")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(inlineAddDay > 1 ? Color.roostForeground : Color.roostMutedForeground)
+                                        .frame(width: 36, height: 38)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                Text(ordinal(inlineAddDay))
+                                    .font(.roostLabel)
+                                    .foregroundStyle(Color.roostForeground)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                Button {
+                                    if inlineAddDay < 31 { inlineAddDay += 1 }
+                                } label: {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(inlineAddDay < 31 ? Color.roostForeground : Color.roostMutedForeground)
+                                        .frame(width: 36, height: 38)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .background(Color.roostMuted.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.roostHairline, lineWidth: 1))
+                        }
+                        .frame(width: 130)
+                    }
+                }
+
+                // Row 3: save / cancel buttons
+                HStack(spacing: 8) {
+                    Button {
+                        withAnimation(.roostSnappy) { inlineAddSection = nil }
+                    } label: {
+                        Text("Cancel")
+                            .font(.roostLabel)
+                            .foregroundStyle(Color.roostMutedForeground)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.roostMuted.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        commitInlineAdd(section: section)
+                    } label: {
+                        if inlineAddSaving {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                        } else {
+                            Text("Save")
+                                .font(.roostLabel)
+                                .foregroundStyle(canSave ? Color.white : Color.roostMutedForeground)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(canSave ? section.allocationColour : Color.roostMuted.opacity(0.45), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSave)
+                }
+            }
+            .padding(.vertical, 14)
+            .padding(.horizontal, 14)
+            .background(section.allocationColour.opacity(0.05))
+
+            BudgetHairline()
+        }
+    }
+
+    private func commitInlineAdd(section: BudgetSectionDef) {
+        let name = inlineAddName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let amount = Decimal(string: inlineAddAmount), amount > 0 else { return }
+        inlineAddSaving = true
+        let day = section.isFixed ? inlineAddDay : nil
+        let line = CreateBudgetLine(
+            homeId: homeManager.homeId ?? UUID(),
+            name: name,
+            amount: amount,
+            budgetType: section.isFixed ? "fixed" : "envelope",
+            sectionGroup: section.id,
+            dayOfMonth: day,
+            isAnnual: false,
+            annualAmount: nil,
+            rolloverEnabled: !section.isFixed,
+            ownership: "shared",
+            member1Percentage: 50,
+            note: nil,
+            sortOrder: 0,
+            isActive: true
+        )
+        Task {
+            try? await budgetVM.addLine(line)
+            await MainActor.run {
+                inlineAddSaving = false
+                withAnimation(.roostSnappy) { inlineAddSection = nil }
+            }
+        }
     }
 
     // MARK: Section total
@@ -949,39 +1090,37 @@ private extension MoneyBudgetsView {
 
         return HStack(spacing: 0) {
             Text("\(section.label) total")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color.roostMutedForeground)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if showSplit {
                 Text(scramble.format(totalMe, symbol: sym))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(section.allocationColour)
                     .frame(width: 65, alignment: .trailing)
                 Text(scramble.format(totalPartner, symbol: sym))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(section.allocationColour)
                     .frame(width: 65, alignment: .trailing)
             } else if section.isFixed {
                 Text(scramble.format(totalBudgetedSection, symbol: sym))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(section.allocationColour)
                     .frame(width: 72, alignment: .trailing)
             } else {
                 Text(scramble.format(totalBudgetedSection, symbol: sym))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(section.allocationColour)
                     .frame(width: 70, alignment: .trailing)
                 Text(scramble.format(totalRemainingSection, symbol: sym))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(totalRemainingSection >= 0
-                        ? Color(hex: 0x3b6d11)
-                        : Color(hex: 0xa32d2d))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(totalRemainingSection >= 0 ? Color.roostSuccess : Color.roostDestructive)
                     .frame(width: 70, alignment: .trailing)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
         .background(Color.roostMuted.opacity(0.32))
         .overlay(moneyHairline, alignment: .top)
     }
@@ -1003,35 +1142,50 @@ private extension MoneyBudgetsView {
         let totalPartner = budgetVM.totalBudgeted - totalMe
 
         return HStack(spacing: 0) {
-            Text("Total budgeted")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.roostForeground)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("TOTAL BUDGETED")
+                    .font(.roostMeta)
+                    .tracking(0.8)
+                    .foregroundStyle(Color.roostMutedForeground)
+                Text(scramble.format(budgetVM.totalBudgeted, symbol: sym))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.roostForeground)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if showSplit {
-                Text(scramble.format(totalMe, symbol: sym))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
-                    .frame(width: 65, alignment: .trailing)
-                Text(scramble.format(totalPartner, symbol: sym))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
-                    .frame(width: 65, alignment: .trailing)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("ME")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text(scramble.format(totalMe, symbol: sym))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .frame(width: 65, alignment: .trailing)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("PARTNER")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text(scramble.format(totalPartner, symbol: sym))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.roostForeground)
+                }
+                .frame(width: 65, alignment: .trailing)
             } else {
-                Text(scramble.format(budgetVM.totalBudgeted, symbol: sym))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.roostForeground)
-                    .frame(width: 70, alignment: .trailing)
-                Text(scramble.format(totalRemaining, symbol: sym))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(totalRemaining >= 0
-                        ? Color(hex: 0x3b6d11)
-                        : Color(hex: 0xa32d2d))
-                    .frame(width: 70, alignment: .trailing)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("REMAINING")
+                        .font(.roostMeta)
+                        .foregroundStyle(Color.roostMutedForeground)
+                    Text(scramble.format(totalRemaining, symbol: sym))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(totalRemaining >= 0 ? Color.roostSuccess : Color.roostDestructive)
+                }
+                .frame(width: 80, alignment: .trailing)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
         .moneyBudgetPanel()
     }
 }
@@ -1041,25 +1195,41 @@ private extension MoneyBudgetsView {
 private extension MoneyBudgetsView {
 
     var emptyState: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "list.bullet.rectangle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.roostPrimary.opacity(0.4))
-            Text("Set up your budget")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Color.roostForeground)
-            Text("Add your fixed costs and lifestyle budgets. They carry forward every month automatically.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.roostMutedForeground)
-                .multilineTextAlignment(.center)
-            Button("Set up budget") {
-                withAnimation(.easeInOut(duration: 0.25)) { editMode = true }
+        RoostCard(prominence: .elevated) {
+            VStack(spacing: 16) {
+                RoostIconContainer(
+                    systemImage: "list.bullet.rectangle.fill",
+                    tint: .roostMoneyTint,
+                    size: .custom(52, iconSize: 24)
+                )
+                VStack(spacing: 6) {
+                    Text("Set up your budget")
+                        .font(.roostCardTitle)
+                        .foregroundStyle(Color.roostForeground)
+                    Text("Add your fixed costs and lifestyle budgets. They carry forward every month automatically.")
+                        .font(.roostBody)
+                        .foregroundStyle(Color.roostMutedForeground)
+                        .multilineTextAlignment(.center)
+                }
+                NavigationLink {
+                    CreateBudgetView()
+                } label: {
+                    Text("Set up budget")
+                        .font(.roostLabel)
+                        .foregroundStyle(Color.roostMoneyTint)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.roostMoneyTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.roostMoneyTint.opacity(0.25), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(Color.roostPrimary)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
-        .padding(Spacing.xxl)
-        .frame(maxWidth: .infinity)
     }
 
     var historicalEmptyState: some View {
@@ -1204,6 +1374,18 @@ private struct FixedBudgetRow: View {
             // Main row
             HStack(spacing: 0) {
 
+                // Delete button (edit mode)
+                if editMode {
+                    Button { onRemove() } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Color.roostDestructive)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 8)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                }
+
                 // Line item name
                 Group {
                     if isEditingName {
@@ -1229,7 +1411,7 @@ private struct FixedBudgetRow: View {
                                 .onTapGesture { if editMode { onNameTap() } }
                             if line.note != nil {
                                 Circle()
-                                    .fill(Color(hex: 0x9DB19F))
+                                    .fill(Color.roostSecondary)
                                     .frame(width: 5, height: 5)
                             }
                             if line.ownership == "member1" {
@@ -1252,11 +1434,22 @@ private struct FixedBudgetRow: View {
                         .foregroundStyle(Color.roostMutedForeground)
                         .frame(width: 65, alignment: .trailing)
                 } else {
-                    // DATE column
-                    Text(line.dayOfMonth.map { ordinal($0) } ?? "—")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.roostMutedForeground)
-                        .frame(width: 52, alignment: .trailing)
+                    // DATE column — styled as a compact chip
+                    Group {
+                        if let day = line.dayOfMonth {
+                            Text(ordinal(day))
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Color.roostMutedForeground)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.roostMuted.opacity(0.6), in: Capsule())
+                        } else {
+                            Text("—")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.roostMutedForeground)
+                        }
+                    }
+                    .frame(width: 52, alignment: .trailing)
 
                     // BUDGETED column
                     if isEditingAmount {
@@ -1270,6 +1463,19 @@ private struct FixedBudgetRow: View {
                                 .multilineTextAlignment(.trailing)
                                 .focused($amountFocused)
                                 .onSubmit { commitAmount() }
+                                .toolbar {
+                                    ToolbarItemGroup(placement: .keyboard) {
+                                        Spacer()
+                                        Button { commitAmount() } label: {
+                                            Text("Done")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 6)
+                                                .background(Color.roostPrimary, in: Capsule())
+                                        }
+                                    }
+                                }
                         }
                         .padding(.horizontal, 4)
                         .padding(.vertical, 3)
@@ -1306,8 +1512,8 @@ private struct FixedBudgetRow: View {
                                             .font(.system(size: 9))
                                     }
                                     .foregroundStyle(line.amount > last
-                                        ? Color(hex: 0x854f0b)
-                                        : Color(hex: 0x3b6d11))
+                                        ? Color.roostWarning
+                                        : Color.roostSuccess)
                                 }
                             }
                         }
@@ -1316,11 +1522,11 @@ private struct FixedBudgetRow: View {
                     }
                 }
             }
-            .padding(.vertical, 9)
-            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
 
-            // Split slider (edit mode, shared ownership only)
-            if editMode && line.ownership == "shared" && memberNames.hasPartner {
+            // Split slider — only when actively editing this row's amount or name
+            if (isEditingAmount || isEditingName) && line.ownership == "shared" && memberNames.hasPartner {
                 SplitSliderRow(
                     initialValue: NSDecimalNumber(decimal: line.member1Percentage).doubleValue,
                     meInitials: memberNames.meInitials,
@@ -1339,15 +1545,6 @@ private struct FixedBudgetRow: View {
                 .padding(.leading, 12)
         }
         .background(Color.clear)
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) { onRemove() } label: {
-                Label("Remove", systemImage: "trash")
-            }
-            Button { onNote() } label: {
-                Label("Note", systemImage: "note.text")
-            }
-            .tint(Color.roostSecondaryInteractive)
-        }
     }
 
     private func commitAmount() {
@@ -1436,16 +1633,16 @@ private struct LifestyleBudgetRow: View {
     private var barColour: Color {
         let spent = NSDecimalNumber(decimal: spentAmount).doubleValue
         let budget = NSDecimalNumber(decimal: effectiveBudget).doubleValue
-        if budget <= 0 { return Color(hex: 0x7fa087) }
+        if budget <= 0 { return Color.roostSuccess }
         let pct = (spent / budget) * 100
-        if pct > 100 { return Color(hex: 0xa32d2d) }
-        if pct >= 80 { return Color(hex: 0x854f0b) }
-        return Color(hex: 0x36A873)
+        if pct > 100 { return Color.roostDestructive }
+        if pct >= 80 { return Color.roostWarning }
+        return Color.roostSuccess
     }
     private var remainingColour: Color {
-        if remaining < 0 { return Color(hex: 0xa32d2d) }
-        if effectiveBudget > 0, remaining / effectiveBudget <= 0.2 { return Color(hex: 0x854f0b) }
-        return Color(hex: 0x3b6d11)
+        if remaining < 0 { return Color.roostDestructive }
+        if effectiveBudget > 0, remaining / effectiveBudget <= 0.2 { return Color.roostWarning }
+        return Color.roostSuccess
     }
     private var meAmount: Decimal {
         effectiveBudget * line.member1Percentage / 100
@@ -1458,6 +1655,18 @@ private struct LifestyleBudgetRow: View {
         VStack(spacing: 0) {
             // Main row
             HStack(spacing: 0) {
+
+                // Delete button (edit mode)
+                if editMode {
+                    Button { onRemove() } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Color.roostDestructive)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 8)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                }
 
                 // Line item name
                 Group {
@@ -1514,6 +1723,19 @@ private struct LifestyleBudgetRow: View {
                                 .multilineTextAlignment(.trailing)
                                 .focused($amountFocused)
                                 .onSubmit { commitAmount() }
+                                .toolbar {
+                                    ToolbarItemGroup(placement: .keyboard) {
+                                        Spacer()
+                                        Button { commitAmount() } label: {
+                                            Text("Done")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 6)
+                                                .background(Color.roostPrimary, in: Capsule())
+                                        }
+                                    }
+                                }
                         }
                         .padding(.horizontal, 4)
                         .padding(.vertical, 3)
@@ -1536,9 +1758,7 @@ private struct LifestyleBudgetRow: View {
                                 if rolloverAmount != 0 {
                                     Text((rolloverAmount > 0 ? "+" : "") + scramble.format(rolloverAmount, symbol: sym) + " rollover")
                                         .font(.system(size: 9))
-                                        .foregroundStyle(rolloverAmount > 0
-                                            ? Color(hex: 0x3b6d11)
-                                            : Color(hex: 0xa32d2d))
+                                        .foregroundStyle(rolloverAmount > 0 ? Color.roostSuccess : Color.roostDestructive)
                                 }
                             }
                         }
@@ -1555,27 +1775,27 @@ private struct LifestyleBudgetRow: View {
                     .frame(width: 70, alignment: .trailing)
                 }
             }
-            .padding(.vertical, 9)
-            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
 
             // Progress bar (read mode, household view only)
             if !editMode && !showSplit {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(Color.roostMuted.opacity(0.72))
-                            .frame(height: 3)
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        Capsule()
+                            .fill(Color.roostMuted.opacity(0.55))
+                            .frame(height: 5)
+                        Capsule()
                             .fill(barColour)
-                            .frame(width: geo.size.width * fillRatio, height: 3)
+                            .frame(width: geo.size.width * fillRatio, height: 5)
                     }
                 }
-                .frame(height: 3)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+                .frame(height: 5)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
             }
 
-            // Edit mode: ownership pills + split slider
+            // Edit mode: ownership pills
             if editMode {
                 // Ownership pills
                 HStack(spacing: 5) {
@@ -1601,34 +1821,25 @@ private struct LifestyleBudgetRow: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 6)
                 .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
-                // Split slider (shared only)
-                if line.ownership == "shared" && memberNames.hasPartner {
-                    SplitSliderRow(
-                        initialValue: NSDecimalNumber(decimal: line.member1Percentage).doubleValue,
-                        meInitials: memberNames.meInitials,
-                        meColour: memberNames.meColour,
-                        partnerInitials: memberNames.partnerInitials,
-                        partnerColour: memberNames.partnerColour,
-                        meName: memberNames.me,
-                        partnerName: memberNames.partner,
-                        onCommit: onSplitCommit
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+            // Split slider — only when actively editing this row's amount or name
+            if (isEditingAmount || isEditingName) && line.ownership == "shared" && memberNames.hasPartner {
+                SplitSliderRow(
+                    initialValue: NSDecimalNumber(decimal: line.member1Percentage).doubleValue,
+                    meInitials: memberNames.meInitials,
+                    meColour: memberNames.meColour,
+                    partnerInitials: memberNames.partnerInitials,
+                    partnerColour: memberNames.partnerColour,
+                    meName: memberNames.me,
+                    partnerName: memberNames.partner,
+                    onCommit: onSplitCommit
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             // Separator
             BudgetHairline().padding(.leading, 12)
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) { onRemove() } label: {
-                Label("Remove", systemImage: "trash")
-            }
-            Button { onNote() } label: {
-                Label("Note", systemImage: "note.text")
-            }
-            .tint(Color.roostSecondaryInteractive)
         }
     }
 
@@ -1710,7 +1921,7 @@ private struct SplitSliderRow: View {
             if let label = labelText {
                 Text(label)
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(hex: 0x9DB19F))
+                    .foregroundStyle(Color.roostSecondary)
             }
         }
         .padding(.horizontal, 14)
