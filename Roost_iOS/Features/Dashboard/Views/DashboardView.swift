@@ -10,6 +10,7 @@ struct DashboardView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var hasAppeared = false
+    @State private var onboardingDismissed = false
     private let previewViewModel: DashboardViewModel?
 
     init(viewModel: DashboardViewModel? = nil) {
@@ -38,6 +39,12 @@ struct DashboardView: View {
                     headerSection
                         .padding(.top, 16)
                         .modifier(DashEntrance(index: 0, appeared: hasAppeared, reduceMotion: reduceMotion))
+
+                    if showOnboardingCard {
+                        gettingStartedCard
+                            .padding(.top, 18)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
 
                     moneyStatusPanel
                         .padding(.top, 22)
@@ -89,6 +96,15 @@ struct DashboardView: View {
                 withAnimation(DesignSystem.Motion.listAppear) { hasAppeared = true }
             }
         }
+        .task(id: homeManager.homeId) {
+            guard let homeId = homeManager.homeId else { return }
+            onboardingDismissed = UserDefaults.standard.bool(forKey: onboardingKey(for: homeId))
+        }
+        .onChange(of: allOnboardingComplete) { _, complete in
+            guard complete, !onboardingDismissed, let homeId = homeManager.homeId else { return }
+            withAnimation(.roostSmooth) { onboardingDismissed = true }
+            UserDefaults.standard.set(true, forKey: onboardingKey(for: homeId))
+        }
         .overlay(alignment: .bottom) {
             if let error = viewModel.errorMessage {
                 Text(error)
@@ -137,6 +153,132 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Getting Started
+
+    private func onboardingKey(for homeId: UUID) -> String {
+        "roost_onboarding_v1_\(homeId.uuidString)"
+    }
+
+    private var onboardingSteps: [OnboardingStep] {
+        [
+            OnboardingStep(
+                title: "Invite your partner",
+                isComplete: homeManager.partner != nil
+            ) {
+                notificationRouter.selectedTab = .more
+                notificationRouter.morePath = [.household]
+            },
+            OnboardingStep(
+                title: "Set a monthly budget",
+                isComplete: currentMonthBudget.limit > 0
+            ) {
+                notificationRouter.selectedTab = .money
+            },
+            OnboardingStep(
+                title: "Add your first expense",
+                isComplete: !viewModel.expenses.isEmpty
+            ) {
+                notificationRouter.selectedTab = .money
+            },
+            OnboardingStep(
+                title: "Add a chore",
+                isComplete: !viewModel.chores.isEmpty
+            ) {
+                notificationRouter.selectedTab = .chores
+            }
+        ]
+    }
+
+    private var completedOnboardingCount: Int { onboardingSteps.filter { $0.isComplete }.count }
+    private var allOnboardingComplete: Bool { completedOnboardingCount == onboardingSteps.count }
+    private var showOnboardingCard: Bool { !onboardingDismissed && !allOnboardingComplete }
+
+    private var gettingStartedCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center) {
+                Text("GET STARTED")
+                    .font(.roostMeta)
+                    .foregroundStyle(Color.roostPrimary)
+                    .tracking(1.0)
+
+                Spacer(minLength: 0)
+
+                Text("\(completedOnboardingCount) of \(onboardingSteps.count) done")
+                    .font(.roostMeta)
+                    .foregroundStyle(Color.roostMutedForeground)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(Array(onboardingSteps.enumerated()), id: \.offset) { index, step in
+                    if step.isComplete {
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Color.roostSuccess)
+
+                            Text(step.title)
+                                .font(.roostBody)
+                                .foregroundStyle(Color.roostMutedForeground)
+                                .strikethrough(true, color: Color.roostMutedForeground)
+
+                            Spacer(minLength: 0)
+                        }
+                        .frame(minHeight: 44)
+                        .padding(.horizontal, 2)
+                    } else {
+                        Button(action: step.action) {
+                            HStack(spacing: 12) {
+                                Circle()
+                                    .stroke(Color.roostMutedForeground.opacity(0.4), lineWidth: 1.5)
+                                    .frame(width: 16, height: 16)
+
+                                Text(step.title)
+                                    .font(.roostBody)
+                                    .foregroundStyle(Color.roostForeground)
+
+                                Spacer(minLength: 0)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color.roostMutedForeground)
+                            }
+                            .frame(minHeight: 44)
+                            .padding(.horizontal, 2)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if index < onboardingSteps.count - 1 {
+                        Rectangle()
+                            .fill(Color.roostHairline)
+                            .frame(height: 1)
+                            .padding(.leading, 28)
+                    }
+                }
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(Color.roostMuted)
+
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(Color.roostPrimary)
+                        .frame(width: geo.size.width * (CGFloat(completedOnboardingCount) / CGFloat(onboardingSteps.count)))
+                        .animation(.roostSmooth, value: completedOnboardingCount)
+                }
+            }
+            .frame(height: 5)
+        }
+        .padding(16)
+        .background(Color.roostCard, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.lg, style: .continuous)
+                .stroke(Color.roostHairline, lineWidth: 1)
+        )
     }
 
     // MARK: - Money status
@@ -761,27 +903,25 @@ struct DashboardView: View {
     }
 
     private var moneyStatusHeadline: String {
-        guard currentMonthBudget.limit > 0 else { return "Set a calm monthly plan" }
-        if remainingBudget <= 0 { return "Budget needs a reset" }
-        if budgetProgressValue > 0.9 { return "\(formattedCurrency(remainingBudget)) left" }
-        if budgetProgressValue > 0.7 { return "Keep an eye on spend" }
+        guard currentMonthBudget.limit > 0 else { return "No budget set" }
+        if remainingBudget <= 0 { return "Over budget" }
         return "\(formattedCurrency(remainingBudget)) left"
     }
 
     private var moneyStatusCopy: String {
         guard currentMonthBudget.limit > 0 else {
-            return "Add a monthly budget so Roost can turn spending into a shared household signal."
+            return "Set a budget to track household spending."
         }
         if remainingBudget <= 0 {
-            return "This month is over plan. Open Money to adjust categories before it becomes noise."
+            return "Over budget this month. Review spending in Money."
         }
         if budgetProgressValue > 0.9 {
-            return "You're close to the limit. Small choices now will keep the household plan steady."
+            return "\(formattedCurrency(remainingBudget)) remaining. Nearing the monthly limit."
         }
         if budgetProgressValue > 0.7 {
-            return "Most of the plan is used. Roost is watching the month with you."
+            return "\(formattedCurrency(remainingBudget)) remaining. Most of the budget is used."
         }
-        return "Your household budget has room. Recent spending and shared balance are in one place."
+        return "Spending is on track this month."
     }
 
     private var nextShopDetail: String {
@@ -811,26 +951,26 @@ struct DashboardView: View {
     }
 
     private var householdRhythmHeadline: String {
-        if viewModel.overdueChores.count > 0 { return "Needs a little attention" }
-        if budgetProgressValue > 0.9 { return "Money is the thing today" }
-        if dueTodayChores.count > 0 || uncheckedShoppingItems.count > 0 { return "A few things are moving" }
-        return "Quiet and on track"
+        if viewModel.overdueChores.count > 0 { return "Needs attention" }
+        if budgetProgressValue > 0.9 { return "Budget nearing limit" }
+        if dueTodayChores.count > 0 || uncheckedShoppingItems.count > 0 { return "Things to do today" }
+        return "All on track"
     }
 
     private var householdRhythmCopy: String {
         if viewModel.overdueChores.count > 0 {
-            return "\(viewModel.overdueChores.count) overdue chore\(viewModel.overdueChores.count == 1 ? "" : "s") could unblock the day."
+            return "\(viewModel.overdueChores.count) overdue chore\(viewModel.overdueChores.count == 1 ? "" : "s")."
         }
         if budgetProgressValue > 0.9 {
-            return "The monthly plan is nearly used, so spend decisions matter more right now."
+            return "Budget nearly used. Keep an eye on spending."
         }
         if dueTodayChores.count > 0 {
-            return "\(dueTodayChores.count) chore\(dueTodayChores.count == 1 ? "" : "s") due today, with money and shopping nearby."
+            return "\(dueTodayChores.count) chore\(dueTodayChores.count == 1 ? "" : "s") due today."
         }
         if uncheckedShoppingItems.count > 0 {
-            return "\(uncheckedShoppingItems.count) shopping item\(uncheckedShoppingItems.count == 1 ? "" : "s") waiting for the next run."
+            return "\(uncheckedShoppingItems.count) item\(uncheckedShoppingItems.count == 1 ? "" : "s") on the shopping list."
         }
-        return "No urgent signals. Roost will surface the next household decision when it matters."
+        return "Nothing needs attention right now."
     }
 
     private var rhythmColors: [Color] {
@@ -841,7 +981,7 @@ struct DashboardView: View {
         if let chore = viewModel.overdueChores.first {
             return DashboardNextMove(
                 title: chore.title,
-                detail: "Overdue chore. Clear it before the household queue grows.",
+                detail: "Overdue.",
                 action: "Open",
                 icon: "exclamationmark",
                 tint: .roostDestructive,
@@ -853,7 +993,7 @@ struct DashboardView: View {
         if budgetProgressValue > 0.9, currentMonthBudget.limit > 0 {
             return DashboardNextMove(
                 title: "Review this month's spend",
-                detail: "\(budgetFootnote). A quick look now prevents end-of-month surprises.",
+                detail: "\(budgetFootnote).",
                 action: "Review",
                 icon: "chart.line.uptrend.xyaxis",
                 tint: .roostPrimary,
@@ -877,7 +1017,7 @@ struct DashboardView: View {
         if uncheckedShoppingItems.count > 0 {
             return DashboardNextMove(
                 title: "\(uncheckedShoppingItems.count) shopping item\(uncheckedShoppingItems.count == 1 ? "" : "s") waiting",
-                detail: "Next shop: \(nextShopDetail.lowercased()). Add or clear the list before you go.",
+                detail: "Next shop: \(nextShopDetail.lowercased()).",
                 action: "Shop",
                 icon: "cart",
                 tint: .roostShoppingTint,
@@ -888,7 +1028,7 @@ struct DashboardView: View {
 
         return DashboardNextMove(
             title: "Check the shared budget",
-            detail: "Money, chores, and shopping are calm. A quick budget glance keeps it that way.",
+            detail: "Money, chores, and shopping are clear.",
             action: "Money",
             icon: "leaf",
             tint: .roostPrimary,
@@ -966,19 +1106,19 @@ struct DashboardView: View {
 
     private var spendingDigestDetail: String {
         guard let topCategory = topSpendingCategories.first else {
-            return "Add expenses and Roost will turn them into a simpler household signal."
+            return "Add expenses to see spending patterns."
         }
         return "\(topCategory.name) is leading at \(formattedCurrency(topCategory.amount))."
     }
 
     private var activityDigestTitle: String {
         guard let item = viewModel.recentActivity.first else { return "Nothing new yet" }
-        return "\(memberName(for: item.userID)) moved things forward"
+        return "\(memberName(for: item.userID)) was last active"
     }
 
     private var activityDigestDetail: String {
         guard let item = viewModel.recentActivity.first else {
-            return "Shared actions will appear here when the household starts moving."
+            return "Shared actions will appear here."
         }
         return relativeTimestamp(item.createdAt)
     }
@@ -1098,4 +1238,10 @@ private struct DashboardNextMove {
     let tint: Color
     let destination: NotificationRouter.AppTab
     let tasksSection: NotificationRouter.TasksSection?
+}
+
+private struct OnboardingStep {
+    let title: String
+    let isComplete: Bool
+    let action: () -> Void
 }
