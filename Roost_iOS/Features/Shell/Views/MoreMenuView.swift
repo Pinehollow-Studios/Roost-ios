@@ -423,6 +423,7 @@ struct MoreSettingsView: View {
                 title: "App",
                 rows: [
                     settingsRow("Appearance", icon: "circle.lefthalf.filled", destination: .appearance, tint: Color.roostPrimary),
+                    settingsRow("Preferences", icon: "slider.horizontal.3", destination: .preferences, tint: Color.roostPrimary),
                     settingsRow("Hazel", icon: "sparkles", destination: .hazel, tint: Color.roostChoreTint),
                     settingsRow("Notifications", icon: "bell", destination: .notificationSettings, tint: Color.roostWarning),
                     settingsRow("Security", icon: "lock.fill", destination: .security, tint: Color.roostMoneyTint)

@@ -208,6 +208,8 @@ struct MainTabView: View {
                                     MoreSettingsView()
                                 case .security:
                                     SecuritySettingsView()
+                                case .preferences:
+                                    PreferencesSettingsView()
                                 }
                             }
                     }

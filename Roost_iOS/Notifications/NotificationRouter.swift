@@ -33,6 +33,7 @@ final class NotificationRouter {
         case calendar
         case settings
         case security
+        case preferences
     }
 
     var selectedTab: AppTab = .home

@@ -31,8 +31,7 @@ struct SettingsView: View {
                 sectionCard(
                     title: "Account",
                     rows: [
-                        .init(title: "Account", icon: "person.badge.key", destination: AnyView(AccountSettingsView())),
-                        .init(title: "DishBoard", icon: "sparkles.rectangle.stack", destination: AnyView(DishBoardComingSoonView()))
+                        .init(title: "Account", icon: "person.badge.key", destination: AnyView(AccountSettingsView()))
                     ]
                 )
 
