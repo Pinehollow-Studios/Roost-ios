@@ -99,5 +99,15 @@ final class RealtimeManager {
             await entry.channel.unsubscribe()
             try? await entry.channel.subscribeWithError()
         }
+        // After reconnect, postgres_changes won't replay anything that happened
+        // while we were offline. Fire each subscription's callback once so
+        // repositories do a refresh and pick up the server's current truth.
+        // Without this, lists can sit on stale cached rows until the next
+        // manual pull-to-refresh.
+        for (_, entry) in channels {
+            for callback in entry.callbacks.values {
+                await callback()
+            }
+        }
     }
 }

@@ -8,6 +8,9 @@ enum ServiceError: LocalizedError {
     case notFound
     case conflict
     case serverError
+    /// Write couldn't reach the server but was persisted to the offline outbox
+    /// and will be replayed automatically on reconnect. UI should treat as success.
+    case queuedForLaterSync
     case unknown(String)
 
     var errorDescription: String? {
@@ -26,6 +29,8 @@ enum ServiceError: LocalizedError {
             return "Something changed while you were working. Pull to refresh and try again."
         case .serverError:
             return "Something went wrong on our end. Give it a moment and try again."
+        case .queuedForLaterSync:
+            return "Saved offline — we'll sync it when you reconnect."
         case .unknown(let message):
             return message
         }

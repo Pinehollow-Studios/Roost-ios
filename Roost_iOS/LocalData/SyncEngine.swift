@@ -9,9 +9,15 @@ import SwiftData
 /// 3. Upsert server responses into SwiftData by ID (merge)
 /// 4. The ViewModel uses network data as the source of truth once fetched
 ///
-/// Offline write queue: not yet implemented. When offline, writes should be
-/// queued locally and replayed when connectivity returns. For now, writes
-/// fail with an error if the network is unavailable.
+/// Offline write queue is implemented in `MutationQueue`/`SyncCoordinator`.
+/// When a Supabase call fails because the device is offline, the ViewModel
+/// enqueues the mutation; the coordinator replays it on reconnect.
+///
+/// Cache upserts below are **dirty-row preserving**: a row whose
+/// `isDirty == true` represents a not-yet-replayed offline change and is never
+/// overwritten or deleted by a server refresh. This prevents the previous
+/// wholesale-wipe behaviour from clobbering offline work when the network
+/// comes back before the queue drains.
 @MainActor
 struct SyncEngine {
     private let container: ModelContainer
@@ -49,12 +55,38 @@ struct SyncEngine {
 
     func cacheShoppingItems(_ items: [ShoppingItem]) throws {
         let context = container.mainContext
-        if let homeID = items.first?.homeID {
-            let predicate = #Predicate<CachedShoppingItem> { $0.homeID == homeID }
-            try context.delete(model: CachedShoppingItem.self, where: predicate)
+        guard let homeID = items.first?.homeID else {
+            try context.save()
+            return
         }
+
+        let existing = try context.fetch(
+            FetchDescriptor<CachedShoppingItem>(predicate: #Predicate { $0.homeID == homeID })
+        )
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let incomingIDs = Set(items.map { $0.id })
+        let now = Date()
+
+        for cached in existing where !incomingIDs.contains(cached.id) && !cached.isDirty {
+            context.delete(cached)
+        }
+
         for item in items {
-            context.insert(CachedShoppingItem(from: item))
+            if let row = existingByID[item.id] {
+                if row.isDirty { continue } // local edit wins until drained
+                row.homeID = item.homeID
+                row.name = item.name
+                row.quantity = item.quantity
+                row.category = item.category
+                row.checked = item.checked
+                row.createdAt = item.createdAt
+                row.lastSyncedAt = now
+                row.pendingOperation = nil
+            } else {
+                let fresh = CachedShoppingItem(from: item)
+                fresh.lastSyncedAt = now
+                context.insert(fresh)
+            }
         }
         try context.save()
     }
@@ -87,12 +119,39 @@ struct SyncEngine {
 
     func cacheExpenses(_ expenses: [Expense]) throws {
         let context = container.mainContext
-        if let homeID = expenses.first?.homeID {
-            let predicate = #Predicate<CachedExpense> { $0.homeID == homeID }
-            try context.delete(model: CachedExpense.self, where: predicate)
+        guard let homeID = expenses.first?.homeID else {
+            try context.save()
+            return
         }
+
+        let existing = try context.fetch(
+            FetchDescriptor<CachedExpense>(predicate: #Predicate { $0.homeID == homeID })
+        )
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let incomingIDs = Set(expenses.map { $0.id })
+        let now = Date()
+
+        for cached in existing where !incomingIDs.contains(cached.id) && !cached.isDirty {
+            context.delete(cached)
+        }
+
         for expense in expenses {
-            context.insert(CachedExpense(from: expense))
+            if let row = existingByID[expense.id] {
+                if row.isDirty { continue }
+                row.homeID = expense.homeID
+                row.title = expense.title
+                row.amount = expense.amount
+                row.paidBy = expense.paidBy
+                row.category = expense.category
+                row.incurredOn = expense.incurredOnDate ?? Date()
+                row.createdAt = expense.createdAt
+                row.lastSyncedAt = now
+                row.pendingOperation = nil
+            } else {
+                let fresh = CachedExpense(from: expense)
+                fresh.lastSyncedAt = now
+                context.insert(fresh)
+            }
         }
         try context.save()
     }
@@ -123,12 +182,42 @@ struct SyncEngine {
 
     func cacheChores(_ chores: [Chore]) throws {
         let context = container.mainContext
-        if let homeID = chores.first?.homeID {
-            let predicate = #Predicate<CachedChore> { $0.homeID == homeID }
-            try context.delete(model: CachedChore.self, where: predicate)
+        guard let homeID = chores.first?.homeID else {
+            try context.save()
+            return
         }
+
+        let existing = try context.fetch(
+            FetchDescriptor<CachedChore>(predicate: #Predicate { $0.homeID == homeID })
+        )
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let incomingIDs = Set(chores.map { $0.id })
+        let now = Date()
+
+        for cached in existing where !incomingIDs.contains(cached.id) && !cached.isDirty {
+            context.delete(cached)
+        }
+
         for chore in chores {
-            context.insert(CachedChore(from: chore))
+            if let row = existingByID[chore.id] {
+                if row.isDirty { continue }
+                row.homeID = chore.homeID
+                row.title = chore.title
+                row.choreDescription = chore.description
+                row.room = chore.room
+                row.assignedTo = chore.assignedTo
+                row.dueDate = chore.dueDate
+                row.completedBy = chore.completedBy
+                row.frequency = chore.frequency
+                row.lastCompletedAt = chore.lastCompletedAt
+                row.createdAt = chore.createdAt
+                row.lastSyncedAt = now
+                row.pendingOperation = nil
+            } else {
+                let fresh = CachedChore(from: chore)
+                fresh.lastSyncedAt = now
+                context.insert(fresh)
+            }
         }
         try context.save()
     }
@@ -155,12 +244,40 @@ struct SyncEngine {
 
     func cacheActivity(_ items: [ActivityFeedItem]) throws {
         let context = container.mainContext
-        if let homeID = items.first?.homeID {
-            let predicate = #Predicate<CachedActivityFeedItem> { $0.homeID == homeID }
-            try context.delete(model: CachedActivityFeedItem.self, where: predicate)
+        guard let homeID = items.first?.homeID else {
+            try context.save()
+            return
         }
+
+        let existing = try context.fetch(
+            FetchDescriptor<CachedActivityFeedItem>(predicate: #Predicate { $0.homeID == homeID })
+        )
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let incomingIDs = Set(items.map { $0.id })
+        let now = Date()
+
+        // Activity feed rows never carry offline writes — always a safe wipe of
+        // non-dirty stale rows. We keep the dirty guard anyway for consistency.
+        for cached in existing where !incomingIDs.contains(cached.id) && !cached.isDirty {
+            context.delete(cached)
+        }
+
         for item in items {
-            context.insert(CachedActivityFeedItem(from: item))
+            if let row = existingByID[item.id] {
+                if row.isDirty { continue }
+                row.homeID = item.homeID
+                row.userID = item.userID
+                row.action = item.action
+                row.entityType = item.entityType
+                row.entityID = item.entityID
+                row.createdAt = item.createdAt
+                row.lastSyncedAt = now
+                row.pendingOperation = nil
+            } else {
+                let fresh = CachedActivityFeedItem(from: item)
+                fresh.lastSyncedAt = now
+                context.insert(fresh)
+            }
         }
         try context.save()
     }

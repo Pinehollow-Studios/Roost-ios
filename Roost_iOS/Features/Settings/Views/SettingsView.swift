@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(SettingsViewModel.self) private var settingsViewModel
+    @Environment(SyncStatusStore.self) private var syncStatusStore
 
     @State private var isSigningOut = false
 
@@ -30,9 +31,7 @@ struct SettingsView: View {
 
                 sectionCard(
                     title: "Account",
-                    rows: [
-                        .init(title: "Account", icon: "person.badge.key", destination: AnyView(AccountSettingsView()))
-                    ]
+                    rows: accountRows
                 )
 
                 signOutCard
@@ -46,6 +45,25 @@ struct SettingsView: View {
             }
         }
         .settingsMessageOverlay()
+    }
+
+    /// Account section rows. Adds "Pending changes" only when the offline
+    /// outbox has items the user should know about — keeps Settings clean for
+    /// the 99% of sessions where everything is synced.
+    private var accountRows: [SettingsRowItem] {
+        var rows: [SettingsRowItem] = [
+            .init(title: "Account", icon: "person.badge.key", destination: AnyView(AccountSettingsView()))
+        ]
+        if syncStatusStore.pendingCount + syncStatusStore.failedCount > 0 {
+            rows.append(
+                .init(
+                    title: "Pending changes",
+                    icon: "arrow.triangle.2.circlepath",
+                    destination: AnyView(PendingChangesView())
+                )
+            )
+        }
+        return rows
     }
 
     private func sectionCard(title: String, rows: [SettingsRowItem]) -> some View {

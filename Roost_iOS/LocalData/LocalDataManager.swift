@@ -9,10 +9,24 @@ final class LocalDataManager {
 
     private init() {
         let schema = Schema([
+            // Pre-offline models (Phase 0 — extended in-place with offline metadata).
             CachedShoppingItem.self,
             CachedExpense.self,
             CachedChore.self,
             CachedActivityFeedItem.self,
+            // Phase 1 offline foundation — additional domain caches.
+            CachedExpenseSplit.self,
+            CachedBudget.self,
+            CachedCustomCategory.self,
+            CachedSavingsGoal.self,
+            CachedCalendarEvent.self,
+            CachedPinboardNote.self,
+            CachedRoom.self,
+            CachedHome.self,
+            CachedHomeMember.self,
+            CachedHouseholdIncome.self,
+            // Phase 1 offline foundation — mutation outbox.
+            PendingMutation.self,
         ])
         do {
             container = try ModelContainer(for: schema)

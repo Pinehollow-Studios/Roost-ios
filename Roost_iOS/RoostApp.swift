@@ -33,6 +33,8 @@ struct RoostApp: App {
     @State private var appBootManager = AppBootManager()
     // Money rebuild — Session 6 savings goals
     @State private var savingsGoalsViewModel = SavingsGoalsViewModel()
+    // Offline foundation — Phase 1
+    @State private var syncStatusStore = SyncStatusStore.shared
 
     @State private var lastBackgroundedAt: Date?
 
@@ -84,6 +86,7 @@ struct RoostApp: App {
                 .environment(scrambleModeEnvironment)
                 .environment(appBootManager)
                 .environment(savingsGoalsViewModel)
+                .environment(syncStatusStore)
                 .modelContainer(LocalDataManager.shared.container)
                 .onOpenURL { url in
                     authManager.handle(url: url)
@@ -94,6 +97,14 @@ struct RoostApp: App {
                     LocalNotificationManager.shared.configure(router: notificationRouter)
                     await subscriptionPricingStore.refresh()
                     AppPrivacyShield.shared.isEnabled = privacyShieldEnabled
+                    // Offline foundation — wire sync coordinator dependencies
+                    // and try an initial drain if we launched online. The
+                    // coordinator itself is idempotent and gates on connectivity.
+                    SyncCoordinator.shared.configure(
+                        networkMonitor: networkMonitor,
+                        authManager: authManager
+                    )
+                    await SyncCoordinator.shared.drainIfOnline()
                 }
                 .onChange(of: authManager.currentUser?.id) { _, userId in
                     Task {
@@ -121,6 +132,8 @@ struct RoostApp: App {
                         // because that notification can fire spuriously for background
                         // apps; scenePhase == .active is the stable, reliable signal.
                         AppPrivacyShield.shared.deactivate()
+                        // Drain any mutations that were queued while backgrounded.
+                        Task { await SyncCoordinator.shared.drainIfOnline() }
                     default:
                         break
                     }
