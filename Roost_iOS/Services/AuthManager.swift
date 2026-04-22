@@ -19,7 +19,17 @@ final class AuthManager {
     private var authStateTask: Task<Void, Never>?
 
     @ObservationIgnored
+    private var restoreTimeoutTask: Task<Void, Never>?
+
+    @ObservationIgnored
     private let homeService = HomeService()
+
+    /// Upper bound on how long the UI will sit on the "Restoring session" loading
+    /// screen before we give up and show the Welcome/login screen. Without this
+    /// the app can hang on cold start if the Supabase auth stream stalls (seen on
+    /// poor or region-restricted networks — exactly the conditions App Review hits).
+    @ObservationIgnored
+    private static let sessionRestoreTimeout: Duration = .seconds(6)
 
     var isAuthenticated: Bool {
         currentSession != nil
@@ -28,17 +38,31 @@ final class AuthManager {
     func startSessionListener() {
         guard authStateTask == nil else { return }
 
+        // Safety timeout — if no auth state event arrives within
+        // `sessionRestoreTimeout` we force-exit the loading screen so the user
+        // can at least attempt to sign in.
+        restoreTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.sessionRestoreTimeout)
+            guard !Task.isCancelled, let self else { return }
+            if self.isRestoringSession {
+                self.isRestoringSession = false
+            }
+        }
+
         authStateTask = Task { [weak self] in
             guard
                 let self,
                 let client = try? SupabaseClientProvider.shared.requireClient()
             else {
+                self?.restoreTimeoutTask?.cancel()
                 self?.clearSessionState()
                 return
             }
 
             for await (event, session) in client.auth.authStateChanges {
                 guard !Task.isCancelled else { return }
+                // First event arrived — cancel the safety timeout.
+                self.restoreTimeoutTask?.cancel()
                 await self.applyAuthStateChange(event: event, session: session)
             }
         }
@@ -69,6 +93,7 @@ final class AuthManager {
 
     deinit {
         authStateTask?.cancel()
+        restoreTimeoutTask?.cancel()
     }
 
     private func applyAuthStateChange(event: AuthChangeEvent, session: Session?) async {
@@ -120,12 +145,33 @@ final class AuthManager {
     }
 
     func refreshHomeStatus() async {
+        // Race the network call against a timeout. Without this, a stalled
+        // request leaves `hasHome = nil` forever and the post-login
+        // "Checking your home" loader becomes a dead end.
         do {
-            homeId = try await homeService.getUserHomeID()
+            homeId = try await withTimeout(seconds: 8) {
+                try await self.homeService.getUserHomeID()
+            }
             hasHome = homeId != nil
         } catch {
             homeId = nil
             hasHome = false
+        }
+    }
+
+    private func withTimeout<T: Sendable>(
+        seconds: TimeInterval,
+        operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask { try await operation() }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                throw CancellationError()
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
         }
     }
 

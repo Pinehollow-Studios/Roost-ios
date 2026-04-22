@@ -24,6 +24,9 @@ struct RoostSecureField: View {
                     SecureField(title, text: $text)
                 }
             }
+            .textContentType(.password)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
             .font(.roostBody)
             .foregroundStyle(Color.roostForeground)
             .focused($isFocused)

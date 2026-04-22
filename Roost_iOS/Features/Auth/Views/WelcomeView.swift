@@ -126,6 +126,8 @@ struct WelcomeView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .submitLabel(.next)
 
                 RoostSecureField(
                     title: "Password",
@@ -203,7 +205,16 @@ struct WelcomeView: View {
 
     // MARK: – Helpers
 
-    private var currentMessage: String? { oauthError ?? viewModel.errorMessage }
+    private var currentMessage: String? {
+        // Surface a clear configuration error before the user wastes time
+        // typing credentials. This guards against a build that shipped without
+        // Secrets.xcconfig values baked in — otherwise the sign-in button
+        // would throw a generic error with no actionable context.
+        if !SupabaseClientProvider.shared.isConfigured {
+            return "Sign-in is unavailable: app configuration is missing. Please reinstall or contact support."
+        }
+        return oauthError ?? viewModel.errorMessage
+    }
 
     @MainActor
     private func signInWithGoogle() async {
